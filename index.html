@@ -526,6 +526,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 
 /* ---------- Co-op online ---------- */
 html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+#touch,#touch *,#abilBar,#abilBar *,#game{touch-action:none!important;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .coop-btn{pointer-events:auto;align-self:flex-start;font-size:13px;padding:8px 14px;background:rgba(12,14,19,.72);color:var(--ink)}
 .coop-btn.live{border-color:var(--teal);color:var(--teal)}
 #coop .coop-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:600}
@@ -7006,6 +7007,9 @@ addEventListener('keydown',e=>{if(G.state==='coop'&&e.key==='Escape'){e.preventD
   const stop=e=>e.preventDefault();
   for(const ev of ['gesturestart','gesturechange','gestureend','dblclick'])document.addEventListener(ev,stop,{passive:false});
   document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+  // sui tasti del gioco il tocco non deve mai arrivare al browser (doppio tocco = zoom su iPhone):
+  // i tasti funzionano con i "pointer" che partono comunque
+  for(const id of ['touch','abilBar','game','joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3','bUse']){const el=$(id);if(el)el.addEventListener('touchstart',e=>{if(e.cancelable)e.preventDefault();},{passive:false});}
   let lastT=0;
   document.addEventListener('touchend',e=>{const now=Date.now(),t=e.target;
     if(now-lastT<350&&!(t&&t.closest&&t.closest('input,textarea,select')))e.preventDefault();lastT=now;},{passive:false});
