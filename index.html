@@ -664,7 +664,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #acForm{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
 #acUser,#acPass{font:inherit;font-size:17px;padding:11px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(300px,84vw);-webkit-user-select:text;user-select:text}
 #acUser:focus,#acPass:focus{border-color:var(--ember);outline:none}
-#updBar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:140;max-width:calc(100vw - 24px);padding:8px 14px;background:rgba(12,10,18,.94);border:1px solid #7fe08a;color:#7fe08a;font-weight:700;font-size:13px;text-align:center;pointer-events:none}
+#updBar{position:fixed;left:50%;top:calc(96px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:140;max-width:calc(100vw - 24px);padding:8px 14px;background:rgba(12,10,18,.94);border:1px solid #7fe08a;color:#7fe08a;font-weight:700;font-size:13px;text-align:center;pointer-events:none}
 
 #coopCodeTxt{font-family:var(--f-body)!important;font-weight:700!important;letter-spacing:.22em}
 #coopCode{font-family:var(--f-body);font-weight:700}
@@ -8200,7 +8200,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794087066';
+const BUILD_ID='1794087277';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -8274,9 +8274,9 @@ async function checkUpdate(){if(updReady||location.protocol!=='https:')return;
     if(m&&m[1]!==BUILD_ID){updReady=m[1];onUpdate();}}catch(e){}}
 setInterval(checkUpdate,60000);setTimeout(checkUpdate,20000);
 const safeNow=()=>G.scene==='cellar'||['intro','waking'].includes(G.state);
-function showUpd(t){const b=$('updBar');b.textContent=t;b.hidden=false;}
+function showUpd(t){const b=$('updBar');b.textContent=t;b.hidden=false;clearTimeout(showUpd.tm);showUpd.tm=setTimeout(()=>{b.hidden=true;},5000);}
 function onUpdate(){if(safeNow()){showUpd('Nuova versione disponibile: aggiorno…');setTimeout(doReload,1500);}
-  else showUpd('È uscita una nuova versione: si aggiornerà appena muori o torni al seminterrato');}
+  else toast('Nuova versione disponibile','Si aggiornerà appena muori o torni al seminterrato');}
 let reloading=false;
 function doReload(){if(reloading)return;reloading=true;showUpd('Aggiorno alla nuova versione…');
   Promise.race([cloudSave(true),new Promise(r=>setTimeout(r,2500))]).finally(()=>{const u=new URL(location.href);u.searchParams.set('v',updReady||Date.now());u.hash='';location.replace(u.toString());});}
