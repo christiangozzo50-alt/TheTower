@@ -8067,7 +8067,7 @@ $('ngIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')
 $('ngCancel').onclick=()=>{$('nameGate').hidden=true;};
 // riprova a confermare online un nome salvato senza connessione
 setTimeout(async()=>{if(!store.get('mpname',''))openNameGate(false);
-  else if(!store.get('nameok',false)&&fbOn()){try{const n=MP.name();if(await nameFree(n)){await fbPut('names/'+encodeURIComponent(nameKey(n)),PID);store.set('nameok',true);}else openNameGate(true);}catch(e){}}},400);
+  else if(!store.get('nameok',false)&&fbOn()){try{const n=MP.name();if(await nameFree(n)){await fbPut('names/'+encodeURIComponent(nameKey(n)),PID);store.set('nameok',true);}else{openNameGate(false);$('ngIn').value=n;$('ngMsg').textContent=`«${n}» è già usato da un altro giocatore: scegline uno nuovo.`;const sg=await suggestName(n);if(sg){$('ngSug').hidden=false;$('ngSug').textContent=`Usa «${sg}»`;$('ngSug').onclick=()=>{$('ngIn').value=sg;confirmName(sg);};}}}catch(e){}}},400);
 
 /* ---------- presenza online e statistiche pubbliche ---------- */
 function heartbeat(){if(!fbOn()||!store.get('nameok',false))return;const k=nameKey(MP.name());
@@ -8139,7 +8139,7 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{o
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794084284';
+const BUILD_ID='1794084370';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
