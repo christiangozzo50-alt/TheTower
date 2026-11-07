@@ -6932,8 +6932,12 @@ function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a
 function withSeed(s,fn){const r=Math.random;Math.random=mulberry(s);try{return fn();}finally{Math.random=r;}}
 
 /* ---------- rete ---------- */
-const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'},
-  {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}];
+const TURN_U='a5944d0595238fc36f2b3238',TURN_P='5r2ZTkU9Jjjh3s+M';
+const ICE=[{urls:'stun:stun.relay.metered.ca:80'},{urls:'stun:stun.l.google.com:19302'},
+  {urls:'turn:global.relay.metered.ca:80',username:TURN_U,credential:TURN_P},
+  {urls:'turn:global.relay.metered.ca:80?transport=tcp',username:TURN_U,credential:TURN_P},
+  {urls:'turn:global.relay.metered.ca:443',username:TURN_U,credential:TURN_P},
+  {urls:'turns:global.relay.metered.ca:443?transport=tcp',username:TURN_U,credential:TURN_P}];
 function patchPeer(){if(!window.Peer||window.Peer.__ice)return;const P0=window.Peer;
   class P2 extends P0{constructor(a,b){if(a&&typeof a==='object'){b=a;a=undefined;}b=Object.assign({},b||{});b.config=Object.assign({iceServers:ICE},b.config||{});if(a===undefined)super(b);else super(a,b);}}
   P2.__ice=true;window.Peer=P2;}
@@ -8189,7 +8193,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794085934';
+const BUILD_ID='1794086366';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
