@@ -540,6 +540,9 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #coop button:disabled{opacity:.4;cursor:default}
 #mpWait{position:fixed;inset:0;z-index:120;display:grid;place-content:center;gap:8px;text-align:center;pointer-events:none}
 #mpWait b{font-family:var(--f-display);font-weight:400;font-size:clamp(22px,4vw,36px);color:var(--ember);animation:pulse 1.6s ease-in-out infinite}
+#restMsg{position:fixed;inset:0;z-index:120;display:grid;place-content:center;gap:8px;text-align:center;pointer-events:none}
+#restMsg b{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4.5vw,40px);color:#7fe08a;animation:pulse 1.6s ease-in-out infinite}
+#restMsg span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
 #mpWait span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
 .mp-tag{position:fixed;left:0;top:0;z-index:4;pointer-events:none;padding:1px 8px;font-weight:700;font-size:12px;color:var(--mc,#7ff0e4);background:rgba(10,8,14,.65);border:1px solid var(--mc,#7ff0e4);white-space:nowrap}
 .mp-tag.down{color:#ff8a8a;border-color:rgba(255,138,138,.5)}
@@ -755,6 +758,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
     <div class="row"><button class="ghost" id="coopLeave" hidden>Esci dalla co-op</button><button class="ghost" id="coopClose">Chiudi</button></div>
   </div>
 </section>
+<div id="restMsg" hidden><b>Ti riposi…</b><span>Vita e abilità tornano al massimo</span></div>
 <div id="mpWait" hidden><b>Aspetti i compagni…</b><span>Salite insieme al piano successivo</span></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
@@ -6791,7 +6795,8 @@ function mpMyState(){const A=P.atk,w=G.weapon||{};let a=null;if(A){a={};for(cons
     ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),sk:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
     c:G.cls?G.cls.id:'',w:[w.type||'spada',w.rarity||0,w.v||0,w.effect||''],ws:r2(G.weapon?weaponScale():1),atk:a};}
 function mpPlayer(pid){let R=MP.players.get(pid);if(!R){R={pid,name:'',x:0,y:0,z:0,tx:0,ty:0,tz:0,walkT:0,lastStep:0,atk:null,hero:null,hkey:'',ready:false,dead:false,sc:'',fl:0,st:''};MP.players.set(pid,R);}return R;}
-function mpRecvState(pid,m){const R=mpPlayer(pid);
+function mpRecvState(pid,m){mpRecvInto(mpPlayer(pid),m);}
+function mpRecvInto(R,m){
   const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
     shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
@@ -6806,13 +6811,13 @@ function mpMakeHero(R,cid,w){mpRemoveHero(R);const cls=CLASSES.find(c=>c.id===ci
     R.hero=h;R.wobj=wo;R.cls=cls;R.hkey=cid+'|'+w.join(',');}catch(e){console.warn('co-op hero',e);R.hero=null;R.hkey='';}}
 function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.root);R.hero=null;}R.hkey='';if(R.tag){R.tag.remove();R.tag=null;}if(R.mate){R.mate.remove();R.mate=null;}}
 const RKEYS=['x','y','z','vx','vy','face','onGround','dead','flipT','stretchT','landT','dashT','hurtT','invul','shieldT','rageT','bearT','dragon','chargeT','spinT','throwT','skidT','climbTurn','atk','walkT','lastStep'];
-const mpVisible=R=>MP.live()&&R.hero&&R.sc===G.scene&&(G.scene==='cellar'||R.fl===G.floor)&&!['intro','waking','cine'].includes(G.state)&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);
+const mpVisible=R=>(R.hub?HUB.on&&G.safe:MP.live())&&R.hero&&R.sc===G.scene&&(G.scene==='cellar'||R.fl===G.floor)&&!['intro','waking','cine'].includes(G.state)&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);
 const TAGCOL=['#ffd27a','#7ff0e4','#ff9ad5','#a8ff7a'];
 function mpDrawRemote(dt){
   const box=$('mpMate');let anyMate=false;
-  for(const R of MP.players.values()){
-    const vis=mpVisible(R);if(R.hero)R.hero.root.visible=!!vis;const col=TAGCOL[R.pid%4];
-    const showMate=MP.live()&&G.scene==='tower'&&R.sc==='tower'&&R.seen;
+  for(const R of [...MP.players.values(),...HUB.players.values()]){
+    const vis=mpVisible(R);if(R.hero)R.hero.root.visible=!!vis;const col=R.hub?'#c7a8ff':TAGCOL[R.pid%4];
+    const showMate=!R.hub&&MP.live()&&G.scene==='tower'&&R.sc==='tower'&&R.seen;
     if(showMate){anyMate=true;if(!R.mate){R.mate=document.createElement('div');R.mate.className='mate-row';R.mate.innerHTML='<small></small><div class="bar mate"><i class="fill"></i></div>';box.appendChild(R.mate);}
       R.mate.style.setProperty('--mc',col);R.mate.firstChild.textContent=(R.name||'Compagno')+(R.dead?' · a terra':'');R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
     else if(R.mate){R.mate.remove();R.mate=null;}
@@ -6916,7 +6921,7 @@ const _buildLevel=buildLevel;
 buildLevel=function(f){if(!MP.live())return _buildLevel(f);const zi=zoneIndex(f);if(G.zoneBuilt!==zi)applyZone(zi);return withSeed(MP.seed*131+f*7919,()=>_buildLevel(f));};
 const _startFloor=startFloor;
 startFloor=function(f){
-  _startFloor(f);MP.emap=new Map();MP.ready=false;for(const R of MP.players.values())R.ready=false;mpWait(false);
+  _startFloor(f);if(G.safe&&!G.tutorial)hubJoin(f);else hubLeave();MP.emap=new Map();MP.ready=false;for(const R of MP.players.values())R.ready=false;mpWait(false);
   if(!MP.live()||G.tutorial)return;
   const ex=withSeed(MP.seed*977+f*31,()=>isBossFloor(f)?rand(-HALF+3,-HALF+11):rand(-HALF+3,GATE_X-9));
   if(G.entry){G.entry.g.position.x=ex;G.entry.x=ex;}
@@ -6970,10 +6975,13 @@ updCamera=function(dt){
   _updCamera(dt);
 };
 const _updHeroVisual=updHeroVisual;
-updHeroVisual=function(dt){if(MP.players.size)mpDrawRemote(dt);_updHeroVisual(dt);};
+updHeroVisual=function(dt){if(MP.players.size||HUB.players.size)mpDrawRemote(dt);_updHeroVisual(dt);};
 
 /* ---------- invio periodico ---------- */
 setInterval(()=>{
+  HUB.tick=(HUB.tick||0)+1;
+  if(HUB.on&&HUB.tick%2===0){const s=mpMyState();s.t='hs';s.sid=HUB.sid;s.n=MP.name();s.code=MP.live()?MP.code:'';
+    if(HUB.lead)HUB.bcast(s);else if(HUB.conn&&HUB.conn.open){try{HUB.conn.send(s);}catch(e){}}}
   if(!MP.live())return;
   MP.send(mpMyState());
   if(MP.host&&G.scene==='tower')MP.bcast(mpSnap());
@@ -6999,6 +7007,72 @@ $('coopLeave').onclick=()=>{sfx('ui');mpLeave(false);};
 $('coopCode').addEventListener('keydown',e=>{if(e.key==='Enter')mpJoin();});
 $('coopCodeTxt').onclick=()=>{try{navigator.clipboard.writeText(MP.code);toast('Codice copiato',MP.code);}catch(e){}};
 addEventListener('keydown',e=>{if(G.state==='coop'&&e.key==='Escape'){e.preventDefault();closeCoop();}},true);
+
+
+/* =========================================================
+   SANTUARIO: punto d'incontro aperto a tutti i giocatori che sono
+   nello stesso santuario in quel momento (anche da partite diverse),
+   più un letto per riposare senza uscire dalla scalata
+   ========================================================= */
+const HUB={on:false,lead:false,want:false,peer:null,conn:null,members:[],players:new Map(),floor:0,sid:Math.random().toString(36).slice(2,10)};
+const hubId=f=>'thetower-hub-v1-'+f;
+HUB.bcast=(m,except)=>{for(const c of HUB.members)if(c.open&&c!==except){try{c.send(m);}catch(e){}}};
+function hubJoin(f){if(HUB.want&&HUB.floor===f)return;hubLeave();HUB.floor=f;HUB.want=true;mpLib(()=>{if(HUB.want&&HUB.floor===f&&!HUB.peer)hubClaim(f);});}
+function hubClaim(f){let p;try{p=new Peer(hubId(f));}catch(e){return;}HUB.peer=p;
+  p.on('open',()=>{if(HUB.peer!==p)return;HUB.on=true;HUB.lead=true;});
+  p.on('connection',c=>{c.on('open',()=>{if(HUB.members.length>=11){c.close();return;}HUB.members.push(c);});
+    c.on('data',m=>{try{hubMsg(m,c);}catch(e){}});
+    c.on('close',()=>{HUB.members=HUB.members.filter(x=>x!==c);if(c.sid){HUB.bcast({t:'hl',sid:c.sid});hubGone(c.sid);}});c.on('error',()=>{});});
+  p.on('error',e=>{if(HUB.peer!==p)return;if(e&&e.type==='unavailable-id'){try{p.destroy();}catch(_){}HUB.peer=null;hubMember(f);}});}
+function hubMember(f){let p;try{p=new Peer();}catch(e){return;}HUB.peer=p;
+  p.on('open',()=>{if(HUB.peer!==p)return;const c=p.connect(hubId(f),{serialization:'json'});HUB.conn=c;
+    c.on('open',()=>{if(HUB.conn===c){HUB.on=true;HUB.lead=false;}});
+    c.on('data',m=>{try{hubMsg(m,null);}catch(e){}});
+    c.on('close',()=>{if(HUB.conn!==c)return;HUB.on=false;hubClear();hubRetry();});c.on('error',()=>{});});
+  p.on('error',e=>{if(HUB.peer!==p)return;if(e&&(e.type==='peer-unavailable'||e.type==='network'))hubRetry();});}
+function hubRetry(){if(!HUB.want)return;const f=HUB.floor,old=HUB.peer;HUB.peer=null;HUB.conn=null;HUB.on=false;try{old&&old.destroy();}catch(_){}
+  setTimeout(()=>{if(HUB.want&&HUB.floor===f&&!HUB.peer)hubClaim(f);},500+Math.random()*1500);}
+function hubLeave(){if(!HUB.want&&!HUB.peer)return;HUB.want=false;HUB.on=false;HUB.lead=false;const p=HUB.peer,c=HUB.conn,ms=HUB.members;HUB.peer=null;HUB.conn=null;HUB.members=[];
+  try{c&&c.close();}catch(_){}for(const x of ms){try{x.close();}catch(_){}}try{p&&p.destroy();}catch(_){}hubClear();}
+function hubClear(){for(const R of HUB.players.values())mpRemoveHero(R);HUB.players.clear();}
+function hubGone(sid){const R=HUB.players.get(sid);if(!R)return;mpRemoveHero(R);HUB.players.delete(sid);}
+function hubMsg(m,c){
+  if(m.t==='hs'){if(m.sid===HUB.sid)return;if(c){c.sid=m.sid;HUB.bcast(m,c);}
+    if(!G.safe||m.fl!==G.floor)return;
+    if(MP.live()&&m.code&&m.code===MP.code)return;   // i compagni di squadra si vedono già
+    let R=HUB.players.get(m.sid);const fresh=!R;
+    if(!R){R={pid:-1,hub:true,name:'',x:0,y:0,z:0,tx:0,ty:0,tz:0,walkT:0,lastStep:0,atk:null,hero:null,hkey:'',sc:'',fl:0,st:''};HUB.players.set(m.sid,R);}
+    R.name=String(m.n||'Avventuriero').slice(0,14);mpRecvInto(R,m);
+    if(fresh){toast(`${R.name} è nel santuario`,'Un altro avventuriero si riposa qui');sfx('lvl');}}
+  else if(m.t==='hl'&&!c)hubGone(m.sid);
+}
+const _enterCellar=enterCellar;
+enterCellar=function(){hubLeave();return _enterCellar();};
+
+/* ---------- letto del santuario ---------- */
+const BED_X=-1.6;
+function buildRestBed(){
+  const g=new THREE.Group();g.position.set(BED_X,0,-1.7);safeG.add(g);
+  const wd=toon(0x5a3a22),wdL=toon(0x7a5434),sheet=toon(0xe8dcc0),blk=toon(0x8a2a34),blk2=toon(0x6a1e28),gold=toon(0xd9b45a,{emissive:0x5a3a00,emissiveIntensity:0.3});
+  for(const x of [-1.25,1.25])for(const z of [-0.6,0.6])mesh(rbox(0.16,0.5,0.16,0.04),wd,x,0.25,z,g);
+  mesh(rbox(2.7,0.22,1.4,0.06),wdL,0,0.5,0,g);
+  mesh(rbox(0.18,1.5,1.5,0.06),wd,-1.36,0.85,0,g);mesh(rbox(0.22,0.14,1.56,0.05),gold,-1.36,1.62,0,g);
+  mesh(rbox(0.16,0.85,1.5,0.06),wd,1.36,0.6,0,g);
+  mesh(rbox(2.5,0.24,1.28,0.12),sheet,0,0.72,0,g);
+  const pil=mesh(rbox(0.55,0.2,0.95,0.1),sheet,-0.9,0.92,0,g);pil.rotation.z=0.12;
+  mesh(rbox(1.7,0.12,1.34,0.06),blk,0.32,0.88,0,g);mesh(rbox(0.18,0.13,1.36,0.04),blk2,-0.48,0.89,0,g);
+  // comodino con candela
+  mesh(rbox(0.6,0.7,0.6,0.06),wd,-2.1,0.35,-0.2,g);mesh(new THREE.CylinderGeometry(0.07,0.08,0.26,12),toon(0xf2ead8),-2.1,0.83,-0.2,g);
+  const fl=mesh(sph(0.07,10,8),new THREE.MeshBasicMaterial({color:0xffb347}),-2.1,1.02,-0.2,g,true);fl.scale.y=1.7;G.props.push({o:fl,flick:1});}
+function restBed(){if(G.state!=='play')return;G.state='rest';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);showMeds(false);G.fadeSpd=1.4;
+  fadeThen(()=>{P.hp=S.maxHp;P.stam=S.stamMax;P.abilCd=P.abil2Cd=P.abil3Cd=0;P.dot=null;P.slowT=0;P.x=BED_X+2;P.vx=0;P.vy=0;P.face=1;P.atk=null;
+    $('restMsg').hidden=false;sfx('ui');
+    setTimeout(()=>{$('restMsg').hidden=true;G.fadeTarget=0;G.state='play';$('touch').hidden=!isTouch;showMeds(true);clearInput();sfx('lvl');
+      popNum(P.x,P.y+2.4,'Riposato!','heal');burst(P.x,P.y+1,0x7fe08a,24,4,3,0.3);
+      toast('Ti sei riposato','Vita e abilità al massimo · il letto non salva: se muori riparti dal piano 1');},1700);});}
+const _buildSafeRoom=buildSafeRoom;
+buildSafeRoom=function(){_buildSafeRoom();try{buildRestBed();}catch(e){console.warn(e);}
+  G.safeInter.push({x:BED_X,y:2.3,name:'Letto',sub:()=>P.hp<S.maxHp?'Riposa: vita e abilità al massimo (non salva)':'Riposa: abilità ricaricate (non salva)',act:restBed});};
 
 /* ---------- niente zoom accidentale su telefono (doppio tocco / pizzico) ---------- */
 (function(){
