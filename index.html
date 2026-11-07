@@ -665,6 +665,9 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #acUser,#acPass{font:inherit;font-size:17px;padding:11px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(300px,84vw);-webkit-user-select:text;user-select:text}
 #acUser:focus,#acPass:focus{border-color:var(--ember);outline:none}
 #updBar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:140;max-width:calc(100vw - 24px);padding:8px 14px;background:rgba(12,10,18,.94);border:1px solid #7fe08a;color:#7fe08a;font-weight:700;font-size:13px;text-align:center;pointer-events:none}
+
+#coopCodeTxt{font-family:var(--f-body)!important;font-weight:700!important;letter-spacing:.22em}
+#coopCode{font-family:var(--f-body);font-weight:700}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -6937,13 +6940,14 @@ function patchPeer(){if(!window.Peer||window.Peer.__ice)return;const P0=window.P
 function mpLib(cb){if(window.Peer){patchPeer();return cb();}const s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
   s.onload=()=>{patchPeer();cb();};s.onerror=()=>mpStatus('Non riesco a scaricare il modulo di rete. Controlla la connessione.');document.head.appendChild(s);}
 function mpStatus(t){const el=$('coopStatus');if(el)el.textContent=t;}
-function mpCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
+function mpCode(){const A='ACDEFHJKLMNPRTWXY34679';   // niente lettere e cifre che si confondono (O/0, I/1, S/5, Z/2, B/8, G/6, U/V, Q)
+  let s='';for(let i=0;i<5;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
 function mpHost(){mpLeave(true);store.set('mpname',MP.name());mpStatus('Creo la partita…');
   mpLib(()=>{MP.code=mpCode();MP.host=true;MP.myPid=0;MP.seed=(Math.random()*1e9)|0;
     const p=new Peer(PEER_PREFIX+MP.code);MP.peer=p;
     p.on('open',()=>{MP.on=true;$('coopCodeTxt').textContent=MP.code;$('coopCodeBox').hidden=false;mpStatus(`Manda questo codice ai tuoi amici (fino a ${MP_MAX-1}).`);mpUi();});
     p.on('connection',c=>mpHostWire(c));
-    p.on('error',e=>{if(e&&e.type==='unavailable-id'){mpHost();return;}if(e&&e.type==='peer-unavailable')return;mpStatus('Errore di rete: '+((e&&e.type)||'sconosciuto'));});
+    p.on('error',e=>{if(e&&e.type==='unavailable-id'&&!MP.live()&&MP.peer===p&&!p.open){mpHost();return;}if(e&&e.type==='peer-unavailable')return;if(e&&['network','server-error','socket-error','socket-closed','disconnected'].includes(e.type)){setTimeout(hostWatch,1000);return;}mpStatus('Errore di rete: '+((e&&e.type)||'sconosciuto'));});
     p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});});}
 function mpHostWire(c){
   c.on('open',()=>{
@@ -6963,8 +6967,8 @@ function mpJoin(tries){tries=tries||0;const code=($('coopCode').value||'').trim(
       c.on('open',()=>{MP.conn=c;MP.on=true;c.send({t:'hi',n:MP.name()});mpUi();});
       c.on('data',m=>{try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});
       c.on('close',()=>{if(MP.conn===c)mpDrop();});c.on('error',()=>{});
-      setTimeout(()=>{if(!MP.live()&&MP.peer===p){if(tries<2){mpStatus(`Riprovo a collegarmi (${tries+2}/3)…`);mpJoin(tries+1);}else mpStatus('Non riesco a collegarmi. Controlla il codice; se è giusto, il tuo amico deve tenere il gioco aperto e in primo piano.');}},8000);});
-    p.on('error',e=>{if(MP.peer!==p)return;if(tries<2){mpStatus(`Riprovo a collegarmi (${tries+2}/3)…`);setTimeout(()=>{if(MP.peer===p&&!MP.live())mpJoin(tries+1);},1500);return;}mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice: controlla che sia giusto e che il tuo amico abbia ancora la partita aperta.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
+      setTimeout(()=>{if(!MP.live()&&MP.peer===p){if(tries<4){mpStatus(`Riprovo a collegarmi (${tries+2}/5)…`);mpJoin(tries+1);}else mpStatus('Non riesco a collegarmi. Controlla il codice; se è giusto, il tuo amico deve tenere il gioco aperto e in primo piano.');}},8000);});
+    p.on('error',e=>{if(MP.peer!==p)return;if(tries<4){mpStatus(`Cerco la stanza, riprovo (${tries+2}/5)…`);setTimeout(()=>{if(MP.peer===p&&!MP.live())mpJoin(tries+1);},3000);return;}mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice. Controlla che sia scritto giusto e chiedi a chi l\'ha creata di tornare nel gioco: la stanza si riapre da sola.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
 function mpPlayerGone(pid){const R=MP.players.get(pid);if(!R)return;mpRemoveHero(R);MP.players.delete(pid);
   toast(`${R.name||'Un compagno'} è uscito`,MP.players.size?'La partita continua':'Continui da solo');
   if(MP.host)mpTryAdvance();mpUi();}
@@ -7321,6 +7325,19 @@ buildSafeRoom=function(){_buildSafeRoom();try{buildRestBed();}catch(e){console.w
   if(window.visualViewport)visualViewport.addEventListener('resize',unzoom);setInterval(unzoom,800);
 })();
 if(/coop-debug/.test(location.hash))window.__MP={MP,G,P,S,startRun,spawnEnemy,openCoop,mpHost,mpJoin};
+
+/* ---------- la stanza resta raggiungibile anche se chi la crea esce un attimo dall'app ---------- */
+let hostFix=false;
+function hostWatch(){const p=MP.peer;if(!MP.host||!MP.on||!p||!MP.code)return;
+  if(p.destroyed){if(hostFix)return;hostFix=true;mpStatus('Riapro la stanza…');
+    const np=new Peer(PEER_PREFIX+MP.code);MP.peer=np;
+    np.on('open',()=>{hostFix=false;mpStatus(MP.live()?'':'Stanza di nuovo aperta: il codice è sempre '+MP.code+'.');});
+    np.on('connection',c=>mpHostWire(c));
+    np.on('error',e=>{hostFix=false;if(e&&e.type==='unavailable-id'){try{np.destroy();}catch(_){}}});
+    np.on('disconnected',()=>{try{np.reconnect();}catch(_){}});return;}
+  if(p.disconnected){try{p.reconnect();}catch(e){try{p.destroy();}catch(_){}}}}
+setInterval(hostWatch,3000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(hostWatch,300);});
 
 /* =========================================================
    AGGIUNTE: salvataggio al letto, scala con conferma, porta online
@@ -8172,7 +8189,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794085376';
+const BUILD_ID='1794085825';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
