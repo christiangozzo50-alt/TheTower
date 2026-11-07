@@ -769,7 +769,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
       <div class="statgrid" id="statgrid"></div>
       <div class="eyebrow" style="letter-spacing:.2em">Classi</div>
       <div class="classrec" id="classrec"></div>
-      <div class="row" style="margin-top:12px"><button class="ghost" id="replayCine">Rivedi il filmato</button><button class="ghost" id="unlockAll">Sblocca tutte le classi</button></div>
+      <div class="row" style="margin-top:12px"><button class="ghost" id="replayCine">Rivedi il filmato</button></div>
     </div>
     <div class="row"><button class="big" id="settingsClose">Chiudi</button></div>
   </div>
@@ -1144,6 +1144,7 @@ $('opener').addEventListener('pointerdown',e=>{if(e.target.closest('#opPlay'))re
 $('opPlay').addEventListener('click',()=>{opReady=true;opPlay();});
 
 /* ---------- Salvataggi (solo su questo dispositivo) ---------- */
+(function(){try{const V='2026-11-07a',K='torre-resetv';if(localStorage.getItem(K)!==JSON.stringify(V)){const keep=new Set(['torre-auth','torre-pid','torre-mpname','torre-nameok','torre-settings','torre-padkeys','torre-keys']);const del=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('torre-')&&!keep.has(k))del.push(k);}for(const k of del)localStorage.removeItem(k);localStorage.setItem(K,JSON.stringify(V));}}catch(e){}})();
 const store={get(k,d){try{const v=localStorage.getItem('torre-'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('torre-'+k,JSON.stringify(v));}catch(e){}}};
 const SETTINGS=Object.assign({master:0.8,music:0.5,sfx:0.8,shake:true,pixel:true,tl:{}},store.get('settings',{}));
 const DEFAULT_KEYS={left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],jump:['Space','KeyC'],atk:['KeyJ','KeyX'],dash:['KeyK','ShiftLeft'],ability:['KeyL','KeyQ'],ability2:['KeyI','KeyR'],ability3:['KeyO','KeyF'],use:['KeyE','Enter'],pause:['Escape','KeyP']};
@@ -6056,7 +6057,7 @@ $('safePts').addEventListener('click',e=>{const b=e.target.closest('[data-pt]');
 $('safeClose').onclick=()=>{sfx('ui');closeSafePed();};
 $('selOk').onclick=()=>{if(!isUnlocked(G.cls))return;sfx('pick');closeSelect(true);};
 $('replayCine').onclick=()=>{if(!store.get('intro-seen',false))return;sfx('ui');$('settings').hidden=true;G.state='menu';fadeThen(()=>{startCine(true);G.fadeTarget=0;});};
-$('unlockAll').onclick=()=>{for(const c of CLASSES)UNL.u[c.id]=true;saveUnl();$('unlockAll').textContent='Tutte le classi sbloccate';sfx('level');if(G.state==='select'){setClass(G.clsIdx);renderSelect();}};
+
 $('selBack').onclick=()=>{sfx('ui');closeSelect(false);};
 
 /* ---------- Filmato introduttivo: tre eroi catturati, uno si libera ---------- */
@@ -8139,7 +8140,7 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{o
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794084370';
+const BUILD_ID='1794084507';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
