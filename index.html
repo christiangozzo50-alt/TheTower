@@ -7034,8 +7034,8 @@ function mpRecvInto(R,m){
   const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
     shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
-  if(snap){R.x=m.x;R.y=m.y;R.z=m.z;R.buf=[];}
-  const now=performance.now();(R.buf||(R.buf=[])).push({t:now,x:m.x,y:m.y,z:m.z,vx:m.vx,vy:m.vy});if(R.buf.length>12)R.buf.shift();R.svx=m.vx;
+  if(snap){R.x=m.x;R.y=m.y;R.z=m.z;R.buf=[];R.lastRt=null;}
+  bufPush(R,{t:performance.now(),x:m.x,y:m.y,z:m.z,vx:m.vx,vy:m.vy});R.svx=m.vx;
   if(!m.atk)R.atk=null;
   else if(!R.atk||R.atk.mv!==m.atk.mv||R.atk.anim!==m.atk.anim||Math.abs(R.atk.t-m.atk.t)>0.12||m.atk.t<R.atk.t-0.05){R.atk=Object.assign({},m.atk);}
   R.em=m.em||null;R.sk=m.sk||0;const key=m.c+'|'+(m.sk||0)+'|'+m.w.join(',');if(key!==R.hkey)mpMakeHero(R,m.c,m.w,m.sk);}
@@ -7047,6 +7047,10 @@ function mpMakeHero(R,cid,w,sk){mpRemoveHero(R);const cls=CLASSES.find(c=>c.id==
 function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.root);R.hero=null;}R.hkey='';if(R.tag){R.tag.remove();R.tag=null;}if(R.mate){R.mate.remove();R.mate=null;}}
 // riproduzione fluida: si mostra il movimento con un piccolo ritardo, interpolando tra i dati ricevuti
 const INTERP_MS=110;
+function bufPush(o,s){const b=o.buf||(o.buf=[]),l=b[b.length-1];if(l){const d=Math.min(400,s.t-l.t);o.iv=o.iv==null?d:o.iv*0.9+d*0.1;o.jit=o.jit==null?0:o.jit*0.9+Math.abs(d-o.iv)*0.1;}
+  b.push(s);if(b.length>12)b.shift();const tg=Math.max(40,Math.min(130,(o.iv||50)+2*(o.jit||0)+8));o.delay=o.delay==null?tg:o.delay+Math.max(-3,Math.min(3,tg-o.delay));}
+// il tempo mostrato non torna mai indietro: niente passi all'indietro quando il ritardo si regola
+function renderT(o){let t=performance.now()-(o.delay||INTERP_MS);if(o.lastRt!=null&&t<o.lastRt)t=o.lastRt;o.lastRt=t;return t;}
 function sampleAt(buf,t){if(!buf||!buf.length)return null;const n=buf.length;
   if(t<=buf[0].t)return buf[0];
   for(let i=n-1;i>0;i--){const a=buf[i-1],b=buf[i];if(t>=a.t&&t<=b.t){const k=(t-a.t)/Math.max(1,b.t-a.t);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,z:a.z+(b.z-a.z)*k};}}
@@ -7061,10 +7065,10 @@ function mpDrawRemote(dt){
     const vis=mpVisible(R);if(R.hero)R.hero.root.visible=!!vis;const col=R.hub?'#c7a8ff':TAGCOL[R.pid%4];
     const showMate=!R.hub&&MP.live()&&G.scene==='tower'&&R.sc==='tower'&&R.seen;
     if(showMate){anyMate=true;if(!R.mate){R.mate=document.createElement('div');R.mate.className='mate-row';R.mate.innerHTML='<small></small><div class="bar mate"><i class="fill"></i></div>';box.appendChild(R.mate);}
-      R.mate.style.setProperty('--mc',col);R.mate.firstChild.textContent=(R.name||'Compagno')+(R.dead?' · a terra':'');R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
+      R.mate.style.setProperty('--mc',col);{const tx=(R.name||'Compagno')+(R.dead?' · a terra':'');if(R.mate.firstChild.textContent!==tx)R.mate.firstChild.textContent=tx;}R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
     else if(R.mate){R.mate.remove();R.mate=null;}
     if(!vis){if(R.tag)R.tag.hidden=true;continue;}
-    {const px=R.x;const s=sampleAt(R.buf,performance.now()-INTERP_MS);if(s){R.x=s.x;R.y=s.y;R.z=s.z;}else{const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;}
+    {const px=R.x;const s=sampleAt(R.buf,renderT(R));if(s){R.x=s.x;R.y=s.y;R.z=s.z;}else{const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;}
       const v=dt>0?(R.x-px)/dt:0;R.dvx=R.dvx==null?v:R.dvx+(v-R.dvx)*Math.min(1,dt*12);R.vx=Math.abs(R.dvx)<0.3?0:R.dvx;}
     if(R.atk){R.atk.t+=dt;if(R.atk.t>=R.atk.wind+R.atk.act+R.atk.rec+0.05&&!R.atk.hold)R.atk=null;}
     for(const a of R.hero.arms)a.wr.scale.setScalar(R.ws||1);
@@ -7125,14 +7129,14 @@ function mpSnap(){
   return {t:'e',f:G.floor,q:G.queue.slice(),cl:G.cleared?1:0,l};}
 
 /* ---------- ospiti: i nemici sono "marionette" mosse dall'host ---------- */
-function mpPuppet(e,dt){const s=sampleAt(e.buf,performance.now()-INTERP_MS);if(s){e.x=s.x;e.y=s.y;}else{const k=damp(dt,14);e.x+=(e.nx-e.x)*k;e.y+=(e.ny-e.y)*k;}e.t+=dt;e.flash-=dt;e.flinch-=dt;e.castT-=dt;e.landT-=dt;}
+function mpPuppet(e,dt){const s=sampleAt(e.buf,renderT(e));if(s){e.x=s.x;e.y=s.y;}else{const k=damp(dt,14);e.x+=(e.nx-e.x)*k;e.y+=(e.ny-e.y)*k;}e.t+=dt;e.flash-=dt;e.flinch-=dt;e.castT-=dt;e.landT-=dt;}
 function mpApplySnap(s){
   if(G.scene!=='tower'||s.f!==G.floor||G.tutorial||G.pvp)return;
   G.queue=s.q.slice();G.spawnT=1e9;const seen=new Set();
   for(const a of s.l){const id=a[0];seen.add(id);let e=MP.emap.get(id);if(e&&e.dead)continue;
     if(!e){e=_spawnEnemy(a[1],{x:a[2],summon:true});e.net=true;e.id=id;e.summon=!!a[21];e.x=a[2];e.y=a[3];MP.emap.set(id,e);
       if(a[20]){e.elite=true;e.sc=1.2;for(const m of e.parts.mats){m.userData.baseE=ELITE_GOLD;m.userData.baseI=0.25;}}}
-    e.nx=a[2];e.ny=a[3];e.vx=a[4];e.vy=a[5];(e.buf||(e.buf=[])).push({t:performance.now(),x:a[2],y:a[3],z:0,vx:a[4],vy:a[5]});if(e.buf.length>10)e.buf.shift();e.face=a[6];e.state=a[7];e.t=a[8];e.warn=a[9];e.hp=a[10];e.maxHp=a[11];e.stunT=a[12];e.slowT=a[13];e.onGround=!!a[14];e.phased=!!a[15];
+    e.nx=a[2];e.ny=a[3];e.vx=a[4];e.vy=a[5];bufPush(e,{t:performance.now(),x:a[2],y:a[3],z:0,vx:a[4],vy:a[5]});e.face=a[6];e.state=a[7];e.t=a[8];e.warn=a[9];e.hp=a[10];e.maxHp=a[11];e.stunT=a[12];e.slowT=a[13];e.onGround=!!a[14];e.phased=!!a[15];
     e.castT=a[16];e.spawnT=a[17];e.hitstun=a[18];e.lastDir=a[19];e.n=a[22];e.phase=a[23];e.landT=a[24];e.hopT=a[25];if(a[26])e.flash=Math.max(e.flash,0.06);e.mode=a[27];e.ename=a[28]||'';e.emod=a[29]||'';}
   for(const e of G.enemies)if(e.net&&!e.dead&&!seen.has(e.id)){e.hp=0;e.critKill=false;killEnemy(e);}
   if(s.cl&&!G.cleared&&aliveCount()===0&&!G.queue.length){G.cleared=true;STATS.floors++;burst(GATE_X,2.5,0xffc56b,30,5,3,0.2);sfx('clear');sfx('gate');lockM.emissive.setHex(0x7fe08a);}
@@ -7228,7 +7232,7 @@ setInterval(()=>{
     if(HUB.lead)HUB.bcast(s);else if(HUB.conn&&HUB.conn.open){try{HUB.conn.send(s);}catch(e){}}}
   if(!MP.live())return;
   MP.send(mpMyState());
-  MP.snapN=(MP.snapN||0)+1;if(MP.host&&G.scene==='tower'&&!G.pvp&&MP.snapN%3!==2)MP.bcast(mpSnap());
+  if(MP.host&&G.scene==='tower'&&!G.pvp)MP.bcast(mpSnap());
   // se chi ha creato la partita torna al seminterrato, gli altri lo seguono
   const H=MP.players.get(0);
   if(!MP.host&&H&&H.seen&&G.scene==='tower'&&H.sc==='cellar'&&!MP.pulling&&!['menu','tip','intro','waking'].includes(G.state)){MP.pulling=true;
@@ -7918,7 +7922,7 @@ updHeroVisual=function(dt){
   if(G.emote&&hero)emotePose(hero,G.emote.k,G.emote.t,P.face);
   emBubble('me',!!G.emote&&G.safe,P.x,P.y,G.emote?EMOTES[G.emote.k]:'');
   for(const R of [...MP.players.values(),...HUB.players.values()]){const on=R.em&&R.hero&&R.hero.root.visible&&G.safe;if(on)emotePose(R.hero,R.em[0],R.em[1],R.face);emBubble(R,!!on,R.x,R.y,on?EMOTES[R.em[0]]:'');}
-  $('emoteBar').hidden=!(G.safe&&G.state==='play'&&G.scene==='tower');
+  {const eh=!(G.safe&&G.state==='play'&&G.scene==='tower');if(updHeroVisual.eh!==eh){updHeroVisual.eh=eh;$('emoteBar').hidden=eh;}}
   // buio: luce solo intorno all'eroe
   if(G.event==='buio'&&G.scene==='tower'){const [sx,sy]=toScreen(P.x,P.y+1,0);$('darkFx').style.background=`radial-gradient(circle at ${sx}px ${sy}px,transparent 0,transparent 110px,rgba(4,3,8,.97) 250px)`;}
   // mercante
@@ -8200,7 +8204,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794087277';
+const BUILD_ID='1794087694';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
