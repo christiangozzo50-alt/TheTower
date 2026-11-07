@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="The Tower"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 
 <title>The Tower</title>
 <meta name="theme-color" content="#0c0e13">
@@ -595,6 +595,17 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #cine.boss #cineSub{top:calc(11dvh + 18px + env(safe-area-inset-top,0px))}
 }
 #cards .card.padsel{border-color:var(--ember);transform:translateY(-6px);box-shadow:0 0 0 3px rgba(255,179,71,.35),0 10px 30px rgba(255,140,40,.25)}
+/* blocco "installa l'app" */
+#installGate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow-y:auto;touch-action:pan-y;background:radial-gradient(ellipse at 50% 30%,#241a30,#07060d 70%);
+  padding:calc(20px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px))}
+#installGate .ig-box{width:min(460px,100%);display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center}
+#installGate .ig-ico{width:84px;height:84px;image-rendering:pixelated;border-radius:20px;box-shadow:0 0 0 3px #000,0 10px 40px rgba(255,160,60,.3)}
+#installGate h2{font-size:clamp(34px,8vw,52px)}
+#installGate .ig-lead{margin:0;font-size:15px;line-height:1.45;color:var(--ink)}
+#installGate .ig-steps{margin:4px 0 0;padding:14px 16px 14px 36px;text-align:left;display:grid;gap:10px;background:rgba(22,25,32,.85);border:1px solid var(--edge);font-size:14px;line-height:1.4;width:100%;box-sizing:border-box}
+#installGate .ig-steps b{color:var(--ember)}
+#installGate .ig-steps svg{width:18px;height:18px;vertical-align:-3px;color:#4ea3ff}
+#installGate .ig-note{margin:0;font-size:12px;color:var(--ink-2)}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -838,6 +849,16 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <div id="specHud" hidden><small>Stai guardando</small><b id="specName"></b><div class="bar hp spec"><i class="fill" id="specFill"></i><span id="specHp"></span></div></div>
 <div id="restMsg" hidden><b>Ti riposi…</b><span>Vita e abilità al massimo · partita salvata</span></div>
 <div id="mpWait" hidden><b>Aspetti i compagni…</b><span>Salite insieme al piano successivo</span></div>
+<div id="installGate" hidden>
+  <div class="ig-box">
+    <img class="ig-ico" src="icon-192.png" alt="">
+    <h2>The Tower</h2>
+    <p class="ig-lead">Per giocare al meglio, installa The Tower sulla schermata Home: si apre a schermo intero, come un'app vera.</p>
+    <button class="big" id="instBtn" hidden>Installa l'app</button>
+    <ol class="ig-steps" id="igSteps"></ol>
+    <p class="ig-note" id="igNote"></p>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
@@ -7456,6 +7477,25 @@ pollPad=function(){
   }
   upPrev=st;if(!PAD.on){PAD.on=true;upMark();}
 };
+
+/* ---------- sul telefono si gioca solo dall'app installata sulla Home ---------- */
+(function(){
+  const ua=navigator.userAgent,iOS=/iPhone|iPad|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1),android=/Android/i.test(ua),mobile=iOS||android||/Mobi/i.test(ua);
+  const mm=q=>window.matchMedia&&matchMedia(q).matches,standalone=mm('(display-mode: standalone)')||mm('(display-mode: fullscreen)')||mm('(display-mode: minimal-ui)')||navigator.standalone===true;
+  if('serviceWorker' in navigator&&location.protocol==='https:')navigator.serviceWorker.register('sw.js').catch(()=>{});
+  let deferred=null;
+  addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferred=e;const b=$('instBtn');if(b&&!$('installGate').hidden)b.hidden=false;});
+  addEventListener('appinstalled',()=>{$('igSteps').innerHTML='<li><b>Fatto!</b> Ora chiudi il browser e apri <b>The Tower</b> dalla schermata Home.</li>';$('instBtn').hidden=true;});
+  if(!mobile||standalone||/[?&]noapp/.test(location.search))return;
+  const share='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 11v9h14v-9"/></svg>';
+  $('installGate').hidden=false;
+  if(iOS){const other=/CriOS|FxiOS|EdgiOS/.test(ua);
+    $('igSteps').innerHTML=`<li>Tocca il tasto <b>Condividi</b> ${share} ${other?'(in alto a destra o nel menu)':'nella barra di Safari'}.</li><li>Scorri e scegli <b>Aggiungi alla schermata Home</b>.</li><li>Tocca <b>Aggiungi</b>, poi apri <b>The Tower</b> dalla Home.</li>`;
+    $('igNote').textContent=other?'Se non trovi la voce, apri questo link con Safari.':'L\'icona compare tra le tue app: da lì il gioco parte a schermo intero.';}
+  else{$('igSteps').innerHTML='<li>Tocca il menu <b>⋮</b> in alto a destra del browser.</li><li>Scegli <b>Installa app</b> (o <b>Aggiungi a schermata Home</b>).</li><li>Conferma, poi apri <b>The Tower</b> dalla Home.</li>';
+    $('igNote').textContent='Se vedi il pulsante "Installa l\'app" qui sopra, basta toccarlo.';if(deferred)$('instBtn').hidden=false;}
+  $('instBtn').onclick=async()=>{if(!deferred)return;deferred.prompt();try{const r=await deferred.userChoice;if(r.outcome==='accepted')$('igSteps').innerHTML='<li><b>Installata!</b> Ora apri <b>The Tower</b> dalla schermata Home.</li>';}catch(e){}deferred=null;$('instBtn').hidden=true;};
+})();
 
 /* ---------- Avvio ---------- */
 resetStats();G.weapon=makeWeapon(G.cls.weapon,0,1);setHero(G.cls);
