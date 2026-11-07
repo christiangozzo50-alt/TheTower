@@ -658,6 +658,13 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #pvpCount{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:45;pointer-events:none;font-family:var(--f-display);font-size:clamp(70px,16vw,160px);color:#fff;text-shadow:6px 6px 0 #000,0 0 40px #7ff0e4}
 #pvpCount.pop{animation:pc-pop .5s cubic-bezier(.2,1.6,.4,1)}@keyframes pc-pop{from{transform:translate(-50%,-50%) scale(2.2);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
 #coop label.coop-row{display:none}
+#account{position:fixed;inset:0;z-index:960;display:grid;place-items:center;overflow-y:auto;background:rgba(7,6,13,.94);padding:20px}
+#account .ig-box{width:min(420px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+#account .ig-lead{margin:0;font-size:14px;line-height:1.45;color:var(--ink)}
+#acForm{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+#acUser,#acPass{font:inherit;font-size:17px;padding:11px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(300px,84vw);-webkit-user-select:text;user-select:text}
+#acUser:focus,#acPass:focus{border-color:var(--ember);outline:none}
+#updBar{position:fixed;left:50%;bottom:calc(10px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:140;max-width:calc(100vw - 24px);padding:8px 14px;background:rgba(12,10,18,.94);border:1px solid #7fe08a;color:#7fe08a;font-weight:700;font-size:13px;text-align:center;pointer-events:none}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -952,10 +959,28 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
     <p class="note" id="ngMsg" aria-live="polite"></p>
     <button class="ghost" id="ngSug" hidden></button>
     <div class="row"><button class="big" id="ngOk">Conferma</button><button class="ghost" id="ngCancel" hidden>Annulla</button></div>
+    <button class="mini" id="ngLogin">Hai già un account? Accedi</button>
   </div>
 </div>
 <div id="inviteBox" hidden><b id="invText"></b><div class="row"><button class="big" id="invYes">Entra</button><button class="ghost" id="invNo">No, grazie</button></div></div>
 <div id="pvpCount" hidden>3</div>
+<div id="account" hidden>
+  <div class="ig-box">
+    <h2>Account</h2>
+    <p class="ig-lead">Con un account ritrovi progressi, armadio, trofei e nome su tutti i tuoi dispositivi.</p>
+    <div id="acForm">
+      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false">
+      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password">
+      <div class="row"><button class="big" id="acLog">Accedi</button><button class="ghost" id="acReg">Crea account</button></div>
+    </div>
+    <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p><button class="ghost" id="acOut">Esci dall'account</button></div>
+    <div id="acChoice" hidden><p class="ig-lead">Su questo dispositivo ci sono già dei progressi. Quali vuoi tenere?</p>
+      <div class="row"><button class="big" id="acUseCloud">Quelli dell'account</button><button class="ghost" id="acUseLocal">Quelli di questo dispositivo</button></div></div>
+    <p class="note" id="acMsg" aria-live="polite"></p>
+    <button class="ghost" id="acClose">Chiudi</button>
+  </div>
+</div>
+<div id="updBar" hidden></div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
@@ -8109,6 +8134,92 @@ const _padBackS=padBack;padBack=function(){for(const id of ['frClose','ngCancel'
 const _mpMsgS=mpMsg;
 mpMsg=function(m,from){if(m.t==='pvpround'){if(!MP.host)pvpRound();return;}return _mpMsgS(m,from);};
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openFriends,openNameGate,pvpRound,PVA:()=>PVA});
+
+/* =========================================================
+   ACCOUNT (nome utente + password, per giocare su più dispositivi)
+   e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
+   ========================================================= */
+const BUILD_ID='1794084284';
+// Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
+const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
+const AUTH=Object.assign({},store.get('auth',{}));
+const authOn=()=>!!(FB_KEY&&FB_URL);
+const logged=()=>!!(AUTH.uid&&AUTH.refreshToken);
+const emailOf=u=>Array.from(nameKey(u)).map(c=>/[a-z0-9_-]/.test(c)?c:'x'+c.charCodeAt(0).toString(16)).join('')+'@thetower-player.app';
+const AUTH_ERR={EMAIL_EXISTS:'Esiste già un account con questo nome.',EMAIL_NOT_FOUND:'Nessun account con questo nome.',INVALID_PASSWORD:'Password sbagliata.',INVALID_LOGIN_CREDENTIALS:'Nome o password sbagliati.',
+  WEAK_PASSWORD:'La password deve avere almeno 6 caratteri.',TOO_MANY_ATTEMPTS_TRY_LATER:'Troppi tentativi: riprova tra qualche minuto.',USER_DISABLED:'Account disattivato.'};
+async function authCall(ep,body){const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${ep}?key=${FB_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();if(!r.ok){const c=((d.error&&d.error.message)||'ERRORE').split(' ')[0].split(':')[0];throw new Error(AUTH_ERR[c]||('Errore: '+c));}return d;}
+function setAuth(d,user){Object.assign(AUTH,{uid:d.localId||d.user_id||AUTH.uid,idToken:d.idToken||d.id_token,refreshToken:d.refreshToken||d.refresh_token,exp:Date.now()+(+(d.expiresIn||d.expires_in)||3600)*1000,user:user||AUTH.user});store.set('auth',AUTH);}
+async function token(){if(!logged())return null;if(AUTH.idToken&&Date.now()<AUTH.exp-60000)return AUTH.idToken;
+  const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(AUTH.refreshToken)});
+  const d=await r.json();if(!r.ok)throw new Error('sessione scaduta');setAuth(d);return AUTH.idToken;}
+const SYNC_SKIP=new Set(['torre-auth']);
+function collectSave(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('torre-')&&!SYNC_SKIP.has(k))o[k]=localStorage.getItem(k);}return o;}
+let lastSync='';
+async function cloudSave(force){if(!authOn()||!logged())return;try{const o=collectSave(),s=JSON.stringify(o);if(!force&&s===lastSync)return;
+  const t=await token();const r=await fetch(`${FB_URL.replace(/\/$/,'')}/saves/${AUTH.uid}.json?auth=${t}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:Date.now(),d:s,u:AUTH.user||MP.name()})});
+  if(r.ok)lastSync=s;}catch(e){}}
+async function cloudLoad(){const t=await token();const r=await fetch(`${FB_URL.replace(/\/$/,'')}/saves/${AUTH.uid}.json?auth=${t}`);if(!r.ok)throw new Error('lettura non riuscita');return r.json();}
+function applySave(sv){const o=JSON.parse(sv.d||'{}');const keep=localStorage.getItem('torre-auth');
+  for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)localStorage.setItem(k,o[k]);if(keep)localStorage.setItem('torre-auth',keep);
+  location.reload();}
+setInterval(()=>cloudSave(false),60000);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)cloudSave(false);});
+
+/* ---------- schermata account ---------- */
+function openAccount(){const a=$('account');a.hidden=false;$('acMsg').textContent='';renderAccount();}
+function closeAccount(){$('account').hidden=true;}
+function renderAccount(){const on=logged();$('acForm').hidden=on;$('acIn').hidden=!on;
+  if(!authOn()){$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='Gli account non sono ancora attivi.';return;}
+  if(on){$('acWho').textContent=AUTH.user||MP.name();}
+  else{if(!$('acUser').value)$('acUser').value=store.get('mpname','')||'';}}
+async function acRegister(){const u=$('acUser').value.trim(),p=$('acPass').value,msg=$('acMsg');
+  if(u.length<3||u.length>14||!/^[A-Za-z0-9À-ÿ _-]+$/.test(u)){msg.textContent='Nome da 3 a 14 caratteri: lettere, numeri, spazi, - e _.';return;}
+  if(p.length<6){msg.textContent='La password deve avere almeno 6 caratteri.';return;}
+  msg.textContent='Creo l\'account…';
+  try{if(!(await nameFree(u))){msg.textContent=`«${u}» è già usato da un altro giocatore.`;return;}
+    const d=await authCall('signUp',{email:emailOf(u),password:p,returnSecureToken:true});setAuth(d,u);
+    await fbPut('names/'+encodeURIComponent(nameKey(u)),PID);store.set('mpname',u);store.set('nameok',true);
+    await cloudSave(true);$('acPass').value='';msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();heartbeat();
+    toast('Account creato','Accedi con '+u+' sugli altri dispositivi');}
+  catch(e){msg.textContent=e.message;}}
+async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,msg=$('acMsg');if(!u||!p){msg.textContent='Scrivi nome e password.';return;}
+  msg.textContent='Accedo…';
+  try{const d=await authCall('signInWithPassword',{email:emailOf(u),password:p,returnSecureToken:true});setAuth(d,u);$('acPass').value='';
+    const sv=await cloudLoad();
+    if(sv&&sv.d){const hasLocal=(STATS.runs||0)>0&&store.get('mpname','')!==u;
+      if(hasLocal){$('acMsg').textContent='';$('acChoice').hidden=false;$('acForm').hidden=true;
+        $('acUseCloud').onclick=()=>applySave(sv);$('acUseLocal').onclick=async()=>{store.set('mpname',u);store.set('nameok',true);await cloudSave(true);$('acChoice').hidden=true;renderAccount();toast('Fatto','I progressi di questo dispositivo sono nel tuo account');};return;}
+      msg.textContent='Carico i tuoi progressi…';applySave(sv);}
+    else{store.set('mpname',u);store.set('nameok',true);await cloudSave(true);msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();toast('Accesso fatto','Bentornato, '+u);}}
+  catch(e){msg.textContent=e.message;}}
+$('acReg').onclick=acRegister;$('acLog').onclick=acLogin;
+$('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
+$('acClose').onclick=closeAccount;
+for(const id of ['acUser','acPass'])$(id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')acLogin();});
+$('ngLogin').onclick=()=>openAccount();
+// nella sezione Amici: stato dell'account
+const _rfA=renderFriends;
+renderFriends=async function(){await _rfA();const me=$('frMe');if(me&&!me.querySelector('#frAcc')){me.insertAdjacentHTML('beforeend',` · <button class="mini" id="frAcc">${logged()?'Account: '+esc(AUTH.user||''):'Accedi / crea account'}</button>`);$('frAcc').onclick=openAccount;}};
+// salvataggi nel cloud nei momenti giusti
+const _ecA=enterCellar;enterCellar=function(){const r=_ecA();setTimeout(()=>cloudSave(false),500);if(updReady)setTimeout(doReload,600);return r;};
+
+/* ---------- aggiornamenti: nuova versione pubblicata ---------- */
+let updReady=null;
+async function checkUpdate(){if(updReady||location.protocol!=='https:')return;
+  try{const t=await (await fetch(location.pathname+'?vc='+Date.now(),{cache:'no-store'})).text();const m=t.match(/const BUILD_ID='(\d+)'/);
+    if(m&&m[1]!==BUILD_ID){updReady=m[1];onUpdate();}}catch(e){}}
+setInterval(checkUpdate,60000);setTimeout(checkUpdate,20000);
+const safeNow=()=>G.scene==='cellar'||['intro','waking'].includes(G.state);
+function showUpd(t){const b=$('updBar');b.textContent=t;b.hidden=false;}
+function onUpdate(){if(safeNow()){showUpd('Nuova versione disponibile: aggiorno…');setTimeout(doReload,1500);}
+  else showUpd('È uscita una nuova versione: si aggiornerà appena muori o torni al seminterrato');}
+let reloading=false;
+function doReload(){if(reloading)return;reloading=true;showUpd('Aggiorno alla nuova versione…');
+  Promise.race([cloudSave(true),new Promise(r=>setTimeout(r,2500))]).finally(()=>{const u=new URL(location.href);u.searchParams.set('v',updReady||Date.now());u.hash='';location.replace(u.toString());});}
+const _goU=gameOver;gameOver=function(){_goU();cloudSave(true);if(updReady){showUpd('Nuova versione pronta: aggiorno tra un attimo…');setTimeout(doReload,3500);}};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{enterCellar:()=>enterCellar(),openAccount,onUpdate,setUpd:v=>{updReady=v;onUpdate();}});
 
 /* ---------- Avvio ---------- */
 resetStats();G.weapon=makeWeapon(G.cls.weapon,0,1);setHero(G.cls);
