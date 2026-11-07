@@ -6929,8 +6929,13 @@ function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a
 function withSeed(s,fn){const r=Math.random;Math.random=mulberry(s);try{return fn();}finally{Math.random=r;}}
 
 /* ---------- rete ---------- */
-function mpLib(cb){if(window.Peer)return cb();const s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
-  s.onload=cb;s.onerror=()=>mpStatus('Non riesco a scaricare il modulo di rete. Controlla la connessione.');document.head.appendChild(s);}
+const ICE=[{urls:'stun:stun.l.google.com:19302'},{urls:'stun:stun1.l.google.com:19302'},{urls:'stun:global.stun.twilio.com:3478'},
+  {urls:['turn:openrelay.metered.ca:80','turn:openrelay.metered.ca:443','turn:openrelay.metered.ca:443?transport=tcp'],username:'openrelayproject',credential:'openrelayproject'}];
+function patchPeer(){if(!window.Peer||window.Peer.__ice)return;const P0=window.Peer;
+  class P2 extends P0{constructor(a,b){if(a&&typeof a==='object'){b=a;a=undefined;}b=Object.assign({},b||{});b.config=Object.assign({iceServers:ICE},b.config||{});if(a===undefined)super(b);else super(a,b);}}
+  P2.__ice=true;window.Peer=P2;}
+function mpLib(cb){if(window.Peer){patchPeer();return cb();}const s=document.createElement('script');s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+  s.onload=()=>{patchPeer();cb();};s.onerror=()=>mpStatus('Non riesco a scaricare il modulo di rete. Controlla la connessione.');document.head.appendChild(s);}
 function mpStatus(t){const el=$('coopStatus');if(el)el.textContent=t;}
 function mpCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
 function mpHost(){mpLeave(true);store.set('mpname',MP.name());mpStatus('Creo la partita…');
@@ -6951,15 +6956,15 @@ function mpHostWire(c){
   c.on('data',m=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;try{mpMsg(m,x.pid);}catch(e){console.warn('co-op',e);}});
   c.on('close',()=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;MP.conns=MP.conns.filter(y=>y!==x);mpPlayerGone(x.pid);MP.bcast({t:'leave',pid:x.pid});});
   c.on('error',()=>{});}
-function mpJoin(){const code=($('coopCode').value||'').trim().toUpperCase();if(code.length<4){mpStatus('Scrivi il codice che ti ha mandato il tuo amico.');return;}
+function mpJoin(tries){tries=tries||0;const code=($('coopCode').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');$('coopCode').value=code;if(code.length<4){mpStatus('Scrivi il codice che ti ha mandato il tuo amico.');return;}
   mpLeave(true);store.set('mpname',MP.name());mpStatus('Mi collego…');
   mpLib(()=>{MP.host=false;MP.code=code;const p=new Peer();MP.peer=p;
     p.on('open',()=>{const c=p.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});
       c.on('open',()=>{MP.conn=c;MP.on=true;c.send({t:'hi',n:MP.name()});mpUi();});
       c.on('data',m=>{try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});
       c.on('close',()=>{if(MP.conn===c)mpDrop();});c.on('error',()=>{});
-      setTimeout(()=>{if(!MP.live()&&MP.peer===p)mpStatus('Nessuna partita con questo codice. Controlla che sia giusto e che il tuo amico sia ancora nella schermata Co-op.');},9000);});
-    p.on('error',e=>{mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
+      setTimeout(()=>{if(!MP.live()&&MP.peer===p){if(tries<2){mpStatus(`Riprovo a collegarmi (${tries+2}/3)…`);mpJoin(tries+1);}else mpStatus('Non riesco a collegarmi. Controlla il codice; se è giusto, il tuo amico deve tenere il gioco aperto e in primo piano.');}},8000);});
+    p.on('error',e=>{if(MP.peer!==p)return;if(tries<2){mpStatus(`Riprovo a collegarmi (${tries+2}/3)…`);setTimeout(()=>{if(MP.peer===p&&!MP.live())mpJoin(tries+1);},1500);return;}mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice: controlla che sia giusto e che il tuo amico abbia ancora la partita aperta.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
 function mpPlayerGone(pid){const R=MP.players.get(pid);if(!R)return;mpRemoveHero(R);MP.players.delete(pid);
   toast(`${R.name||'Un compagno'} è uscito`,MP.players.size?'La partita continua':'Continui da solo');
   if(MP.host)mpTryAdvance();mpUi();}
@@ -8088,22 +8093,24 @@ async function renderFriends(){for(const b of document.querySelectorAll('#friend
   if(frTab==='gruppo'){closeFriends();openCoop();return;}
   if(!fbOn()){box.innerHTML='<p class="note">La parte online non è collegata.</p>';return;}
   if(frTab==='amici'){
-    if(!FRIENDS.length){box.innerHTML='<p class="note">Non hai ancora amici: cercali per nome nella scheda «Cerca».</p>';return;}
+    const pendHtml=FRPEND.length?`<div class="bd-h">Richieste in attesa</div>`+FRPEND.map(f=>`<div class="fr-r"><span class="dot"></span><div><b>${esc(f.n)}</b><small>Aspetta che accetti</small></div><button class="mini del" data-unp="${esc(f.k)}">Annulla</button></div>`).join(''):'';
+    if(!FRIENDS.length){box.innerHTML='<p class="note">Non hai ancora amici: cercali per nome nella scheda «Cerca».</p>'+pendHtml;return;}
     box.innerHTML='<p class="note">Carico…</p>';
     const rows=await Promise.all(FRIENDS.map(async f=>{try{return {f,p:await fbGet('players/'+encodeURIComponent(f.k))};}catch(e){return {f,p:null};}}));
     rows.sort((a,b)=>(isOnline(b.p)?1:0)-(isOnline(a.p)?1:0));
     box.innerHTML=rows.map(({f,p})=>`<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><b>${esc((p&&p.n)||f.n)}</b><small>${p?statLine(p):'Nessuna statistica'}</small></div>
-      <button class="mini" data-inv="${esc(f.k)}" ${isOnline(p)?'':'disabled'}>Invita</button><button class="mini del" data-rm="${esc(f.k)}">Togli</button></div>`).join('');}
+      <button class="mini" data-inv="${esc(f.k)}" ${isOnline(p)?'':'disabled'}>Invita</button><button class="mini del" data-rm="${esc(f.k)}">Togli</button></div>`).join('')+pendHtml;}
   else{box.innerHTML=`<div class="fr-search"><input id="frQ" placeholder="Nome del giocatore" maxlength="14" autocomplete="off"><button class="ghost" id="frGo">Cerca</button></div><div id="frRes"></div>`;
     const go=async()=>{const q=nameKey($('frQ').value);const res=$('frRes');if(q.length<2){res.innerHTML='<p class="note">Scrivi almeno 2 lettere.</p>';return;}res.innerHTML='<p class="note">Cerco…</p>';
       try{const d=await fbGet('players',`orderBy=${encodeURIComponent('"$key"')}&startAt=${encodeURIComponent(JSON.stringify(q))}&endAt=${encodeURIComponent(JSON.stringify(q+''))}&limitToFirst=15`)||{};
         const me=nameKey(MP.name()),list=Object.entries(d).filter(([k])=>k!==me);
         res.innerHTML=list.length?list.map(([k,p])=>{const fr=FRIENDS.some(f=>f.k===k);return `<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><b>${esc(p.n||k)}</b><small>${statLine(p)}</small></div>
-          <button class="mini" data-add="${esc(k)}" data-n="${esc(p.n||k)}" ${fr?'disabled':''}>${fr?'Già amico':'Aggiungi'}</button></div>`;}).join(''):'<p class="note">Nessun giocatore con questo nome.</p>';}
+          <button class="mini" data-add="${esc(k)}" data-n="${esc(p.n||k)}" ${fr||pend(k)?'disabled':''}>${fr?'Già amico':pend(k)?'Richiesta inviata':'Aggiungi'}</button></div>`;}).join(''):'<p class="note">Nessun giocatore con questo nome.</p>';}
       catch(e){res.innerHTML='<p class="note">Ricerca non riuscita. Controlla la connessione.</p>';}};
     $('frGo').onclick=go;$('frQ').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go();});setTimeout(()=>$('frQ').focus(),60);}}
 $('friends').addEventListener('click',async e=>{const t=e.target.closest('.tab');if(t){frTab=t.dataset.ft;sfx('ui');renderFriends();return;}
-  const a=e.target.closest('[data-add]');if(a){FRIENDS.push({k:a.dataset.add,n:a.dataset.n});saveFriends();a.disabled=true;a.textContent='Aggiunto';sfx('pick');toast('Amico aggiunto',a.dataset.n);return;}
+  const a=e.target.closest('[data-add]');if(a){a.disabled=true;a.textContent='Invio…';const ok=await sendFriendReq(a.dataset.add,a.dataset.n);a.textContent=ok?'Richiesta inviata':'Riprova';a.disabled=ok;return;}
+  const u=e.target.closest('[data-unp]');if(u){FRPEND=FRPEND.filter(f=>f.k!==u.dataset.unp);saveFrPend();fbDel(`invites/${encodeURIComponent(u.dataset.unp)}/${encodeURIComponent(nameKey(MP.name())+'__f')}`).catch(()=>{});renderFriends();return;}
   const r=e.target.closest('[data-rm]');if(r){FRIENDS=FRIENDS.filter(f=>f.k!==r.dataset.rm);saveFriends();sfx('ui');renderFriends();return;}
   const i=e.target.closest('[data-inv]');if(i){i.disabled=true;i.textContent='Invito…';await inviteFriend(i.dataset.inv);i.textContent='Invitato';}});
 $('frClose').onclick=()=>{sfx('ui');closeFriends();};
@@ -8112,12 +8119,25 @@ async function inviteFriend(k){
   if(!MP.code){toast('Invito non riuscito','Non riesco a creare il gruppo');return;}
   try{await fbPut(`invites/${encodeURIComponent(k)}/${encodeURIComponent(nameKey(MP.name()))}`,{n:MP.name(),code:MP.code,t:Date.now()});toast('Invito mandato','Quando accetta entra nel tuo gruppo');}
   catch(e){toast('Invito non riuscito','Controlla la connessione');}}
+/* ---------- richieste d'amicizia: diventate amici solo quando l'altro accetta ---------- */
+let FRPEND=store.get('frpend',[]);const saveFrPend=()=>store.set('frpend',FRPEND);const pend=k=>FRPEND.some(f=>f.k===k);
+async function sendFriendReq(k,n){try{await fbPut(`invites/${encodeURIComponent(k)}/${encodeURIComponent(nameKey(MP.name())+'__f')}`,{n:MP.name(),t:Date.now()});
+  if(!pend(k)){FRPEND.push({k,n});saveFrPend();}sfx('pick');toast('Richiesta inviata',`Diventerete amici quando ${n} accetta`);return true;}catch(e){toast('Richiesta non inviata','Controlla la connessione');return false;}}
 /* ---------- inviti ricevuti ---------- */
 let invShown={};
 setInterval(async()=>{if(!fbOn()||!store.get('nameok',false)||!$('inviteBox').hidden)return;const me=nameKey(MP.name());
   try{const d=await fbGet('invites/'+encodeURIComponent(me));if(!d)return;
-    for(const [from,v] of Object.entries(d)){if(!v||Date.now()-v.t>120000){fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});continue;}
+    for(const [from,v] of Object.entries(d)){const kind=from.endsWith('__f')?'f':from.endsWith('__a')?'a':'g',who=kind==='g'?from:from.slice(0,-3),del=()=>fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
+      if(!v||Date.now()-v.t>(kind==='g'?120000:7*864e5)){del();continue;}
+      if(kind==='a'){del();if(!FRIENDS.some(f=>f.k===who)){FRIENDS.push({k:who,n:v.n});saveFriends();}FRPEND=FRPEND.filter(f=>f.k!==who);saveFrPend();toast('Nuovo amico!',`${v.n} ha accettato la tua richiesta`);sfx('lvl');if(G.state==='friends')renderFriends();continue;}
+      if(kind==='f'&&FRIENDS.some(f=>f.k===who)){del();fbPut(`invites/${encodeURIComponent(who)}/${encodeURIComponent(me+'__a')}`,{n:MP.name(),t:Date.now()}).catch(()=>{});continue;}
       if(invShown[from+v.t])continue;invShown[from+v.t]=1;
+      if(kind==='f'){$('invText').textContent=`${v.n} vuole essere tuo amico`;$('invYes').textContent='Accetta';$('invNo').textContent='Rifiuta';$('inviteBox').hidden=false;sfx('lvl');
+        $('invYes').onclick=()=>{$('inviteBox').hidden=true;del();if(!FRIENDS.some(f=>f.k===who)){FRIENDS.push({k:who,n:v.n});saveFriends();}
+          FRPEND=FRPEND.filter(f=>f.k!==who);saveFrPend();fbPut(`invites/${encodeURIComponent(who)}/${encodeURIComponent(me+'__a')}`,{n:MP.name(),t:Date.now()}).catch(()=>{});
+          toast('Nuovo amico!',`Tu e ${v.n} ora siete amici`);if(G.state==='friends')renderFriends();};
+        $('invNo').onclick=()=>{$('inviteBox').hidden=true;del();};break;}
+      $('invYes').textContent='Entra';$('invNo').textContent='No, grazie';
       $('invText').textContent=`${v.n} ti invita nel suo gruppo`;$('inviteBox').hidden=false;sfx('lvl');
       $('invYes').onclick=()=>{$('inviteBox').hidden=true;fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
         if(G.state!=='cellar'&&G.state!=='friends'&&G.state!=='coop'){toast('Torna al seminterrato','Poi riapri l\'invito dalla sezione Amici');return;}
@@ -8152,7 +8172,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794084839';
+const BUILD_ID='1794085376';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
