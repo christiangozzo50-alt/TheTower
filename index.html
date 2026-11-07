@@ -8136,11 +8136,23 @@ const _mpMsgS=mpMsg;
 mpMsg=function(m,from){if(m.t==='pvpround'){if(!MP.host)pvpRound();return;}return _mpMsgS(m,from);};
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openFriends,openNameGate,pvpRound,PVA:()=>PVA});
 
+/* ---------- lance impugnate più al centro, non all'estremità ---------- */
+function centerSpear(a){try{if(!a||!a.g)return a;const g=a.g;g.updateMatrixWorld(true);
+  const box=new THREE.Box3().setFromObject(g);if(!isFinite(box.min.y)||!isFinite(box.max.y))return a;
+  const tipY=a.tip?a.tip.position.y:box.max.y,point=tipY>=0?box.max.y:box.min.y,butt=tipY>=0?box.min.y:box.max.y;
+  const p=butt+(point-butt)*0.42;   // la mano sta poco dietro il centro, verso il fondo dell'asta
+  if(Math.abs(p)<0.05)return a;for(const c of g.children)c.position.y-=p;g.userData.gripShift=p;}catch(e){}return a;}
+const _bwmT=buildWeaponMesh;
+buildWeaponMesh=function(type,rarity,effect){const a=_bwmT(type,rarity,effect);return type==='lancia'?centerSpear(a):a;};
+const _bw2T=buildWeapon2;
+buildWeapon2=function(type,v,rarity,effect){const a=_bw2T(type,v,rarity,effect);return type==='lancia'&&WEAPONS[type]?centerSpear(a):a;};
+if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
+
 /* =========================================================
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794084507';
+const BUILD_ID='1794084839';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
