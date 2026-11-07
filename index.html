@@ -679,6 +679,11 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .sh-sk img,.sh-sw{display:block;width:100%;max-width:150px;aspect-ratio:150/190;justify-self:center;border:1px solid var(--edge);background:#1a1622}
 .sh-sw{max-width:90px;aspect-ratio:1;border-radius:50%}
 .sh-body .bd-h small{font-family:var(--f-body,inherit);font-size:12px;color:var(--ink-2)}
+/* il filmato del guardiano prendeva la larghezza della barra vita del boss (.boss): ora occupa tutto lo schermo */
+#cine.boss{width:auto;margin:0;order:0}
+#cine.boss #cineSub{width:min(860px,calc(100vw - 260px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px)))}
+@media (max-width:600px){#cine.boss #cineSub{width:calc(100vw - 32px);top:calc(11vh + 62px + env(safe-area-inset-top,0px))}}
+@media (max-width:600px){@supports (height:1dvh){#cine.boss #cineSub{top:calc(11dvh + 62px + env(safe-area-inset-top,0px))}}}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -8399,7 +8404,7 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{o
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794089225';
+const BUILD_ID='1794089357';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
