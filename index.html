@@ -641,6 +641,23 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .lb-r{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:6px 10px;background:rgba(22,25,32,.85);border:1px solid var(--edge);font-size:13px}
 .lb-r b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb-r small{color:var(--ink-2)}.lb-r em{font-style:normal;font-weight:700;color:var(--ember)}.lb-r.me{border-color:var(--ember)}
 .pvp-rank{margin:4px 0 0;font-size:14px;color:var(--ink-2)}.pvp-rank b{color:var(--xp)}
+/* nome, amici, inviti, conto alla rovescia */
+#nameGate{position:fixed;inset:0;z-index:950;display:grid;place-items:center;overflow-y:auto;background:radial-gradient(ellipse at 50% 30%,#241a30,#07060d 70%);padding:20px}
+#nameGate .ig-box{width:min(420px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+#nameGate .ig-ico{width:72px;height:72px;image-rendering:pixelated;border-radius:18px;box-shadow:0 0 0 3px #000}
+#nameGate .ig-lead{margin:0;font-size:14px;line-height:1.45;color:var(--ink)}
+#ngIn,#frQ{font:inherit;font-size:18px;padding:12px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(280px,80vw);text-align:center;-webkit-user-select:text;user-select:text}
+#ngIn:focus,#frQ:focus{border-color:var(--ember);outline:none}
+.fr-search{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}#frQ{text-align:left;font-size:16px}
+.fr-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;background:rgba(22,25,32,.85);border:1px solid var(--edge)}
+.fr-r b{display:block;font-size:14px;color:var(--ink)}.fr-r small{font-size:11px;color:var(--ink-2)}
+.fr-r .dot{width:10px;height:10px;border-radius:50%;background:#4a4652}.fr-r .dot.on{background:#7fe08a;box-shadow:0 0 8px #7fe08a}
+.fr-r button:disabled{opacity:.4}
+#inviteBox{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:130;display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 18px;background:rgba(12,10,18,.95);border:2px solid #7ff0e4;box-shadow:0 0 30px rgba(127,240,228,.3)}
+#inviteBox b{font-family:var(--f-display);font-weight:400;font-size:18px;color:#7ff0e4;text-align:center}
+#pvpCount{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);z-index:45;pointer-events:none;font-family:var(--f-display);font-size:clamp(70px,16vw,160px);color:#fff;text-shadow:6px 6px 0 #000,0 0 40px #7ff0e4}
+#pvpCount.pop{animation:pc-pop .5s cubic-bezier(.2,1.6,.4,1)}@keyframes pc-pop{from{transform:translate(-50%,-50%) scale(2.2);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+#coop label.coop-row{display:none}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -917,6 +934,28 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 <div id="reviveBar" hidden><span id="reviveName"></span><div class="rv-track"><i id="reviveFill"></i></div></div>
 <div id="darkFx" hidden></div>
 <div id="curseFx" hidden></div>
+<section class="screen" id="friends" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">Amici</div>
+    <p class="note" id="frMe"></p>
+    <div class="tabs" role="tablist"><button class="tab" data-ft="amici" role="tab">I tuoi amici</button><button class="tab" data-ft="cerca" role="tab">Cerca giocatori</button><button class="tab" data-ft="gruppo" role="tab">Gruppo (co-op)</button></div>
+    <div id="frBody" class="bd-body"></div>
+    <div class="row"><button class="ghost" id="frClose">Chiudi</button></div>
+  </div>
+</section>
+<div id="nameGate" hidden>
+  <div class="ig-box">
+    <img class="ig-ico" src="icon-192.png" alt="">
+    <h2 id="ngTitle">Come ti chiami?</h2>
+    <p class="ig-lead">Il tuo nome compare in classifica, agli amici e nelle partite online. Ogni giocatore ha un nome diverso.</p>
+    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false">
+    <p class="note" id="ngMsg" aria-live="polite"></p>
+    <button class="ghost" id="ngSug" hidden></button>
+    <div class="row"><button class="big" id="ngOk">Conferma</button><button class="ghost" id="ngCancel" hidden>Annulla</button></div>
+  </div>
+</div>
+<div id="inviteBox" hidden><b id="invText"></b><div class="row"><button class="big" id="invYes">Entra</button><button class="ghost" id="invNo">No, grazie</button></div></div>
+<div id="pvpCount" hidden>3</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
@@ -1279,7 +1318,7 @@ setInterval(musicTick,100);
 const W=50,HALF=W/2,GRAV=-42,CEIL=13;
 const GATE_X=HALF-5,STAIR_X0=GATE_X+0.7,STAIR_N=5,STAIR_W=0.5,STAIR_RISE=0.6,LAND_X=STAIR_X0+STAIR_N*STAIR_W,STAIR_TOP=STAIR_N*STAIR_RISE,DOOR_X=HALF-1;
 const DSC=(GATE_X+HALF)/31,MX=x=>-HALF+(x+18)*DSC;   // allarga gli arredi pensati per la stanza vecchia
-const CH=13,CELLAR_CEIL=6.4,PED_X=2.6,PED_Z=-1.2;
+const CH=13,CELLAR_CEIL=6.4,PED_X=2.2,PED_Z=-1.2;
 const TOP_FLOOR=100;
 const hpMul=f=>1+0.22*(f-1)+0.006*(f-1)*(f-1), dmgMul=f=>1+0.11*(f-1)+0.0008*(f-1)*(f-1), spdMul=f=>Math.min(1.5,1+0.006*(f-1));
 const isBossFloor=f=>f%5===0,isSafeFloor=f=>f===13||(f>1&&f%25===1);
@@ -1989,7 +2028,7 @@ function updProps(dt){
    IL SEMINTERRATO (menu esplorabile)
    ========================================================= */
 const cellarG=new THREE.Group();scene.add(cellarG);
-const cellarLights=[],INTER=[],wdDoors=[];let cellarWD=null,safeG=null;const WD_X=6.0;
+const cellarLights=[],INTER=[],wdDoors=[];let cellarWD=null,safeG=null;const WD_X=5.5;
 let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
 (function buildCellar(){
   const C=cellarG;
@@ -2001,7 +2040,7 @@ let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
   mesh(new THREE.BoxGeometry(CH*2+6,1,7),mat(0x1e1a16,{roughness:1}),0,CELLAR_CEIL+0.7,-0.2,C,true);
   for(let x=-CH+1;x<=CH;x+=4)mesh(rbox(0.5,0.5,7,0.1),woodD,x,CELLAR_CEIL,-0.2,C,true);
   mesh(rbox(CH*2+2,0.4,0.4,0.08),woodD,0,CELLAR_CEIL-0.2,-2.6,C,true);
-  for(const x of [-6.5,-0.4,5.3])mesh(rbox(0.9,CELLAR_CEIL,0.8,0.18),stone,x,CELLAR_CEIL/2,-2.75,C);
+  for(const x of [-6.8,0.0,4.05])mesh(rbox(0.9,CELLAR_CEIL,0.8,0.18),stone,x,CELLAR_CEIL/2,-2.75,C);
   // giaciglio
   const straw=mat(0xc9a54a,{roughness:1});
   mesh(rbox(2.9,0.32,1.7,0.1),woodD,-10.4,0.16,-1.1,C);
@@ -2013,7 +2052,7 @@ let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
   const candle=mesh(sph(0.07,12,10),new THREE.MeshBasicMaterial({color:0xffc56b}),-8.2,1.18,-1.9,C,true);candle.scale.set(1,1.8,1);
   const cl=new THREE.PointLight(0xffb060,1.3,10,1.6);cl.position.set(-8.2,1.7,-0.8);C.add(cl);cellarLights.push({light:cl,flame:candle,base:1.3,seed:1});
   // banco da lavoro = impostazioni
-  const bx=-3.4;
+  const bx=-4.0;
   mesh(rbox(3.0,0.2,1.3,0.06),wood,bx,1.0,-1.6,C);
   for(const [dx,dz] of [[-1.35,-0.5],[1.35,-0.5],[-1.35,0.5],[1.35,0.5]])mesh(rbox(0.16,1.0,0.16,0.04),woodD,bx+dx,0.5,-1.6+dz,C);
   mesh(rbox(2.8,0.1,1.1,0.03),woodD,bx,0.35,-1.6,C);
@@ -2040,7 +2079,7 @@ let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
   for(const [x,z] of [[-12.3,-2.5],[-11.45,-2.65]]){mesh(new THREE.LatheGeometry(barrelPts,28),wood,x,0,z,C);for(const y of [0.18,0.87]){const b=mesh(new THREE.TorusGeometry(0.42,0.025,8,32),metal,x,y,z,C);b.rotation.x=Math.PI/2;}}
   mesh(rbox(1.0,1.0,1.0,0.06),wood,7.9,0.5,-2.45,C);
   // armadio dell'equipaggiamento
-  const WX=6.0,wd=new THREE.Group();cellarWD=wd;wd.position.set(WX,0,-2.3);C.add(wd);
+  const WX=5.5,wd=new THREE.Group();cellarWD=wd;wd.position.set(WX,0,-2.3);C.add(wd);
   mesh(rbox(1.7,2.9,0.8,0.08),woodD,0,1.45,0,wd);mesh(rbox(1.9,0.2,0.95,0.06),wood,0,2.98,0,wd);mesh(rbox(1.8,0.16,0.9,0.05),wood,0,0.08,0,wd);
   for(const s of [-1,1]){const pv=new THREE.Group();pv.position.set(s*0.81,0,0.42);wd.add(pv);wdDoors.push({g:pv,s});
     mesh(rbox(0.8,2.5,0.06,0.04),wood,-s*0.4,1.5,0,pv);mesh(sph(0.05,10,8),mat(0xd9b45a,{metalness:.6,roughness:.3}),-s*0.71,1.5,0.05,pv);}
@@ -2065,7 +2104,7 @@ let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
   const mkRing=x=>{const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),x,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);return r;};
   INTER.push({id:'bench',x:bx,y:2.4,name:'Banco da lavoro',sub:()=>'Volume, comandi e statistiche',ring:mkRing(bx),act:()=>openSettings('cellar')});
   INTER.push({id:'ped',x:PED_X,y:3.0,name:'Piedistallo delle classi',sub:()=>'Scegli con chi salire',ring:mkRing(PED_X),act:openSelect});
-  INTER.push({id:'wardrobe',x:6.0,y:3.3,name:'Armadio',sub:()=>`${INV.items.length} oggetti · cambia l'equipaggiamento`,ring:mkRing(6.0),act:openWardrobe});
+  INTER.push({id:'wardrobe',x:5.5,y:3.3,name:'Armadio',sub:()=>`${INV.items.length} oggetti · cambia l'equipaggiamento`,ring:mkRing(5.5),act:openWardrobe});
   INTER.push({id:'stairs',x:10.2,y:2.8,name:'Scala della torre',sub:()=>`Inizia la scalata come ${G.cls.name}`,ring:mkRing(10.2),act:()=>{G.state='menu';$('prompt').hidden=true;$('bUse').hidden=true;fadeThen(()=>{startRun();G.fadeTarget=0;});}});
 })();
 
@@ -4248,7 +4287,7 @@ const weaponDamage=()=>G.weapon.dmg*S.dmgMul*(1+S.lvDmg)*(G.inAbil?1+0.15*(G.cls
    FISICA COMUNE
    ========================================================= */
 const overlap=(ax1,ax2,ay1,ay2,b)=>ax2>b.x-b.w/2&&ax1<b.x+b.w/2&&ay2>b.y&&ay1<b.y+b.h;
-function rightBound(b){if(G.scene==='tower')return(b.isEnemy||!G.gateOpen)?GATE_X-0.5:HALF-0.6;return G.bounds.right;}
+function rightBound(b){if(G.pvp&&G.scene==='tower'&&typeof PVA!=='undefined')return PVA.r;if(G.scene==='tower')return(b.isEnemy||!G.gateOpen)?GATE_X-0.5:HALF-0.6;return G.bounds.right;}
 function moveBody(b,dt){
   const steps=Math.max(1,Math.ceil(Math.max(Math.abs(b.vx),Math.abs(b.vy))*dt/0.25)),h=dt/steps;
   b.onGround=false;b.hitWall=0;b.bonk=false;for(let i=0;i<steps;i++)stepBody(b,h);
@@ -7835,15 +7874,15 @@ const _ecF=enterCellar;
 enterCellar=function(){G.horde=false;G.event=null;$('darkFx').hidden=true;$('curseFx').hidden=true;G.emote=null;const r=_ecF();buildNpcs();return r;};
 
 /* ---------- arredi nuovi del seminterrato: fabbro e bacheca ---------- */
-const FORGE_X=-6.1,BOARD_X=-0.45;
+const FORGE_X=-7.2,BOARD_X=-1.25;
 (function(){const C=cellarG;
   const g=new THREE.Group();g.position.set(FORGE_X,0,-1.5);C.add(g);const iron=toon(0x3a3a44),coal=new THREE.MeshBasicMaterial({color:0xff7a2e});
   mesh(new THREE.CylinderGeometry(0.42,0.5,0.7,14),toon(0x6a4a30),0,0.35,0,g);
   mesh(rbox(0.9,0.22,0.38,0.05),iron,0,0.82,0,g);mesh(rbox(0.5,0.16,0.3,0.04),iron,0,0.64,0,g);const h=mesh(new THREE.ConeGeometry(0.16,0.42,10),iron,0.58,0.83,0,g);h.rotation.z=-Math.PI/2;
-  mesh(rbox(1.0,0.5,0.8,0.08),toon(0x4a4652),1.2,0.25,-0.5,g);const c=mesh(rbox(0.8,0.08,0.6,0.04),coal,1.2,0.52,-0.5,g,true);G.props.push({o:c,tw:3});
+  mesh(rbox(1.0,0.5,0.8,0.08),toon(0x4a4652),1.1,0.25,-0.45,g);const c=mesh(rbox(0.8,0.08,0.6,0.04),coal,1.1,0.52,-0.45,g,true);G.props.push({o:c,tw:3});
   const b=new THREE.Group();b.position.set(BOARD_X,2.3,-3.0);C.add(b);
-  mesh(rbox(1.9,1.3,0.1,0.03),toon(0x6a4a30),0,0,0,b);mesh(rbox(2.05,0.12,0.14,0.03),toon(0x4a3220),0,0.7,0.02,b);
-  const papers=[[-0.55,0.2,0xe8dcc0],[0.1,0.25,0xd8cca8],[0.6,0.1,0xffd27a],[-0.3,-0.3,0xd8cca8],[0.4,-0.35,0xe8dcc0]];
+  mesh(rbox(1.6,1.3,0.1,0.03),toon(0x6a4a30),0,0,0,b);mesh(rbox(1.75,0.12,0.14,0.03),toon(0x4a3220),0,0.7,0.02,b);
+  const papers=[[-0.45,0.2,0xe8dcc0],[0.08,0.25,0xd8cca8],[0.5,0.1,0xffd27a],[-0.25,-0.3,0xd8cca8],[0.35,-0.35,0xe8dcc0]];
   for(const [x,y,col] of papers){const p=mesh(new THREE.PlaneGeometry(0.42,0.5),new THREE.MeshBasicMaterial({color:col}),x,y,0.06,b,true);p.rotation.z=rand(-0.15,0.15);}
   const mk=x=>{const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),x,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);return r;};
   INTER.push({id:'forge',x:FORGE_X,y:2.2,name:'Fabbro',sub:()=>`${FRAG.n} frammenti · smonta e migliora gli oggetti`,ring:mk(FORGE_X),act:openForge});
@@ -7902,7 +7941,7 @@ const _ocaF=openClimbAsk;
 openClimbAsk=function(){_ocaF();$('caHorde').hidden=MP.live()&&!MP.host;};
 {const st=INTER.find(i=>i.id==='stairs');if(st)st.act=()=>openClimbAsk();}
 setTimeout(troCheck,0);
-if(/coop-debug/.test(location.hash))window.__F={startCine,updCine,openForge,openBoard,openClimbAsk,openOnline,openCoop,G,P,doEmote,trophyList,INV,makeGear,makeWeapon,invAdd,enterCellar,startRun,MP};
+if(/coop-debug/.test(location.hash))window.__F={pvpBegin,PV,startCine,updCine,openForge,openBoard,openClimbAsk,openOnline,openCoop,G,P,doEmote,trophyList,INV,makeGear,makeWeapon,invAdd,enterCellar,startRun,MP};
 
 /* ---------- filmato iniziale: colpi che arrivano a segno e capitano che attacca ---------- */
 cineMonUpd=function(e,dt){const m=e.cm;if(e.dead)return;e.flash=(e.flash||0)-dt;e.flinch=(e.flinch||0)-dt;
@@ -7935,6 +7974,141 @@ cineDuel=function(h,dt){const C=G.cine;if(h.special)return;
   else if(h.ds==='def'&&h.dt>0.24){h.ds='c1';h.dt=0;h.vx=0;heroAct(h,'swing');}
   else if(h.ds==='c1'){if(!h.h1&&h.dt>0.13){h.h1=1;cineKnock(e,side,0.3);}if(h.dt>0.3){h.h1=0;h.ds='c2';h.dt=0;heroAct(h,'heavy');}}
   else if(h.ds==='c2'){if(!h.h2&&h.dt>0.17){h.h2=1;cineKnock(e,side,1);fxSlash(e.x,1.2,0,HCOL[h.id],1.2,Math.PI/2,side*0.4,0.25);}if(h.dt>0.42){h.h2=0;h.ds='engage';h.tgt=null;h.dt=0;}}};
+
+/* =========================================================
+   PvP a round con conto alla rovescia, arena piccola; nome unico
+   del giocatore; sezione Amici (statistiche, inviti, ricerca)
+   ========================================================= */
+
+/* ---------- arena PvP più piccola ---------- */
+let PVA={l:-8,r:8,c:0};
+function pvpSpawnXNew(){const t=pvpTeamOf(MP.myPid)||0,mates=Object.keys(PV.teams).filter(k=>PV.teams[k]===t).map(Number).sort((a,b)=>a-b),off=Math.max(0,mates.indexOf(MP.myPid))*1.4;
+  return t===0?PVA.l+1.6+off:PVA.r-1.6-off;}
+pvpSpawnX=pvpSpawnXNew;
+const _paS=pvpArena;
+pvpArena=function(){const L=-HALF+0.6,R=GATE_X-0.5,c=(L+R)/2;PVA={l:c-8.5,r:c+8.5,c};G.bounds.left=PVA.l;
+  _paS();
+  const wm=new THREE.MeshBasicMaterial({color:0x7ff0e4,transparent:true,opacity:0.22,depthWrite:false,blending:THREE.AdditiveBlending});
+  for(const x of [PVA.l-0.15,PVA.r+0.15]){mesh(rbox(0.25,CEIL,3.2,0.05),wm,x,CEIL/2,0,levelGroup,true);for(let y=0.5;y<CEIL;y+=1.2)mesh(rbox(0.3,0.06,3.3,0.02),new THREE.MeshBasicMaterial({color:0x7ff0e4}),x,y,0,levelGroup,true);}
+  // i barili e i forzieri fuori dall'arena non servono
+  for(const b of G.barrels||[]){if(b.g.position.x<PVA.l||b.g.position.x>PVA.r){b.dead=true;levelGroup.remove(b.g);}}
+  pvpRound();};
+/* ---------- conto alla rovescia e round: dopo ogni caduta tutti tornano in posizione ---------- */
+function pvpRound(){if(!PV.on)return;clearTimeout(PV.rt);PV.pending=false;const me=MP.myPid,alive=(PV.lives[me]||0)>0;
+  if(alive){if(P.dead)mpRevive();Object.assign(P,{z:0,hp:S.maxHp,stam:S.stamMax,x:pvpSpawnX(),y:0,vx:0,vy:0,atk:null,dot:null,slowT:0,invul:0,dashT:0,shieldT:0,chargeT:0,spinT:0});P.face=P.x<PVA.c?1:-1;if(hero)hero.root.rotation.z=0;$('deathFx').classList.remove('on');}
+  for(const p of G.projs)p.dead=true;
+  G.state='pvpwait';clearInput();$('touch').hidden=true;showMeds(false);pvpHud();
+  const el=$('pvpCount');let n=3;el.hidden=false;
+  const tick=()=>{if(!PV.on){el.hidden=true;return;}
+    el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');
+    if(n>0){el.textContent=n;sfx('ui');n--;PV.rt=setTimeout(tick,1000);}
+    else{el.textContent='VIA!';sfx('slam');shake(0.2);if(G.state==='pvpwait')G.state='play';$('touch').hidden=!isTouch;showMeds(true);canvas.focus();PV.rt=setTimeout(()=>{el.hidden=true;},700);}};
+  tick();}
+pvpDie=function(){_playerDie();G.overT=1e9;const me=MP.myPid;PV.lives[me]=Math.max(0,(PV.lives[me]||1)-1);
+  MP.send({t:'pvpdie',pid:me,lives:PV.lives[me],by:PV.lastBy});pvpHud();
+  toast(PV.lives[me]>0?'Sei stato abbattuto':'Eliminato',PV.lives[me]>0?`Vite rimaste: ${PV.lives[me]} · nuovo round tra poco`:'Guarda come va a finire');
+  if(MP.host)pvpCheck();};
+const _pcS=pvpCheck;
+pvpCheck=function(){_pcS();if(MP.host&&PV.on&&!PV.pending){PV.pending=true;clearTimeout(PV.rt2);PV.rt2=setTimeout(()=>{if(!PV.on)return;MP.bcast({t:'pvpround'});pvpRound();},1700);}};
+const _pvEndS=pvpEnd;
+pvpEnd=function(w){clearTimeout(PV.rt);clearTimeout(PV.rt2);$('pvpCount').hidden=true;return _pvEndS(w);};
+
+/* ---------- nome del giocatore (unico) ---------- */
+const nameKey=n=>String(n).toLowerCase().trim().replace(/[.#$\[\]\/]/g,'').replace(/\s+/g,'_');
+MP.name=()=>(store.get('mpname','')||'Giocatore').slice(0,14);
+async function fbPut(path,v){return fbPost(path,v,'PUT');}
+async function fbPatch(path,v){return fbPost(path,v,'PATCH');}
+async function fbDel(path){const r=await fetch(`${FB_URL.replace(/\/$/,'')}/${path}.json`,{method:'DELETE'});return r.ok;}
+async function nameFree(n){const v=await fbGet('names/'+encodeURIComponent(nameKey(n)));return v==null||v===PID;}
+async function suggestName(n){const base=n.replace(/\d+$/,'').slice(0,11);
+  for(let i=0;i<8;i++){const c=base+(i<4?Math.floor(Math.random()*90+10):Math.floor(Math.random()*900+100));if(await nameFree(c))return c;}return null;}
+function openNameGate(change){const g=$('nameGate');g.hidden=false;$('ngIn').value=change?MP.name():'';$('ngMsg').textContent='';$('ngSug').hidden=true;
+  $('ngTitle').textContent=change?'Cambia il tuo nome':'Come ti chiami?';$('ngCancel').hidden=!change;setTimeout(()=>$('ngIn').focus(),80);}
+async function confirmName(n){n=(n||'').trim().replace(/\s+/g,' ');const msg=$('ngMsg'),ok=$('ngOk');
+  if(n.length<3||n.length>14){msg.textContent='Il nome deve avere da 3 a 14 caratteri.';return;}
+  if(!/^[A-Za-z0-9À-ÿ _-]+$/.test(n)){msg.textContent='Usa solo lettere, numeri, spazi, - e _.';return;}
+  if(n===MP.name()&&store.get('nameok',false)){$('nameGate').hidden=true;return;}
+  ok.disabled=true;msg.textContent='Controllo che sia libero…';$('ngSug').hidden=true;
+  try{
+    if(fbOn()){if(!(await nameFree(n))){const s=await suggestName(n);msg.textContent=`«${n}» è già usato da un altro giocatore.`;
+        if(s){$('ngSug').hidden=false;$('ngSug').textContent=`Usa «${s}»`;$('ngSug').onclick=()=>{$('ngIn').value=s;confirmName(s);};}ok.disabled=false;return;}
+      await fbPut('names/'+encodeURIComponent(nameKey(n)),PID);
+      if((await fbGet('names/'+encodeURIComponent(nameKey(n))))!==PID){msg.textContent='Qualcuno l\'ha appena preso, riprova.';ok.disabled=false;return;}}
+    store.set('mpname',n);store.set('nameok',true);$('nameGate').hidden=true;toast('Benvenuto, '+n,'Questo nome comparirà in classifica e agli amici');heartbeat();mpUi();
+  }catch(e){store.set('mpname',n);store.set('nameok',false);$('nameGate').hidden=true;toast('Nome salvato','Lo confermo online appena c\'è connessione');}
+  ok.disabled=false;}
+$('ngOk').onclick=()=>confirmName($('ngIn').value);
+$('ngIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')confirmName($('ngIn').value);});
+$('ngCancel').onclick=()=>{$('nameGate').hidden=true;};
+// riprova a confermare online un nome salvato senza connessione
+setTimeout(async()=>{if(!store.get('mpname',''))openNameGate(false);
+  else if(!store.get('nameok',false)&&fbOn()){try{const n=MP.name();if(await nameFree(n)){await fbPut('names/'+encodeURIComponent(nameKey(n)),PID);store.set('nameok',true);}else openNameGate(true);}catch(e){}}},400);
+
+/* ---------- presenza online e statistiche pubbliche ---------- */
+function heartbeat(){if(!fbOn()||!store.get('nameok',false))return;const k=nameKey(MP.name());
+  fbPatch('players/'+encodeURIComponent(k),{n:MP.name(),pid:PID,t:Date.now(),best:STATS.best||0,cls:G.cls?G.cls.name:'',runs:STATS.runs||0,kills:STATS.kills||0,pvp:RATING.r,tier:tierOf(RATING.r)}).catch(()=>{});}
+setInterval(heartbeat,45000);setTimeout(heartbeat,3000);
+const isOnline=p=>p&&p.t&&Date.now()-p.t<120000;
+
+/* ---------- sezione Amici ---------- */
+let FRIENDS=store.get('friends',[]);const saveFriends=()=>store.set('friends',FRIENDS);
+let frTab='amici';
+function openFriends(tab){if(G.state!=='cellar')return;G.state='friends';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);frTab=tab||'amici';$('friends').hidden=false;renderFriends();}
+function closeFriends(){$('friends').hidden=true;if(G.state==='friends'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}}
+function statLine(p){return `Piano max ${p.best||0}${p.cls?' · '+esc(p.cls):''} · ${p.runs||0} scalate · ${p.kills||0} nemici · ${esc(p.tier||tierOf(p.pvp||1000))}`;}
+async function renderFriends(){for(const b of document.querySelectorAll('#friends .tab'))b.setAttribute('aria-selected',b.dataset.ft===frTab);
+  $('frMe').innerHTML=`Il tuo nome: <b>${esc(MP.name())}</b> <button class="mini" id="frRename">Cambia</button>`;$('frRename').onclick=()=>openNameGate(true);
+  const box=$('frBody');
+  if(frTab==='gruppo'){closeFriends();openCoop();return;}
+  if(!fbOn()){box.innerHTML='<p class="note">La parte online non è collegata.</p>';return;}
+  if(frTab==='amici'){
+    if(!FRIENDS.length){box.innerHTML='<p class="note">Non hai ancora amici: cercali per nome nella scheda «Cerca».</p>';return;}
+    box.innerHTML='<p class="note">Carico…</p>';
+    const rows=await Promise.all(FRIENDS.map(async f=>{try{return {f,p:await fbGet('players/'+encodeURIComponent(f.k))};}catch(e){return {f,p:null};}}));
+    rows.sort((a,b)=>(isOnline(b.p)?1:0)-(isOnline(a.p)?1:0));
+    box.innerHTML=rows.map(({f,p})=>`<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><b>${esc((p&&p.n)||f.n)}</b><small>${p?statLine(p):'Nessuna statistica'}</small></div>
+      <button class="mini" data-inv="${esc(f.k)}" ${isOnline(p)?'':'disabled'}>Invita</button><button class="mini del" data-rm="${esc(f.k)}">Togli</button></div>`).join('');}
+  else{box.innerHTML=`<div class="fr-search"><input id="frQ" placeholder="Nome del giocatore" maxlength="14" autocomplete="off"><button class="ghost" id="frGo">Cerca</button></div><div id="frRes"></div>`;
+    const go=async()=>{const q=nameKey($('frQ').value);const res=$('frRes');if(q.length<2){res.innerHTML='<p class="note">Scrivi almeno 2 lettere.</p>';return;}res.innerHTML='<p class="note">Cerco…</p>';
+      try{const d=await fbGet('players',`orderBy=${encodeURIComponent('"$key"')}&startAt=${encodeURIComponent(JSON.stringify(q))}&endAt=${encodeURIComponent(JSON.stringify(q+''))}&limitToFirst=15`)||{};
+        const me=nameKey(MP.name()),list=Object.entries(d).filter(([k])=>k!==me);
+        res.innerHTML=list.length?list.map(([k,p])=>{const fr=FRIENDS.some(f=>f.k===k);return `<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><b>${esc(p.n||k)}</b><small>${statLine(p)}</small></div>
+          <button class="mini" data-add="${esc(k)}" data-n="${esc(p.n||k)}" ${fr?'disabled':''}>${fr?'Già amico':'Aggiungi'}</button></div>`;}).join(''):'<p class="note">Nessun giocatore con questo nome.</p>';}
+      catch(e){res.innerHTML='<p class="note">Ricerca non riuscita. Controlla la connessione.</p>';}};
+    $('frGo').onclick=go;$('frQ').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go();});setTimeout(()=>$('frQ').focus(),60);}}
+$('friends').addEventListener('click',async e=>{const t=e.target.closest('.tab');if(t){frTab=t.dataset.ft;sfx('ui');renderFriends();return;}
+  const a=e.target.closest('[data-add]');if(a){FRIENDS.push({k:a.dataset.add,n:a.dataset.n});saveFriends();a.disabled=true;a.textContent='Aggiunto';sfx('pick');toast('Amico aggiunto',a.dataset.n);return;}
+  const r=e.target.closest('[data-rm]');if(r){FRIENDS=FRIENDS.filter(f=>f.k!==r.dataset.rm);saveFriends();sfx('ui');renderFriends();return;}
+  const i=e.target.closest('[data-inv]');if(i){i.disabled=true;i.textContent='Invito…';await inviteFriend(i.dataset.inv);i.textContent='Invitato';}});
+$('frClose').onclick=()=>{sfx('ui');closeFriends();};
+async function inviteFriend(k){
+  if(!(MP.on&&MP.host)){mpHost();for(let i=0;i<40&&!(MP.on&&MP.code);i++)await new Promise(r=>setTimeout(r,250));}
+  if(!MP.code){toast('Invito non riuscito','Non riesco a creare il gruppo');return;}
+  try{await fbPut(`invites/${encodeURIComponent(k)}/${encodeURIComponent(nameKey(MP.name()))}`,{n:MP.name(),code:MP.code,t:Date.now()});toast('Invito mandato','Quando accetta entra nel tuo gruppo');}
+  catch(e){toast('Invito non riuscito','Controlla la connessione');}}
+/* ---------- inviti ricevuti ---------- */
+let invShown={};
+setInterval(async()=>{if(!fbOn()||!store.get('nameok',false)||!$('inviteBox').hidden)return;const me=nameKey(MP.name());
+  try{const d=await fbGet('invites/'+encodeURIComponent(me));if(!d)return;
+    for(const [from,v] of Object.entries(d)){if(!v||Date.now()-v.t>120000){fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});continue;}
+      if(invShown[from+v.t])continue;invShown[from+v.t]=1;
+      $('invText').textContent=`${v.n} ti invita nel suo gruppo`;$('inviteBox').hidden=false;sfx('lvl');
+      $('invYes').onclick=()=>{$('inviteBox').hidden=true;fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
+        if(G.state!=='cellar'&&G.state!=='friends'&&G.state!=='coop'){toast('Torna al seminterrato','Poi riapri l\'invito dalla sezione Amici');return;}
+        if(G.state==='friends')closeFriends();if(G.state==='cellar')openCoop();$('coopCode').value=v.code;mpJoin();};
+      $('invNo').onclick=()=>{$('inviteBox').hidden=true;fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});};
+      break;}}catch(e){}},8000);
+/* ---------- il pulsante in alto diventa «Amici» ---------- */
+$('coopBtn').onclick=()=>{sfx('ui');openFriends('amici');};
+const _mpUiS=mpUi;
+mpUi=function(){_mpUiS();const b=$('coopBtn');b.textContent=MP.live()?`Amici · gruppo da ${MP.count()}`:'Amici';};
+mpUi();
+$('onCoop').onclick=()=>{sfx('ui');closeOnline();openCoop();};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&G.state==='friends'){e.preventDefault();closeFriends();}},true);
+const _padBackS=padBack;padBack=function(){for(const id of ['frClose','ngCancel','invNo']){const b=$(id);if(b&&b.offsetParent!==null&&!b.closest('[hidden]')){b.click();return true;}}return _padBackS();};
+const _mpMsgS=mpMsg;
+mpMsg=function(m,from){if(m.t==='pvpround'){if(!MP.host)pvpRound();return;}return _mpMsgS(m,from);};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openFriends,openNameGate,pvpRound,PVA:()=>PVA});
 
 /* ---------- Avvio ---------- */
 resetStats();G.weapon=makeWeapon(G.cls.weapon,0,1);setHero(G.cls);
