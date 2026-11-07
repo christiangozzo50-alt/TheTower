@@ -615,8 +615,8 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #reviveBar{position:fixed;left:0;top:0;z-index:6;pointer-events:none;display:flex;flex-direction:column;align-items:center;gap:4px;text-shadow:0 2px 2px #000}
 #reviveBar span{font-weight:700;font-size:12px;color:#7fe08a;white-space:nowrap;background:rgba(10,8,14,.7);padding:2px 8px}
 .rv-track{width:120px;height:8px;background:rgba(10,8,14,.8);border:1px solid #7fe08a;overflow:hidden}.rv-track i{display:block;height:100%;background:#7fe08a;transform-origin:left;transform:scaleX(0)}
-#darkFx{position:fixed;inset:0;z-index:3;pointer-events:none}
-#curseFx{position:fixed;inset:0;z-index:3;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(90,20,110,.45));mix-blend-mode:multiply;animation:pulse 3s ease-in-out infinite}
+#darkFx{position:fixed;inset:0;pointer-events:none}
+#curseFx{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(90,20,110,.45));mix-blend-mode:multiply;animation:pulse 3s ease-in-out infinite}
 /* fabbro */
 .fg-n{color:var(--ember);font-family:var(--f-display);font-weight:400;font-size:22px}
 .fg-wrap{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:12px;width:100%;text-align:left}
@@ -672,7 +672,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
 <div id="fx"></div>
-<div id="soft"></div><div id="bossVig"></div>
+<div id="soft"></div><div id="darkFx" hidden></div><div id="curseFx" hidden></div><div id="bossVig"></div>
 <div id="hurt"></div>
 
 <div id="cellarHud" hidden>
@@ -942,8 +942,6 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 </section>
 <div id="emoteBar" hidden><button data-em="saluta" title="Saluta (1)">👋</button><button data-em="inchino" title="Inchino (2)">🙇</button><button data-em="balla" title="Balla (3)">💃</button></div>
 <div id="reviveBar" hidden><span id="reviveName"></span><div class="rv-track"><i id="reviveFill"></i></div></div>
-<div id="darkFx" hidden></div>
-<div id="curseFx" hidden></div>
 <section class="screen" id="friends" hidden>
   <div class="panel wide">
     <div class="eyebrow">Amici</div>
@@ -7036,7 +7034,8 @@ function mpRecvInto(R,m){
   const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
     shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
-  if(snap){R.x=m.x;R.y=m.y;R.z=m.z;}
+  if(snap){R.x=m.x;R.y=m.y;R.z=m.z;R.buf=[];}
+  const now=performance.now();(R.buf||(R.buf=[])).push({t:now,x:m.x,y:m.y,z:m.z,vx:m.vx,vy:m.vy});if(R.buf.length>12)R.buf.shift();R.svx=m.vx;
   if(!m.atk)R.atk=null;
   else if(!R.atk||R.atk.mv!==m.atk.mv||R.atk.anim!==m.atk.anim||Math.abs(R.atk.t-m.atk.t)>0.12||m.atk.t<R.atk.t-0.05){R.atk=Object.assign({},m.atk);}
   R.em=m.em||null;R.sk=m.sk||0;const key=m.c+'|'+(m.sk||0)+'|'+m.w.join(',');if(key!==R.hkey)mpMakeHero(R,m.c,m.w,m.sk);}
@@ -7046,6 +7045,13 @@ function mpMakeHero(R,cid,w,sk){mpRemoveHero(R);const cls=CLASSES.find(c=>c.id==
     if(wo.type==='pugnali'){const b=applyVariant(buildWeaponMesh(wo.type,wo.rarity,wo.effect),wo);h.arms[1].wr.add(b.g);h.tipB=b.tip;h.wpnB=b.g;}
     R.hero=h;R.wobj=wo;R.cls=cls;R.hkey=cid+'|'+(sk||0)+'|'+w.join(',');}catch(e){console.warn('co-op hero',e);R.hero=null;R.hkey='';}}
 function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.root);R.hero=null;}R.hkey='';if(R.tag){R.tag.remove();R.tag=null;}if(R.mate){R.mate.remove();R.mate=null;}}
+// riproduzione fluida: si mostra il movimento con un piccolo ritardo, interpolando tra i dati ricevuti
+const INTERP_MS=110;
+function sampleAt(buf,t){if(!buf||!buf.length)return null;const n=buf.length;
+  if(t<=buf[0].t)return buf[0];
+  for(let i=n-1;i>0;i--){const a=buf[i-1],b=buf[i];if(t>=a.t&&t<=b.t){const k=(t-a.t)/Math.max(1,b.t-a.t);return {x:a.x+(b.x-a.x)*k,y:a.y+(b.y-a.y)*k,z:a.z+(b.z-a.z)*k};}}
+  const l=buf[n-1],ex=Math.min(0.18,(t-l.t)/1000);   // oltre l'ultimo dato: si prosegue per poco nella stessa direzione
+  return {x:l.x+(l.vx||0)*ex,y:Math.max(0,l.y+(l.vy||0)*ex),z:l.z};}
 const RKEYS=['x','y','z','vx','vy','face','onGround','dead','flipT','stretchT','landT','dashT','hurtT','invul','shieldT','rageT','bearT','dragon','chargeT','spinT','throwT','skidT','climbTurn','atk','walkT','lastStep'];
 const mpVisible=R=>(R.hub?HUB.on&&G.safe:MP.live())&&R.hero&&R.sc===G.scene&&(G.scene==='cellar'||R.fl===G.floor)&&!['intro','waking','cine'].includes(G.state)&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);
 const TAGCOL=['#ffd27a','#7ff0e4','#ff9ad5','#a8ff7a'];
@@ -7058,14 +7064,15 @@ function mpDrawRemote(dt){
       R.mate.style.setProperty('--mc',col);R.mate.firstChild.textContent=(R.name||'Compagno')+(R.dead?' · a terra':'');R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
     else if(R.mate){R.mate.remove();R.mate=null;}
     if(!vis){if(R.tag)R.tag.hidden=true;continue;}
-    const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;
+    {const px=R.x;const s=sampleAt(R.buf,performance.now()-INTERP_MS);if(s){R.x=s.x;R.y=s.y;R.z=s.z;}else{const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;}
+      const v=dt>0?(R.x-px)/dt:0;R.dvx=R.dvx==null?v:R.dvx+(v-R.dvx)*Math.min(1,dt*12);R.vx=Math.abs(R.dvx)<0.3?0:R.dvx;}
     if(R.atk){R.atk.t+=dt;if(R.atk.t>=R.atk.wind+R.atk.act+R.atk.rec+0.05&&!R.atk.hold)R.atk=null;}
     for(const a of R.hero.arms)a.wr.scale.setScalar(R.ws||1);
     // si riusa l'animazione dell'eroe locale scambiando per un attimo i dati
     const bk={};for(const k2 of RKEYS){bk[k2]=P[k2];P[k2]=R[k2];}
     const gH=hero,gW=G.weapon,gC=G.cls,gS=G.state,gE=G.enterT,uT=updTrail,uB=updBear;
     hero=R.hero;G.weapon=R.wobj;G.cls=R.cls;G.state=(R.st==='climb'||R.st==='enter')?R.st:'play';G.enterT=R.et||0;updTrail=()=>{};updBear=()=>{};
-    try{_updHeroVisual(dt);}catch(e){}finally{for(const k2 of RKEYS){R[k2]=P[k2];P[k2]=bk[k2];}hero=gH;G.weapon=gW;G.cls=gC;G.state=gS;G.enterT=gE;updTrail=uT;updBear=uB;}
+    try{_updHeroVisual(dt);}catch(e){MP.lastErr=String(e&&e.stack||e).slice(0,400);}finally{for(const k2 of RKEYS){R[k2]=P[k2];P[k2]=bk[k2];}hero=gH;G.weapon=gW;G.cls=gC;G.state=gS;G.enterT=gE;updTrail=uT;updBear=uB;}
     if(!R.tag){R.tag=document.createElement('div');R.tag.className='mp-tag';document.body.appendChild(R.tag);}
     const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.hidden=false;R.tag.textContent=R.name||'Compagno';R.tag.style.setProperty('--mc',col);
     R.tag.classList.toggle('down',!!R.dead);R.tag.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;
@@ -7118,14 +7125,14 @@ function mpSnap(){
   return {t:'e',f:G.floor,q:G.queue.slice(),cl:G.cleared?1:0,l};}
 
 /* ---------- ospiti: i nemici sono "marionette" mosse dall'host ---------- */
-function mpPuppet(e,dt){const k=damp(dt,14);e.x+=(e.nx-e.x)*k;e.y+=(e.ny-e.y)*k;e.t+=dt;e.flash-=dt;e.flinch-=dt;e.castT-=dt;e.landT-=dt;}
+function mpPuppet(e,dt){const s=sampleAt(e.buf,performance.now()-INTERP_MS);if(s){e.x=s.x;e.y=s.y;}else{const k=damp(dt,14);e.x+=(e.nx-e.x)*k;e.y+=(e.ny-e.y)*k;}e.t+=dt;e.flash-=dt;e.flinch-=dt;e.castT-=dt;e.landT-=dt;}
 function mpApplySnap(s){
   if(G.scene!=='tower'||s.f!==G.floor||G.tutorial||G.pvp)return;
   G.queue=s.q.slice();G.spawnT=1e9;const seen=new Set();
   for(const a of s.l){const id=a[0];seen.add(id);let e=MP.emap.get(id);if(e&&e.dead)continue;
     if(!e){e=_spawnEnemy(a[1],{x:a[2],summon:true});e.net=true;e.id=id;e.summon=!!a[21];e.x=a[2];e.y=a[3];MP.emap.set(id,e);
       if(a[20]){e.elite=true;e.sc=1.2;for(const m of e.parts.mats){m.userData.baseE=ELITE_GOLD;m.userData.baseI=0.25;}}}
-    e.nx=a[2];e.ny=a[3];e.vx=a[4];e.vy=a[5];e.face=a[6];e.state=a[7];e.t=a[8];e.warn=a[9];e.hp=a[10];e.maxHp=a[11];e.stunT=a[12];e.slowT=a[13];e.onGround=!!a[14];e.phased=!!a[15];
+    e.nx=a[2];e.ny=a[3];e.vx=a[4];e.vy=a[5];(e.buf||(e.buf=[])).push({t:performance.now(),x:a[2],y:a[3],z:0,vx:a[4],vy:a[5]});if(e.buf.length>10)e.buf.shift();e.face=a[6];e.state=a[7];e.t=a[8];e.warn=a[9];e.hp=a[10];e.maxHp=a[11];e.stunT=a[12];e.slowT=a[13];e.onGround=!!a[14];e.phased=!!a[15];
     e.castT=a[16];e.spawnT=a[17];e.hitstun=a[18];e.lastDir=a[19];e.n=a[22];e.phase=a[23];e.landT=a[24];e.hopT=a[25];if(a[26])e.flash=Math.max(e.flash,0.06);e.mode=a[27];e.ename=a[28]||'';e.emod=a[29]||'';}
   for(const e of G.enemies)if(e.net&&!e.dead&&!seen.has(e.id)){e.hp=0;e.critKill=false;killEnemy(e);}
   if(s.cl&&!G.cleared&&aliveCount()===0&&!G.queue.length){G.cleared=true;STATS.floors++;burst(GATE_X,2.5,0xffc56b,30,5,3,0.2);sfx('clear');sfx('gate');lockM.emissive.setHex(0x7fe08a);}
@@ -7221,7 +7228,7 @@ setInterval(()=>{
     if(HUB.lead)HUB.bcast(s);else if(HUB.conn&&HUB.conn.open){try{HUB.conn.send(s);}catch(e){}}}
   if(!MP.live())return;
   MP.send(mpMyState());
-  if(MP.host&&G.scene==='tower'&&!G.pvp)MP.bcast(mpSnap());
+  MP.snapN=(MP.snapN||0)+1;if(MP.host&&G.scene==='tower'&&!G.pvp&&MP.snapN%3!==2)MP.bcast(mpSnap());
   // se chi ha creato la partita torna al seminterrato, gli altri lo seguono
   const H=MP.players.get(0);
   if(!MP.host&&H&&H.seen&&G.scene==='tower'&&H.sc==='cellar'&&!MP.pulling&&!['menu','tip','intro','waking'].includes(G.state)){MP.pulling=true;
@@ -8175,7 +8182,7 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&G.state==='friends'){e.preve
 const _padBackS=padBack;padBack=function(){for(const id of ['frClose','ngCancel','invNo']){const b=$(id);if(b&&b.offsetParent!==null&&!b.closest('[hidden]')){b.click();return true;}}return _padBackS();};
 const _mpMsgS=mpMsg;
 mpMsg=function(m,from){if(m.t==='pvpround'){if(!MP.host)pvpRound();return;}return _mpMsgS(m,from);};
-if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openFriends,openNameGate,pvpRound,PVA:()=>PVA});
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openFriends,openNameGate,pvpRound,PVA:()=>PVA,mpMsg:(m,f)=>mpMsg(m,f)});
 
 /* ---------- lance impugnate più al centro, non all'estremità ---------- */
 function centerSpear(a){try{if(!a||!a.g)return a;const g=a.g;g.updateMatrixWorld(true);
@@ -8193,7 +8200,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794086366';
+const BUILD_ID='1794087066';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
