@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 
 <title>The Tower</title>
 <meta name="theme-color" content="#0c0e13">
@@ -525,6 +525,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 @keyframes tipbar{to{transform:scaleX(1)}}
 
 /* ---------- Co-op online ---------- */
+html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .coop-btn{pointer-events:auto;align-self:flex-start;font-size:13px;padding:8px 14px;background:rgba(12,14,19,.72);color:var(--ink)}
 .coop-btn.live{border-color:var(--teal);color:var(--teal)}
 #coop .coop-row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;font-weight:600}
@@ -539,12 +540,13 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 #mpWait{position:fixed;inset:0;z-index:120;display:grid;place-content:center;gap:8px;text-align:center;pointer-events:none}
 #mpWait b{font-family:var(--f-display);font-weight:400;font-size:clamp(22px,4vw,36px);color:var(--ember);animation:pulse 1.6s ease-in-out infinite}
 #mpWait span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
-#mpTag{position:fixed;left:0;top:0;z-index:4;pointer-events:none;padding:1px 8px;font-weight:700;font-size:12px;color:#7ff0e4;background:rgba(10,8,14,.65);border:1px solid rgba(127,240,228,.5);white-space:nowrap}
-#mpTag.down{color:#ff8a8a;border-color:rgba(255,138,138,.5)}
-#mpMate{display:flex;flex-direction:column;gap:2px;margin-top:2px}
-#mpMate small{font-size:11px;font-weight:700;color:#7ff0e4;letter-spacing:.06em;text-shadow:0 1px 2px #000}
-.bar.mate{height:8px;width:clamp(120px,18vw,200px);border-width:1px}
-.bar.mate .fill{background:linear-gradient(180deg,#9ff5ec,#3fcfc0);transition:transform .15s}
+.mp-tag{position:fixed;left:0;top:0;z-index:4;pointer-events:none;padding:1px 8px;font-weight:700;font-size:12px;color:var(--mc,#7ff0e4);background:rgba(10,8,14,.65);border:1px solid var(--mc,#7ff0e4);white-space:nowrap}
+.mp-tag.down{color:#ff8a8a;border-color:rgba(255,138,138,.5)}
+#mpMate{display:flex;flex-direction:column;gap:4px;margin-top:2px}
+.mate-row{display:flex;flex-direction:column;gap:2px}
+.mate-row small{font-size:11px;font-weight:700;color:var(--mc,#7ff0e4);letter-spacing:.06em;text-shadow:0 1px 2px #000}
+.bar.mate{height:7px;width:clamp(110px,16vw,180px);border-width:1px}
+.bar.mate .fill{background:var(--mc,#3fcfc0);transition:transform .15s}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -563,7 +565,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
   <div class="hud-left">
     <div class="bar hp"><i class="lag" id="hpLag"></i><i class="fill" id="hpFill"></i><span id="hpText">100 / 100</span></div>
     <div class="bar stam" id="stamBar"><i class="fill" id="stamFill"></i></div>
-    <div id="mpMate" hidden><small id="mpMateN"></small><div class="bar mate"><i class="fill" id="mpMateF"></i></div></div>
+    <div id="mpMate" hidden></div>
     <div class="bar upb" title="Prossimo potenziamento"><i class="fill" id="upFill"></i></div>
   </div>
   <div class="hud-center">
@@ -740,9 +742,9 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 
 <section class="screen" id="coop" hidden>
   <div class="panel">
-    <div class="eyebrow">Gioca con un amico</div>
+    <div class="eyebrow">Gioca con gli amici · fino a 4</div>
     <h2>Co-op online</h2>
-    <p class="lead">Ognuno gioca dal proprio telefono o PC. Uno crea la partita e manda il codice, l'altro lo scrive qui sotto.</p>
+    <p class="lead">Ognuno gioca dal proprio telefono o PC. Uno crea la partita e manda il codice, gli altri lo scrivono qui sotto. Più siete, più nemici ci sono.</p>
     <label class="coop-row">Il tuo nome <input id="coopName" maxlength="14" placeholder="Giocatore" autocomplete="off"></label>
     <div class="row"><button class="big" id="coopHost">Crea partita</button></div>
     <div id="coopCodeBox" hidden><small>Codice della partita</small><b id="coopCodeTxt" title="Tocca per copiarlo"></b></div>
@@ -752,8 +754,7 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
     <div class="row"><button class="ghost" id="coopLeave" hidden>Esci dalla co-op</button><button class="ghost" id="coopClose">Chiudi</button></div>
   </div>
 </section>
-<div id="mpWait" hidden><b>Aspetti il compagno…</b><span>Salite insieme al piano successivo</span></div>
-<div id="mpTag" hidden></div>
+<div id="mpWait" hidden><b>Aspetti i compagni…</b><span>Salite insieme al piano successivo</span></div>
 <script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
 <script>
 (function(){
@@ -5548,7 +5549,7 @@ let hintTimer=0;
 function setHint(text,dur){const h=$('hint');if(text){h.textContent=text;h.classList.add('show');hintTimer=dur;}else{h.classList.remove('show');hintTimer=0;}}
 function updFloor(dt){
   const alive=aliveCount();
-  const maxAlive=Math.min(10,3+Math.floor(G.floor/12));
+  const maxAlive=Math.round(Math.min(10,3+Math.floor(G.floor/12))*mpCapMul());
   if(G.queue.length){G.spawnT-=dt;if(G.spawnT<=0&&alive<=maxAlive){const k=Math.min(G.queue.length,(alive===0&&G.enemies.length===0?6:5)+Math.floor(G.floor/20));for(let i=0;i<k;i++)spawnEnemy(G.queue.shift());G.spawnT=0.8;}}
   const left=aliveCount()+G.queue.length;drawCounter(left);
   if(!G.cleared&&left===0&&G.enemies.length>0&&!(G.tutorial&&!(G.tut&&G.tut.final))){
@@ -6676,17 +6677,25 @@ function frame(now){
 }
 
 /* =========================================================
-   CO-OP ONLINE (2 giocatori, ognuno sul proprio dispositivo)
-   Chi crea la partita ("host") gestisce nemici, danni e piani;
-   l'altro ("ospite") muove il suo eroe e manda i colpi all'host.
-   Collegamento diretto tra i dispositivi con PeerJS.
+   CO-OP ONLINE (fino a 4 giocatori, ognuno sul proprio dispositivo)
+   Chi crea la partita ("host") gestisce nemici, danni e piani e
+   fa da ponte tra gli altri; gli ospiti muovono il proprio eroe e
+   mandano i colpi all'host. Collegamento diretto con PeerJS.
    ========================================================= */
-const MP={on:false,host:false,conn:null,peer:null,code:'',seed:(Math.random()*1e9)|0,nid:0,emap:new Map(),rs:null,hero:null,hkey:'',
-  ready:false,pReady:false,redir:false,netStart:false,pname:'',sendT:0,hintT:0};
-MP.live=()=>!!(MP.on&&MP.conn&&MP.conn.open);
-MP.send=m=>{if(MP.live()){try{MP.conn.send(m);}catch(e){}}};
+const MP_MAX=4;
+const MP={on:false,host:false,peer:null,conn:null,conns:[],myPid:0,players:new Map(),code:'',seed:(Math.random()*1e9)|0,nid:0,emap:new Map(),
+  ready:false,redir:-1,netStart:false,hintT:0,pulling:false};
+MP.live=()=>MP.on&&(MP.host?MP.conns.some(x=>x.c.open):!!(MP.conn&&MP.conn.open));
+MP.count=()=>1+(MP.host?MP.conns.filter(x=>x.c.open).length:MP.players.size);
 MP.name=()=>(($('coopName')&&$('coopName').value.trim())||store.get('mpname','')||'Giocatore').slice(0,14);
-const PEER_PREFIX='thetower-coop-v1-';
+MP.send=m=>{if(MP.host)return MP.bcast(m);if(MP.conn&&MP.conn.open){try{MP.conn.send(m);}catch(e){}}};
+MP.bcast=(m,except)=>{for(const x of MP.conns)if(x.c.open&&x.pid!==except){try{x.c.send(m);}catch(e){}}};
+MP.sendTo=(pid,m)=>{const x=MP.conns.find(x=>x.pid===pid);if(x&&x.c.open){try{x.c.send(m);}catch(e){}}};
+const pName=pid=>{const R=MP.players.get(pid);return (R&&R.name)||'Compagno';};
+// più giocatori = più nemici (e guardiani più resistenti)
+function mpMul(){return MP.live()?1+0.6*(MP.count()-1):1;}
+function mpCapMul(){return Math.min(2,mpMul());}
+const PEER_PREFIX='thetower-coop-v2-';
 const r2=v=>Math.round((v||0)*100)/100;
 function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
 function withSeed(s,fn){const r=Math.random;Math.random=mulberry(s);try{return fn();}finally{Math.random=r;}}
@@ -6697,135 +6706,165 @@ function mpLib(cb){if(window.Peer)return cb();const s=document.createElement('sc
 function mpStatus(t){const el=$('coopStatus');if(el)el.textContent=t;}
 function mpCode(){const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let s='';for(let i=0;i<5;i++)s+=A[Math.floor(Math.random()*A.length)];return s;}
 function mpHost(){mpLeave(true);store.set('mpname',MP.name());mpStatus('Creo la partita…');
-  mpLib(()=>{MP.code=mpCode();MP.host=true;MP.seed=(Math.random()*1e9)|0;
+  mpLib(()=>{MP.code=mpCode();MP.host=true;MP.myPid=0;MP.seed=(Math.random()*1e9)|0;
     const p=new Peer(PEER_PREFIX+MP.code);MP.peer=p;
-    p.on('open',()=>{$('coopCodeTxt').textContent=MP.code;$('coopCodeBox').hidden=false;mpStatus('Manda questo codice al tuo amico e aspetta che entri.');mpUi();});
-    p.on('connection',c=>{if(MP.conn&&MP.conn.open){c.on('open',()=>{c.send({t:'full'});setTimeout(()=>c.close(),300);});return;}mpWire(c);});
-    p.on('error',e=>{if(e&&e.type==='unavailable-id'){mpHost();return;}mpStatus('Errore di rete: '+((e&&e.type)||'sconosciuto'));});
+    p.on('open',()=>{MP.on=true;$('coopCodeTxt').textContent=MP.code;$('coopCodeBox').hidden=false;mpStatus(`Manda questo codice ai tuoi amici (fino a ${MP_MAX-1}).`);mpUi();});
+    p.on('connection',c=>mpHostWire(c));
+    p.on('error',e=>{if(e&&e.type==='unavailable-id'){mpHost();return;}if(e&&e.type==='peer-unavailable')return;mpStatus('Errore di rete: '+((e&&e.type)||'sconosciuto'));});
     p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});});}
+function mpHostWire(c){
+  c.on('open',()=>{
+    const used=new Set(MP.conns.filter(x=>x.c.open).map(x=>x.pid));
+    if(used.size>=MP_MAX-1){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}
+    let pid=1;while(used.has(pid))pid++;
+    MP.conns=MP.conns.filter(x=>x.c.open);MP.conns.push({c,pid});
+    const names={0:MP.name()};for(const [k,R] of MP.players)names[k]=R.name;
+    c.send({t:'welcome',pid,seed:MP.seed,names});mpUi();});
+  c.on('data',m=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;try{mpMsg(m,x.pid);}catch(e){console.warn('co-op',e);}});
+  c.on('close',()=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;MP.conns=MP.conns.filter(y=>y!==x);mpPlayerGone(x.pid);MP.bcast({t:'leave',pid:x.pid});});
+  c.on('error',()=>{});}
 function mpJoin(){const code=($('coopCode').value||'').trim().toUpperCase();if(code.length<4){mpStatus('Scrivi il codice che ti ha mandato il tuo amico.');return;}
   mpLeave(true);store.set('mpname',MP.name());mpStatus('Mi collego…');
   mpLib(()=>{MP.host=false;MP.code=code;const p=new Peer();MP.peer=p;
-    p.on('open',()=>{const c=p.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});mpWire(c);
+    p.on('open',()=>{const c=p.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});
+      c.on('open',()=>{MP.conn=c;MP.on=true;c.send({t:'hi',n:MP.name()});mpUi();});
+      c.on('data',m=>{try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});
+      c.on('close',()=>{if(MP.conn===c)mpDrop();});c.on('error',()=>{});
       setTimeout(()=>{if(!MP.live()&&MP.peer===p)mpStatus('Nessuna partita con questo codice. Controlla che sia giusto e che il tuo amico sia ancora nella schermata Co-op.');},9000);});
     p.on('error',e=>{mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
-function mpWire(c){
-  c.on('open',()=>{MP.conn=c;MP.on=true;MP.send({t:'hi',n:MP.name()});if(MP.host)MP.send({t:'seed',seed:MP.seed});mpUi();});
-  c.on('data',m=>{try{mpMsg(m);}catch(e){console.warn('co-op',e);}});
-  c.on('close',()=>{if(MP.conn===c)mpDrop();});
-  c.on('error',()=>{});}
-function mpDrop(){const wasLive=MP.on;MP.on=false;MP.conn=null;mpRemoveHero();MP.rs=null;
-  if(wasLive)toast('Compagno disconnesso',MP.host?'Continui da solo':'Torni al seminterrato');
-  if(MP.ready){MP.ready=false;mpWait(false);if(MP.host)_nextFloor();}
-  if(!MP.host&&G.scene==='tower'&&wasLive){for(const e of G.enemies)if(e.net&&!e.dead){scene.remove(e.parts.root);e.dead=true;}
+function mpPlayerGone(pid){const R=MP.players.get(pid);if(!R)return;mpRemoveHero(R);MP.players.delete(pid);
+  toast(`${R.name||'Un compagno'} è uscito`,MP.players.size?'La partita continua':'Continui da solo');
+  if(MP.host)mpTryAdvance();mpUi();}
+function mpDrop(){const wasLive=MP.on;MP.on=false;MP.conn=null;for(const R of MP.players.values())mpRemoveHero(R);MP.players.clear();
+  if(wasLive)toast('Partita co-op chiusa','Torni al seminterrato');
+  if(MP.ready){MP.ready=false;mpWait(false);}
+  if(G.scene==='tower'&&wasLive){for(const e of G.enemies)if(e.net&&!e.dead){scene.remove(e.parts.root);e.dead=true;}
     G.state='menu';$('deathFx').classList.remove('on');G.deathSlow=0;['over','pause','upgrade'].forEach(id=>$(id).hidden=true);fadeThen(()=>{enterCellar();G.fadeTarget=0;});}
   mpUi();}
-function mpLeave(quiet){const c=MP.conn,p=MP.peer;MP.on=false;MP.conn=null;MP.peer=null;MP.code='';
-  try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}mpRemoveHero();MP.rs=null;MP.ready=MP.pReady=false;
+function mpLeave(quiet){const c=MP.conn,p=MP.peer,cs=MP.conns;MP.on=false;MP.conn=null;MP.conns=[];MP.peer=null;MP.code='';
+  try{c&&c.close();}catch(e){}for(const x of cs){try{x.c.close();}catch(e){}}try{p&&p.destroy();}catch(e){}
+  for(const R of MP.players.values())mpRemoveHero(R);MP.players.clear();MP.ready=false;
   if($('coopCodeBox'))$('coopCodeBox').hidden=true;if(!quiet)mpStatus('Sei uscito dalla co-op.');mpUi();}
-function mpUi(){const live=MP.live();
-  $('coopLeave').hidden=!(live||MP.peer);$('coopHost').disabled=live;$('coopJoin').disabled=live;
-  $('coopBtn').textContent=live?'Co-op · '+(MP.pname||'compagno'):'Co-op';$('coopBtn').classList.toggle('live',live);
-  if(live)mpStatus(MP.host?`Connesso con ${MP.pname||'il tuo amico'}. Vai alla scala della torre per partire insieme.`:`Connesso con ${MP.pname||'il tuo amico'}. La scalata parte quando lui sale la scala.`);}
+function mpUi(){const live=MP.live(),n=MP.count(),names=[...MP.players.values()].map(R=>R.name||'compagno');
+  $('coopLeave').hidden=!(MP.on||MP.peer);$('coopHost').disabled=MP.on;$('coopJoin').disabled=MP.on;
+  $('coopBtn').textContent=live?`Co-op · ${n} giocatori`:(MP.on&&MP.host?'Co-op · in attesa':'Co-op');$('coopBtn').classList.toggle('live',live);
+  if(live)mpStatus(`In partita: ${[MP.name(),...names].join(', ')}. `+(MP.host?(n<MP_MAX?`Possono entrare altri ${MP_MAX-n}. `:'')+'Vai alla scala della torre per partire tutti insieme.':'La scalata parte quando chi ha creato la partita sale la scala.'));}
 
 /* ---------- messaggi ---------- */
-function mpMsg(m){
+function mpMsg(m,from){
   switch(m.t){
-  case 'hi':MP.pname=String(m.n||'Compagno').slice(0,14);toast('Compagno connesso',MP.pname+' è nella tua partita');sfx('lvl');mpUi();
-    if(MP.host&&G.scene==='tower')toast('Compagno connesso',MP.pname+' entra alla prossima scalata');break;
-  case 'full':mpStatus('Questa partita è già piena.');mpLeave(true);break;
-  case 'seed':MP.seed=m.seed;break;
-  case 's':mpRecvState(m);break;
+  case 'welcome':MP.myPid=m.pid;MP.seed=m.seed;for(const k in m.names){const pid=+k;if(pid===MP.myPid)continue;const R=mpPlayer(pid);R.name=m.names[k];}
+    toast('Sei in partita',`Con ${Object.keys(m.names).filter(k=>+k!==MP.myPid).map(k=>m.names[k]).join(', ')}`);sfx('lvl');mpUi();break;
+  case 'hi':if(MP.host){const R=mpPlayer(from);R.name=String(m.n||'Compagno').slice(0,14);MP.bcast({t:'name',pid:from,n:R.name},from);
+    toast('Nuovo compagno',R.name+' è nella partita');sfx('lvl');if(G.scene==='tower')toast('Nuovo compagno',R.name+' entra alla prossima scalata');mpUi();}break;
+  case 'name':{const R=mpPlayer(m.pid);R.name=m.n;toast('Nuovo compagno',m.n+' è nella partita');mpUi();break;}
+  case 'leave':if(!MP.host)mpPlayerGone(m.pid);break;
+  case 'full':mpStatus(`Questa partita è già piena (${MP_MAX} giocatori).`);mpLeave(true);break;
+  case 's':{const pid=MP.host?from:m.pid;if(pid===MP.myPid)break;if(MP.host){m.pid=pid;MP.bcast(m,pid);}mpRecvState(pid,m);break;}
   case 'e':if(!MP.host)mpApplySnap(m);break;
   case 'hit':if(MP.host)mpRemoteHit(m);break;
-  case 'hurt':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)hurtPlayer(m.d,m.fx,m.eff);break;
+  case 'hurt':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_hurtPlayer(m.d,m.fx,m.eff);break;
   case 'proj':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_spawnProj(Object.assign({},m.o));break;
   case 'warn':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_addWarn(m.x,m.w,m.d,()=>{});break;
   case 'pil':if(!MP.host&&G.scene==='tower'&&m.f===G.floor){const x=m.x;lightning(x,CEIL,x,0);burst(x,0.3,m.c,16,5,4,0.4);sfx('zap');shake(0.2);
-    if(!P.dead&&Math.abs(P.x-x)<0.7+P.w/2)hurtPlayer(m.d,x,m.eff);}break;
-  case 'ready':MP.pReady=true;if(MP.host)mpTryAdvance();break;
+    if(!P.dead&&Math.abs(P.x-x)<0.7+P.w/2)_hurtPlayer(m.d,x,m.eff);}break;
+  case 'ready':{const pid=MP.host?from:m.pid;const R=MP.players.get(pid);if(R)R.ready=true;if(MP.host){MP.bcast({t:'ready',pid},pid);mpTryAdvance();}break;}
   case 'next':if(!MP.host)mpGoNext(m.f);break;
-  case 'down':if(MP.rs)MP.rs.dead=true;
-    if(P.dead&&G.scene==='tower'){G.overT=Math.min(G.overT,1.2);}
-    else if(G.scene==='tower'&&G.state!=='over'){toast(`${MP.pname||'Il compagno'} è caduto`,'Arriva al cancello per riportarlo in gioco al piano dopo');}
-    if(MP.host)mpTryAdvance();break;
+  case 'down':{const pid=MP.host?from:m.pid;const R=MP.players.get(pid);if(R)R.dead=true;if(MP.host)MP.bcast({t:'down',pid},pid);
+    if(P.dead&&G.scene==='tower'){if(!mpAnyAlive())G.overT=Math.min(G.overT,1.2);}
+    else if(G.scene==='tower'&&G.state!=='over')toast(`${pName(pid)} è caduto`,'Arriva al cancello per riportarlo in gioco al piano dopo');
+    if(MP.host)mpTryAdvance();break;}
   case 'start':if(!MP.host){MP.seed=m.seed;MP.netStart=true;
     ['over','pause','upgrade','loot','settings','classes','win','coop','safePed'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});
     $('deathFx').classList.remove('on');G.deathSlow=0;clearInput();G.state='menu';fadeThen(()=>{startRun();G.fadeTarget=0;});}break;
   case 'reqStart':if(MP.host){if(G.state==='cellar'){G.state='menu';$('prompt').hidden=true;$('bUse').hidden=true;fadeThen(()=>{startRun();G.fadeTarget=0;});}
-    else toast(`${MP.pname||'Il compagno'} è pronto`,'Sali la scala della torre per partire insieme');}break;
+    else toast(`${pName(from)} è pronto`,'Sali la scala della torre per partire tutti insieme');}break;
   }
 }
 
-/* ---------- stato del proprio eroe (inviato 20 volte al secondo) ---------- */
+/* ---------- stato degli eroi (inviato 20 volte al secondo) ---------- */
 const AKEYS=['t','wind','act','rec','hand','anim','mv','fin','r0','rest','from','to','restSh','wSh','aSh','hold'];
 function mpMyState(){const A=P.atk,w=G.weapon||{};let a=null;if(A){a={};for(const k of AKEYS)if(A[k]!==undefined)a[k]=A[k];}
-  return {t:'s',x:r2(P.x),y:r2(P.y),z:r2(P.z),vx:r2(P.vx),vy:r2(P.vy),f:P.face,g:P.onGround?1:0,d:P.dead?1:0,hp:Math.round(P.hp),mh:Math.round(S.maxHp||100),
+  return {t:'s',pid:MP.myPid,x:r2(P.x),y:r2(P.y),z:r2(P.z),vx:r2(P.vx),vy:r2(P.vy),f:P.face,g:P.onGround?1:0,d:P.dead?1:0,hp:Math.round(P.hp),mh:Math.round(S.maxHp||100),
     ft:r2(P.flipT),sr:r2(P.stretchT),lt:r2(P.landT),da:r2(P.dashT),ht:r2(P.hurtT),iv:r2(P.invul),sh:r2(P.shieldT),rg:r2(P.rageT),br:r2(P.bearT),dr:P.dragon||null,
     ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),sk:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
     c:G.cls?G.cls.id:'',w:[w.type||'spada',w.rarity||0,w.v||0,w.effect||''],ws:r2(G.weapon?weaponScale():1),atk:a};}
-function mpRecvState(m){let R=MP.rs;
-  if(!R){R=MP.rs={x:m.x,y:m.y,z:m.z,walkT:0,lastStep:0,atk:null};}
-  const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6;
+function mpPlayer(pid){let R=MP.players.get(pid);if(!R){R={pid,name:'',x:0,y:0,z:0,tx:0,ty:0,tz:0,walkT:0,lastStep:0,atk:null,hero:null,hkey:'',ready:false,dead:false,sc:'',fl:0,st:''};MP.players.set(pid,R);}return R;}
+function mpRecvState(pid,m){const R=mpPlayer(pid);
+  const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
     shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
   if(snap){R.x=m.x;R.y=m.y;R.z=m.z;}
   if(!m.atk)R.atk=null;
   else if(!R.atk||R.atk.mv!==m.atk.mv||R.atk.anim!==m.atk.anim||Math.abs(R.atk.t-m.atk.t)>0.12||m.atk.t<R.atk.t-0.05){R.atk=Object.assign({},m.atk);}
-  const key=m.c+'|'+m.w.join(',');if(key!==MP.hkey)mpMakeHero(m.c,m.w);}
-function mpMakeHero(cid,w){mpRemoveHero();const cls=CLASSES.find(c=>c.id===cid)||CLASSES[0];
+  const key=m.c+'|'+m.w.join(',');if(key!==R.hkey)mpMakeHero(R,m.c,m.w);}
+function mpMakeHero(R,cid,w){mpRemoveHero(R);const cls=CLASSES.find(c=>c.id===cid)||CLASSES[0];
   try{const h=buildHero(cls);scene.add(h.root);const wo={type:w[0],rarity:w[1],v:w[2],effect:w[3]||null};
     const a=applyVariant(buildWeaponMesh(wo.type,wo.rarity,wo.effect),wo);h.arms[0].wr.add(a.g);h.wpnF=a.g;h.tipF=a.tip;h.wpnB=null;h.tipB=null;
     if(wo.type==='pugnali'){const b=applyVariant(buildWeaponMesh(wo.type,wo.rarity,wo.effect),wo);h.arms[1].wr.add(b.g);h.tipB=b.tip;h.wpnB=b.g;}
-    MP.hero=h;MP.wobj=wo;MP.cls=cls;MP.hkey=cid+'|'+w.join(',');}catch(e){console.warn('co-op hero',e);MP.hero=null;MP.hkey='';}}
-function mpRemoveHero(){if(MP.hero){scene.remove(MP.hero.root);disposeObj(MP.hero.root);MP.hero=null;}MP.hkey='';const t=$('mpTag');if(t)t.hidden=true;const mm=$('mpMate');if(mm)mm.hidden=true;}
+    R.hero=h;R.wobj=wo;R.cls=cls;R.hkey=cid+'|'+w.join(',');}catch(e){console.warn('co-op hero',e);R.hero=null;R.hkey='';}}
+function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.root);R.hero=null;}R.hkey='';if(R.tag){R.tag.remove();R.tag=null;}if(R.mate){R.mate.remove();R.mate=null;}}
 const RKEYS=['x','y','z','vx','vy','face','onGround','dead','flipT','stretchT','landT','dashT','hurtT','invul','shieldT','rageT','bearT','dragon','chargeT','spinT','throwT','skidT','climbTurn','atk','walkT','lastStep'];
-const mpVisible=()=>{const R=MP.rs;return MP.live()&&R&&MP.hero&&R.sc===G.scene&&(G.scene==='cellar'||R.fl===G.floor)&&!['intro','waking','cine'].includes(G.state)&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);};
+const mpVisible=R=>MP.live()&&R.hero&&R.sc===G.scene&&(G.scene==='cellar'||R.fl===G.floor)&&!['intro','waking','cine'].includes(G.state)&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);
+const TAGCOL=['#ffd27a','#7ff0e4','#ff9ad5','#a8ff7a'];
 function mpDrawRemote(dt){
-  const R=MP.rs,vis=mpVisible();if(MP.hero)MP.hero.root.visible=!!vis;
-  const tag=$('mpTag'),mate=$('mpMate');
-  if(mate){const show=MP.live()&&R&&G.scene==='tower'&&R.sc==='tower';mate.hidden=!show;if(show){$('mpMateN').textContent=(MP.pname||'Compagno')+(R.dead?' · a terra':'');$('mpMateF').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}}
-  if(!vis){if(tag)tag.hidden=true;return;}
-  const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;
-  if(R.atk){R.atk.t+=dt;if(R.atk.t>=R.atk.wind+R.atk.act+R.atk.rec+0.05&&!R.atk.hold)R.atk=null;}
-  for(const a of MP.hero.arms)a.wr.scale.setScalar(R.ws||1);
-  // si riusa l'animazione dell'eroe locale scambiando per un attimo i dati
-  const bk={};for(const k2 of RKEYS){bk[k2]=P[k2];P[k2]=R[k2];}
-  const gH=hero,gW=G.weapon,gC=G.cls,gS=G.state,gE=G.enterT,uT=updTrail,uB=updBear;
-  hero=MP.hero;G.weapon=MP.wobj;G.cls=MP.cls;G.state=(R.st==='climb'||R.st==='enter')?R.st:'play';G.enterT=R.et||0;updTrail=()=>{};updBear=()=>{};
-  try{_updHeroVisual(dt);}catch(e){}finally{for(const k2 of RKEYS){R[k2]=P[k2];P[k2]=bk[k2];}hero=gH;G.weapon=gW;G.cls=gC;G.state=gS;G.enterT=gE;updTrail=uT;updBear=uB;}
-  if(tag){const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);tag.hidden=false;tag.textContent=MP.pname||'Compagno';tag.classList.toggle('down',!!R.dead);tag.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;}
+  const box=$('mpMate');let anyMate=false;
+  for(const R of MP.players.values()){
+    const vis=mpVisible(R);if(R.hero)R.hero.root.visible=!!vis;const col=TAGCOL[R.pid%4];
+    const showMate=MP.live()&&G.scene==='tower'&&R.sc==='tower'&&R.seen;
+    if(showMate){anyMate=true;if(!R.mate){R.mate=document.createElement('div');R.mate.className='mate-row';R.mate.innerHTML='<small></small><div class="bar mate"><i class="fill"></i></div>';box.appendChild(R.mate);}
+      R.mate.style.setProperty('--mc',col);R.mate.firstChild.textContent=(R.name||'Compagno')+(R.dead?' · a terra':'');R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
+    else if(R.mate){R.mate.remove();R.mate=null;}
+    if(!vis){if(R.tag)R.tag.hidden=true;continue;}
+    const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;
+    if(R.atk){R.atk.t+=dt;if(R.atk.t>=R.atk.wind+R.atk.act+R.atk.rec+0.05&&!R.atk.hold)R.atk=null;}
+    for(const a of R.hero.arms)a.wr.scale.setScalar(R.ws||1);
+    // si riusa l'animazione dell'eroe locale scambiando per un attimo i dati
+    const bk={};for(const k2 of RKEYS){bk[k2]=P[k2];P[k2]=R[k2];}
+    const gH=hero,gW=G.weapon,gC=G.cls,gS=G.state,gE=G.enterT,uT=updTrail,uB=updBear;
+    hero=R.hero;G.weapon=R.wobj;G.cls=R.cls;G.state=(R.st==='climb'||R.st==='enter')?R.st:'play';G.enterT=R.et||0;updTrail=()=>{};updBear=()=>{};
+    try{_updHeroVisual(dt);}catch(e){}finally{for(const k2 of RKEYS){R[k2]=P[k2];P[k2]=bk[k2];}hero=gH;G.weapon=gW;G.cls=gC;G.state=gS;G.enterT=gE;updTrail=uT;updBear=uB;}
+    if(!R.tag){R.tag=document.createElement('div');R.tag.className='mp-tag';document.body.appendChild(R.tag);}
+    const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.hidden=false;R.tag.textContent=R.name||'Compagno';R.tag.style.setProperty('--mc',col);
+    R.tag.classList.toggle('down',!!R.dead);R.tag.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;
+  }
+  if(box)box.hidden=!anyMate;
 }
 
-/* ---------- host: nemici che inseguono il più vicino ---------- */
-const mpTarget=()=>{const R=MP.rs;return MP.live()&&MP.host&&R&&R.sc==='tower'&&R.fl===G.floor&&R.st==='play'&&!R.dead;};
+/* ---------- host: i nemici inseguono il giocatore più vicino ---------- */
+const mpTargetable=R=>R.sc==='tower'&&R.fl===G.floor&&R.st==='play'&&!R.dead;
+function mpAnyAlive(){for(const R of MP.players.values())if(R.sc==='tower'&&R.fl===G.floor&&!R.dead)return true;return false;}
 const _updEnemy=updEnemy;
 updEnemy=function(e,dt){
   if(!MP.host&&e.net){mpPuppet(e,dt);return;}
-  if(!mpTarget()){e.tg='l';return _updEnemy(e,dt);}
-  const R=MP.rs;let useR;
-  if(P.dead)useR=true;
-  else{const dl=Math.hypot(P.x-e.x,P.y-e.y),dr=Math.hypot(R.x-e.x,R.y-e.y);useR=e.tg==='r'?dr<dl+2:dr<dl-2;}
-  e.tg=useR?'r':'l';if(!useR)return _updEnemy(e,dt);
-  const b=[P.x,P.y,P.vx,P.vy,P.dead,P.onGround];P.x=R.x;P.y=R.y;P.vx=R.vx;P.vy=R.vy;P.dead=false;P.onGround=R.onGround;MP.redir=true;
-  try{_updEnemy(e,dt);}finally{MP.redir=false;[P.x,P.y,P.vx,P.vy,P.dead,P.onGround]=b;}
+  if(!MP.host||!MP.live()){e.tg=-1;return _updEnemy(e,dt);}
+  let best=-1,bd=P.dead?1e9:Math.hypot(P.x-e.x,P.y-e.y)-(e.tg===-1?2:0);
+  for(const R of MP.players.values()){if(!mpTargetable(R))continue;const d=Math.hypot(R.x-e.x,R.y-e.y)-(e.tg===R.pid?2:0);if(d<bd){bd=d;best=R.pid;}}
+  e.tg=best;if(best<0)return _updEnemy(e,dt);
+  const R=MP.players.get(best);
+  const b=[P.x,P.y,P.vx,P.vy,P.dead,P.onGround];P.x=R.x;P.y=R.y;P.vx=R.vx;P.vy=R.vy;P.dead=false;P.onGround=R.onGround;MP.redir=best;
+  try{_updEnemy(e,dt);}finally{MP.redir=-1;[P.x,P.y,P.vx,P.vy,P.dead,P.onGround]=b;}
 };
 const _hurtPlayer=hurtPlayer;
 hurtPlayer=function(d,fx,eff){
-  if(MP.redir){const R=MP.rs;if(R&&!R.dead&&!(R.invul>0)&&!(R.dashT>0)){MP.send({t:'hurt',f:G.floor,d,fx,eff});burst(R.x,R.y+1,0xe0434f,6,4,2);}return;}
+  if(MP.redir>=0){const R=MP.players.get(MP.redir);if(R&&!R.dead&&!(R.invul>0)&&!(R.dashT>0)){MP.sendTo(R.pid,{t:'hurt',f:G.floor,d,fx,eff});burst(R.x,R.y+1,0xe0434f,6,4,2);}return;}
   return _hurtPlayer(d,fx,eff);
 };
 const _spawnProj=spawnProj;
 spawnProj=function(o){
-  if(MP.live()&&MP.host&&o&&o.owner==='e'&&G.scene==='tower'){const c={};for(const k in o){const v=o[k];if(typeof v==='number'||typeof v==='string'||typeof v==='boolean')c[k]=v;}MP.send({t:'proj',f:G.floor,o:c});}
+  if(MP.host&&MP.live()&&o&&o.owner==='e'&&G.scene==='tower'){const c={};for(const k in o){const v=o[k];if(typeof v==='number'||typeof v==='string'||typeof v==='boolean')c[k]=v;}MP.bcast({t:'proj',f:G.floor,o:c});}
   return _spawnProj(o);
 };
 const _addWarn=addWarn;
-addWarn=function(x,w,dur,cb){if(MP.live()&&MP.host)MP.send({t:'warn',f:G.floor,x,w,d:dur});return _addWarn(x,w,dur,cb);};
+addWarn=function(x,w,dur,cb){if(MP.host&&MP.live())MP.bcast({t:'warn',f:G.floor,x,w,d:dur});return _addWarn(x,w,dur,cb);};
 const _pillar=pillar;
-pillar=function(e,x){if(MP.live()&&MP.host)MP.send({t:'pil',f:G.floor,x,d:e.dmg*1.1,c:e.color,eff:e.eff||null});return _pillar(e,x);};
+pillar=function(e,x){if(MP.host&&MP.live())MP.bcast({t:'pil',f:G.floor,x,d:e.dmg*1.1,c:e.color,eff:e.eff||null});return _pillar(e,x);};
 const _spawnEnemy=spawnEnemy;
-spawnEnemy=function(type,o){const e=_spawnEnemy(type,o);if(e&&e.id==null)e.id=++MP.nid;return e;};
+spawnEnemy=function(type,o){const e=_spawnEnemy(type,o);if(e&&e.id==null){e.id=++MP.nid;
+  if(type==='boss'&&MP.host&&MP.live()){const k=1+0.7*(MP.count()-1);e.hp*=k;e.maxHp=e.hp;}}return e;};
+const _buildQueue=buildQueue;
+buildQueue=function(f){const q=_buildQueue(f);if(!MP.host||!MP.live()||!q.length||q[0]==='boss')return q;
+  const extra=Math.round(q.length*(mpMul()-1));for(let i=0;i<extra;i++)q.push(q[Math.floor(Math.random()*q.length)]);return q;};
 function mpRemoteHit(m){if(G.scene!=='tower'||m.f!==G.floor)return;const e=G.enemies.find(x=>x.id===m.id&&!x.dead);if(!e)return;
   const c=S.crit;S.crit=-9;
   try{_hitEnemy(e,m.d,m.dir,{kb:m.kb,ky:m.ky,hs:m.hs,stun:m.stun,launch:m.launch,unblockable:m.unb,effect:m.eff,noCombo:true});}finally{S.crit=c;}}
@@ -6835,7 +6874,7 @@ function mpSnap(){
       r2(e.castT),r2(e.spawnT),r2(e.hitstun),e.lastDir||1,e.elite?1:0,e.summon?1:0,e.n||0,e.phase||1,r2(e.landT),r2(e.hopT),e.flash>0?1:0,e.mode||'']);}
   return {t:'e',f:G.floor,q:G.queue.slice(),cl:G.cleared?1:0,l};}
 
-/* ---------- ospite: i nemici sono "marionette" mosse dall'host ---------- */
+/* ---------- ospiti: i nemici sono "marionette" mosse dall'host ---------- */
 function mpPuppet(e,dt){const k=damp(dt,14);e.x+=(e.nx-e.x)*k;e.y+=(e.ny-e.y)*k;e.t+=dt;e.flash-=dt;e.flinch-=dt;e.castT-=dt;e.landT-=dt;}
 function mpApplySnap(s){
   if(G.scene!=='tower'||s.f!==G.floor||G.tutorial)return;
@@ -6871,35 +6910,37 @@ bossSpawnNow=function(){
   G.queue=[];B.e=e;e.face=-1;B.by=e.y;burst(e.x,e.y+e.h*0.5,B.d.color,60,9,4,0.4);burst(e.x,e.y+0.3,0x1a1420,40,6,2,0.2);sfx('boom');
 };
 
-/* ---------- stesse stanze per tutti e due ---------- */
+/* ---------- stesse stanze per tutti ---------- */
 const _buildLevel=buildLevel;
 buildLevel=function(f){if(!MP.live())return _buildLevel(f);const zi=zoneIndex(f);if(G.zoneBuilt!==zi)applyZone(zi);return withSeed(MP.seed*131+f*7919,()=>_buildLevel(f));};
 const _startFloor=startFloor;
 startFloor=function(f){
-  _startFloor(f);MP.emap=new Map();MP.ready=MP.pReady=false;mpWait(false);
+  _startFloor(f);MP.emap=new Map();MP.ready=false;for(const R of MP.players.values())R.ready=false;mpWait(false);
   if(!MP.live()||G.tutorial)return;
   const ex=withSeed(MP.seed*977+f*31,()=>isBossFloor(f)?rand(-HALF+3,-HALF+11):rand(-HALF+3,GATE_X-9));
   if(G.entry){G.entry.g.position.x=ex;G.entry.x=ex;}
-  P.x=ex+(MP.host?-0.45:0.45);P.face=ex<0?1:-1;
+  P.x=ex+[-0.6,0.6,-0.2,0.2][MP.myPid%4];P.face=ex<0?1:-1;
   if(!MP.host)G.spawnT=1e9;
 };
 
-/* ---------- salire insieme ---------- */
+/* ---------- salire tutti insieme ---------- */
 function mpWait(on){const w=$('mpWait');if(w)w.hidden=!on;}
+const mpInTower=()=>[...MP.players.values()].some(R=>R.sc==='tower');
 const _nextFloor=nextFloor;
 nextFloor=function(){
-  if(!MP.live()||!MP.rs||MP.rs.sc!=='tower')return _nextFloor();
-  MP.ready=true;MP.send({t:'ready',f:G.floor});mpWait(true);clearInput();
+  if(!MP.live()||!mpInTower())return _nextFloor();
+  MP.ready=true;MP.send({t:'ready',pid:MP.myPid,f:G.floor});mpWait(true);clearInput();
   if(MP.host)mpTryAdvance();
 };
 function mpTryAdvance(){if(!MP.host||G.scene!=='tower')return;
-  const R=MP.rs,meOk=MP.ready||P.dead,peerOk=MP.pReady||!R||R.dead||R.sc!=='tower';
-  if(!meOk||!peerOk)return;
-  if(!MP.ready&&!MP.pReady)return;   // nessuno dei due è ancora arrivato alle scale
-  const f=G.floor+1;MP.send({t:'next',f});mpGoNext(f);}
+  if(!MP.live()&&MP.ready){MP.ready=false;mpWait(false);_nextFloor();return;}
+  let any=MP.ready;if(!(MP.ready||P.dead))return;
+  for(const R of MP.players.values()){if(R.sc!=='tower')continue;if(R.ready)any=true;else if(!R.dead)return;}
+  if(!any)return;   // nessuno è ancora arrivato alle scale
+  const f=G.floor+1;MP.bcast({t:'next',f});mpGoNext(f);}
 function mpRevive(){P.dead=false;P.hp=Math.max(1,Math.round(S.maxHp*0.5));P.dot=null;$('deathFx').classList.remove('on');G.deathSlow=0;G.overT=1.5;if(hero)hero.root.rotation.z=0;}
 function mpGoNext(f){
-  mpWait(false);MP.ready=MP.pReady=false;if(MP.rs)MP.rs.dead=false;
+  mpWait(false);MP.ready=false;for(const R of MP.players.values()){R.ready=false;R.dead=false;}
   if(P.dead)mpRevive();
   ['upgrade','pause','loot','over'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});
   if(G.state==='play'||G.state==='upgrade'||G.state==='pause')collectAllItems();
@@ -6909,43 +6950,45 @@ const _playerDie=playerDie;
 playerDie=function(){
   _playerDie();
   if(!MP.live()||G.scene!=='tower')return;
-  MP.send({t:'down'});
-  const R=MP.rs;if(R&&!R.dead&&R.sc==='tower'&&R.fl===G.floor){G.overT=1e9;toast('Sei a terra','Se il compagno arriva al cancello, rientri al piano dopo');if(MP.host)setTimeout(mpTryAdvance,50);}
+  MP.send({t:'down',pid:MP.myPid});
+  if(mpAnyAlive()){G.overT=1e9;toast('Sei a terra','Se un compagno arriva al cancello, rientri al piano dopo');if(MP.host)setTimeout(mpTryAdvance,50);}
 };
 const _startRun=startRun;
 startRun=function(){
   if(MP.live()){
-    if(MP.host){MP.seed=(Math.random()*1e9)|0;MP.send({t:'start',seed:MP.seed});}
-    else if(!MP.netStart){MP.send({t:'reqStart'});enterCellar();toast('Pronto!','La scalata parte quando il tuo amico sale la scala');return;}
+    if(MP.host){MP.seed=(Math.random()*1e9)|0;MP.bcast({t:'start',seed:MP.seed});}
+    else if(!MP.netStart){MP.send({t:'reqStart'});enterCellar();toast('Pronto!','La scalata parte quando chi ha creato la partita sale la scala');return;}
   }
   MP.netStart=false;_startRun();
 };
 const _updCamera=updCamera;
 updCamera=function(dt){
-  const R=MP.rs;
-  if(MP.live()&&P.dead&&G.scene==='tower'&&G.state==='play'&&R&&!R.dead&&R.sc==='tower'&&R.fl===G.floor&&!(G.deathSlow>0)){
-    const bx=P.x,by=P.y;P.x=R.x;P.y=R.y;P.dead=false;$('deathFx').classList.remove('on');try{_updCamera(dt);}finally{P.x=bx;P.y=by;P.dead=true;}return;}
+  if(MP.live()&&P.dead&&G.scene==='tower'&&G.state==='play'&&!(G.deathSlow>0)){
+    let R=null;for(const r of MP.players.values())if(r.sc==='tower'&&r.fl===G.floor&&!r.dead){R=r;break;}
+    if(R){const bx=P.x,by=P.y;P.x=R.x;P.y=R.y;P.dead=false;$('deathFx').classList.remove('on');try{_updCamera(dt);}finally{P.x=bx;P.y=by;P.dead=true;}return;}}
   _updCamera(dt);
 };
 const _updHeroVisual=updHeroVisual;
-updHeroVisual=function(dt){if(MP.rs||MP.hero)mpDrawRemote(dt);_updHeroVisual(dt);};
+updHeroVisual=function(dt){if(MP.players.size)mpDrawRemote(dt);_updHeroVisual(dt);};
 
 /* ---------- invio periodico ---------- */
 setInterval(()=>{
   if(!MP.live())return;
   MP.send(mpMyState());
-  // se chi ha creato la partita torna al seminterrato, l'ospite lo segue
-  if(!MP.host&&G.scene==='tower'&&MP.rs&&MP.rs.sc==='cellar'&&!MP.pulling&&!['menu','tip','intro','waking'].includes(G.state)){MP.pulling=true;
-    toast(`${MP.pname||'Il compagno'} è tornato al seminterrato`,'Lo raggiungi');mpWait(false);
+  if(MP.host&&G.scene==='tower')MP.bcast(mpSnap());
+  // se chi ha creato la partita torna al seminterrato, gli altri lo seguono
+  const H=MP.players.get(0);
+  if(!MP.host&&H&&H.seen&&G.scene==='tower'&&H.sc==='cellar'&&!MP.pulling&&!['menu','tip','intro','waking'].includes(G.state)){MP.pulling=true;
+    toast(`${H.name||'Il compagno'} è tornato al seminterrato`,'Lo raggiungi');mpWait(false);
     ['over','pause','upgrade','loot'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});$('deathFx').classList.remove('on');G.deathSlow=0;clearInput();
     G.state='menu';fadeThen(()=>{enterCellar();G.fadeTarget=0;MP.pulling=false;});}
-  if(MP.host&&G.scene==='tower')MP.send(mpSnap());
-  if(MP.pReady&&!MP.ready&&G.state==='play'&&G.scene==='tower'&&!P.dead){MP.hintT-=0.05;if(MP.hintT<=0){MP.hintT=2;setHint(G.cleared?`${MP.pname||'Il compagno'} ti aspetta sulle scale: attraversa il cancello`:`${MP.pname||'Il compagno'} ti aspetta sulle scale`,1.8);}}
+  const W=[...MP.players.values()].find(R=>R.ready);
+  if(W&&!MP.ready&&G.state==='play'&&G.scene==='tower'&&!P.dead){MP.hintT-=0.05;if(MP.hintT<=0){MP.hintT=2;setHint(G.cleared?`${W.name||'Un compagno'} ti aspetta sulle scale: attraversa il cancello`:`${W.name||'Un compagno'} ti aspetta sulle scale`,1.8);}}
 },50);
 
 /* ---------- schermata Co-op ---------- */
 function openCoop(){if(G.state!=='cellar')return;G.state='coop';clearInput();$('prompt').hidden=true;$('bUse').hidden=true;$('touch').hidden=true;
-  $('coopName').value=store.get('mpname','')||'';$('coop').hidden=false;mpUi();if(!MP.live()&&!MP.peer)mpStatus('');}
+  $('coopName').value=store.get('mpname','')||'';$('coop').hidden=false;mpUi();if(!MP.on&&!MP.peer)mpStatus('');}
 function closeCoop(){$('coop').hidden=true;if(G.state==='coop'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}}
 $('coopBtn').onclick=()=>{sfx('ui');openCoop();};
 $('coopClose').onclick=()=>{sfx('ui');closeCoop();};
@@ -6955,6 +6998,21 @@ $('coopLeave').onclick=()=>{sfx('ui');mpLeave(false);};
 $('coopCode').addEventListener('keydown',e=>{if(e.key==='Enter')mpJoin();});
 $('coopCodeTxt').onclick=()=>{try{navigator.clipboard.writeText(MP.code);toast('Codice copiato',MP.code);}catch(e){}};
 addEventListener('keydown',e=>{if(G.state==='coop'&&e.key==='Escape'){e.preventDefault();closeCoop();}},true);
+
+/* ---------- niente zoom accidentale su telefono (doppio tocco / pizzico) ---------- */
+(function(){
+  const vp=document.querySelector('meta[name=viewport]'),base='width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover';
+  if(vp)vp.setAttribute('content',base);
+  const stop=e=>e.preventDefault();
+  for(const ev of ['gesturestart','gesturechange','gestureend','dblclick'])document.addEventListener(ev,stop,{passive:false});
+  document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault();},{passive:false});
+  let lastT=0;
+  document.addEventListener('touchend',e=>{const now=Date.now(),t=e.target;
+    if(now-lastT<350&&!(t&&t.closest&&t.closest('input,textarea,select')))e.preventDefault();lastT=now;},{passive:false});
+  // se lo schermo è rimasto ingrandito, lo riporta subito alla misura normale
+  const unzoom=()=>{if(!vp||!window.visualViewport||visualViewport.scale<=1.01)return;vp.setAttribute('content',base+',minimum-scale=1');setTimeout(()=>vp.setAttribute('content',base),80);};
+  if(window.visualViewport)visualViewport.addEventListener('resize',unzoom);setInterval(unzoom,800);
+})();
 if(/coop-debug/.test(location.hash))window.__MP={MP,G,P,S,startRun,spawnEnemy,openCoop,mpHost,mpJoin};
 
 /* ---------- Avvio ---------- */
