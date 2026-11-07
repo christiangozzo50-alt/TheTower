@@ -8189,7 +8189,7 @@ if(hero&&G.weapon&&G.weapon.type==='lancia')attachWeapon();
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794085825';
+const BUILD_ID='1794085934';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -8237,7 +8237,8 @@ async function acRegister(){const u=$('acUser').value.trim(),p=$('acPass').value
 async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,msg=$('acMsg');if(!u||!p){msg.textContent='Scrivi nome e password.';return;}
   msg.textContent='Accedo…';
   try{const d=await authCall('signInWithPassword',{email:emailOf(u),password:p,returnSecureToken:true});setAuth(d,u);$('acPass').value='';
-    const sv=await cloudLoad();
+    let sv=null;try{sv=await cloudLoad();}catch(err){store.set('mpname',u);store.set('nameok',true);msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();
+      toast('Accesso fatto','Non riesco a leggere i progressi online: per ora resti con quelli di questo dispositivo');return;}
     if(sv&&sv.d){const hasLocal=(STATS.runs||0)>0&&store.get('mpname','')!==u;
       if(hasLocal){$('acMsg').textContent='';$('acChoice').hidden=false;$('acForm').hidden=true;
         $('acUseCloud').onclick=()=>applySave(sv);$('acUseLocal').onclick=async()=>{store.set('mpname',u);store.set('nameok',true);await cloudSave(true);$('acChoice').hidden=true;renderAccount();toast('Fatto','I progressi di questo dispositivo sono nel tuo account');};return;}
