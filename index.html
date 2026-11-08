@@ -791,6 +791,22 @@ button.sh-stage:hover img,button.sh-stage:focus-visible img{transform:scale(1.06
 #clearCard p b{font-family:var(--f-display);font-weight:400;font-size:16px;color:#fff}#clearCard p em{font-style:normal;font-size:11px;color:var(--ink-2)}
 #clearCard p.ok b{color:#ff8a9c}#clearCard p em.cn{width:14px;height:12px}
 @media (max-height:500px){#clearCard{top:calc(70px + env(safe-area-inset-top,0px));padding:6px 12px;min-width:190px}#clearCard h3{font-size:17px}}
+/* presentazione dei combattenti PvP */
+#pvpVs{position:fixed;inset:0;z-index:45;display:grid;align-content:center;justify-items:center;gap:18px;pointer-events:none;
+  background:linear-gradient(90deg,rgba(120,20,20,.55),rgba(8,6,12,.75) 42%,rgba(8,6,12,.75) 58%,rgba(20,50,120,.55));opacity:0;transition:opacity .4s}
+#pvpVs.on{opacity:1}#pvpVs.out{opacity:0}
+.vs-arena{text-align:center}.vs-arena small{display:block;font-size:12px;font-weight:800;letter-spacing:.3em;text-transform:uppercase;color:#d8c8a8}
+.vs-arena b{font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4vw,38px);color:#ffd27a;text-shadow:3px 3px 0 #000}
+.vs-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:clamp(14px,4vw,48px);width:min(900px,94vw)}
+.vs-team{display:grid;gap:10px}.vs-team.t0{justify-items:end;text-align:right}.vs-team.t1{justify-items:start;text-align:left}
+.vs-p{padding:8px 16px;background:rgba(10,8,14,.7);border:2px solid;width:min(240px,36vw);box-sizing:border-box}
+.t0 .vs-p{border-color:#e05a4a;animation:vsl .5s cubic-bezier(.2,.9,.3,1.2) both}.t1 .vs-p{border-color:#4a8ae0;animation:vsr .5s cubic-bezier(.2,.9,.3,1.2) both}
+.vs-team .vs-p:nth-child(2){animation-delay:.12s}
+.vs-p b{display:block;font-family:var(--f-display);font-weight:400;font-size:clamp(20px,3.2vw,30px);color:#fff;text-shadow:2px 2px 0 #000;line-height:1.05}
+.vs-p span{display:block;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#d8c8a8;margin-top:2px}
+.vs-p.me b{color:#ffd27a}
+.vs-mid{font-family:var(--f-display);font-size:clamp(40px,8vw,76px);color:#fff;text-shadow:0 0 22px rgba(255,200,120,.8),4px 4px 0 #000;animation:vsm .5s .25s cubic-bezier(.2,.9,.3,1.4) both}
+@keyframes vsl{from{transform:translateX(-60vw)}}@keyframes vsr{from{transform:translateX(60vw)}}@keyframes vsm{from{transform:scale(2.4);opacity:0}}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -6807,8 +6823,8 @@ function updHeroVisual(dt){
   {const sl=special==='sleep';for(const a of R.arms)a.wr.visible=!sl;if(R.cape)R.cape.visible=!sl;}
   if(ap){const arm=R.arms[A.hand==='B'?1:0];arm.sh.rotation.x=ap.sh;arm.el.rotation.x=ap.el;arm.wr.rotation.x=ap.wr;}
   if(R.wpnF){const off=ap&&A.hand!=='B'?ap.off:0;R.wpnF.position.y+=(-off-R.wpnF.position.y)*(ap?1:damp(dt,20));}
-  if(R.cape)R.cape.rotation.x=0.05+Math.min(0.5,speed*0.04)+(P.vy<-2?-0.15:P.vy>2?0.12:0);
-  {const sp=Math.min(1,speed/9),up=clamp(-P.vy*0.04,-0.5,0.7);
+  if(R.cape)R.cape.rotation.x=window.__ANIMV!==1?capeRot2(speed,R):0.05+Math.min(0.5,speed*0.04)+(P.vy<-2?-0.15:P.vy>2?0.12:0);
+  if(window.__ANIMV!==1)flows2(R,speed,dt);else{const sp=Math.min(1,speed/9),up=clamp(-P.vy*0.04,-0.5,0.7);
    for(const f of R.flows||[])f.segs.forEach((s,i)=>{const tg=(i===0?f.base:0.1)+sp*(i===0?0.8:0.22)*f.amp+up*(i===0?0.5:0.18)+Math.sin(G.time*(5+sp*7)-i*0.9)*(0.05+0.1*sp)*(1+i*0.5);
      s.rotation.x+=(tg-s.rotation.x)*damp(dt,13-i*2.5);});}
   m.visible=!(P.invul>0&&!P.dead&&st==='play'&&Math.floor(P.invul*16)%2===0)&&!(show&&show.hide);
@@ -9057,6 +9073,12 @@ const _drReb=deathRoot;deathRoot=function(R,an,dt){if(P.rebirth&&R.local&&rebirt
 // posa da fluttuante anche nei primi istanti dopo essere tornato vivo
 const _rpReb=reactPose;reactPose=function(t,dt){_rpReb(t,dt);if(P.rebirth&&!P.dead)mixT(t,{fF:0.6,fB:0.65,head:0.25,lean:-0.12,hF:0.05,kF:0.3,hB:0.12,kB:0.45},clamp((REB.land-P.rebirth.t)/(REB.land-REB.rise),0,1));};
 
+/* ---------- mantelli e stoffe: in corsa ondeggiano dietro senza alzarsi troppo ---------- */
+function capeRot2(speed,R){const lean=R.torso?R.torso.rotation.x:0;return 0.05+Math.min(0.3,speed*0.028)-lean*0.4+(P.vy<-2?-0.12:P.vy>2?0.08:0);}
+function flows2(R,speed,dt){const sp=Math.min(1,speed/9),up=clamp(-P.vy*0.035,-0.4,0.55),lean=R.torso?R.torso.rotation.x:0;
+  for(const f of R.flows||[])f.segs.forEach((s,i)=>{const w=Math.sin(G.time*(5+sp*5)-i*0.9)*(0.04+0.06*sp)*(1+i*0.4);
+    const tg=i===0?f.base+sp*0.42*f.amp+up*0.4-lean*0.55+w:0.08+sp*0.1*f.amp+up*0.14+w;s.rotation.x+=(tg-s.rotation.x)*damp(dt,13-i*2.5);});}
+
 /* =========================================================
    TOCCO PIÙ AFFIDABILE: il joystick non resta più bloccato a destra o a sinistra
    (su iPhone a volte il dito che si alza non arriva come "pointerup")
@@ -9234,10 +9256,166 @@ const _upE=update;update=function(dt){_upE(dt);battleIntensity(dt);};
 const _ecE=enterCellar;enterCellar=function(){BAT.I=0;return _ecE.apply(this,arguments);};
 
 /* =========================================================
+   ARENE PvP A TEMA: 3 mappe per l'1 contro 1 e 3 per il 2 contro 2, a rotazione
+   + schermata con i nomi e le classi dei combattenti prima di iniziare
+   ========================================================= */
+let ARENA=null;
+const aBasic=(c,o)=>new THREE.MeshBasicMaterial(Object.assign({color:c,fog:false},o||{}));
+const aGlow=(c,op)=>new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:op==null?0.9:op,blending:THREE.AdditiveBlending,depthWrite:false,fog:false});
+function aRng(seed){let s=(seed>>>0)||1;return ()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+// pezzi comuni
+// facciata del pavimento verso la telecamera: blocchi di pietra invece di una parete piatta
+function aBlocks(col){const [cn,x]=cv(64,64),k=new THREE.Color(col),d=k.clone().multiplyScalar(0.62),m=k.clone().multiplyScalar(0.4);
+  x.fillStyle='#'+d.getHexString();x.fillRect(0,0,64,64);x.fillStyle='#'+m.getHexString();
+  x.fillRect(0,0,64,3);x.fillRect(0,32,64,3);x.fillRect(0,0,3,32);x.fillRect(32,32,3,32);
+  x.fillStyle='rgba(255,255,255,0.06)';x.fillRect(3,3,61,4);x.fillRect(0,35,64,4);
+  const t=new THREE.CanvasTexture(cn);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.magFilter=THREE.NearestFilter;return t;}
+function aFloor(g,c,hw,col,front){const W=hw*2+14;mesh(new THREE.BoxGeometry(W,6,7.8),toon(col),c,-3,0.6,g);
+  const t=aBlocks(col);t.repeat.set(W/1.8,6/1.8);mesh(new THREE.PlaneGeometry(W,6),new THREE.MeshLambertMaterial({map:t}),c,-3,4.51,g,true);
+  mesh(new THREE.BoxGeometry(W,0.14,0.16),toon(front||new THREE.Color(col).multiplyScalar(0.8).getHex()),c,-0.07,4.52,g,true);}
+function aBack(g,c,hw,col,h){mesh(new THREE.BoxGeometry(hw*2+14,h||14,0.6),toon(col),c,(h||14)/2,-3.3,g);}
+function aSky(g,c,col,top){mesh(new THREE.PlaneGeometry(160,70),aBasic(col),c,12,-24,g,true);if(top!=null)mesh(new THREE.PlaneGeometry(160,30),aBasic(top,{transparent:true,opacity:0.6}),c,26,-23.5,g,true);}
+function aPlat(g,x,y,w,col,edge){mesh(rbox(w,0.36,1.9,0.06),toon(col),x,y-0.18,-0.2,g);if(edge)mesh(rbox(w+0.08,0.07,1.96,0.02),toon(edge),x,y-0.02,-0.2,g);G.solids.push({x1:x-w/2,x2:x+w/2,y1:y-0.5,y2:y});}
+function aTorch(g,x,y,z,col){mesh(new THREE.CylinderGeometry(0.05,0.07,0.6,6),toon(0x4a3524),x,y,z,g);const f=mesh(new THREE.ConeGeometry(0.13,0.36,7),aGlow(col||0xffa040),x,y+0.45,z,g,true);
+  mesh(sph(0.1,8,6),aGlow(0xffe0a0),x,y+0.36,z,g,true);ARENA.flames.push(f);}
+function aLight(g,x,y,z,col,int,dist){const l=new THREE.PointLight(col,int,dist||10);l.position.set(x,y,z);g.add(l);ARENA.lights.push({l,b:int});return l;}
+function aSide(g,x,col,h,cap){mesh(rbox(1.0,h,3.4,0.06),toon(col),x,h/2,-0.2,g);if(cap)mesh(rbox(1.2,0.3,3.6,0.05),toon(cap),x,h+0.15,-0.2,g);}
+function aBanner(g,x,y,col,emb){const b=mesh(new THREE.PlaneGeometry(1.1,2.6),toon(col,{side:THREE.DoubleSide}),x,y,-2.95,g);mesh(rbox(1.3,0.08,0.08,0.02),toon(0xd9b45a),x,y+1.32,-2.9,g);
+  if(emb)mesh(new THREE.CircleGeometry(0.28,12),toon(emb),x,y+0.3,-2.93,g,true);ARENA.cloth.push(b);return b;}
+/* ---------- 1 contro 1 ---------- */
+const ARENAS1=[
+ {id:'colosseo',name:'Fossa del colosseo',sky:0x2a1712,fog:0x2a1712,hemi:0xffd8a8,build(g,c,hw,r){
+   aSky(g,c,0x3a2016,0x1a0e0c);aFloor(g,c,hw,0xc9a46a);
+   // muro della fossa con archi
+   mesh(new THREE.BoxGeometry(hw*2+14,5.2,0.6),toon(0x8a7a64),c,2.6,-3.3,g);mesh(new THREE.BoxGeometry(hw*2+14,0.35,0.9),toon(0x6e604e),c,5.3,-3.2,g);
+   for(let x=c-hw-4;x<=c+hw+4;x+=3.2){mesh(new THREE.BoxGeometry(1.5,2.1,0.1),toon(0x1c140f),x,1.05,-2.98,g,true);mesh(new THREE.CircleGeometry(0.75,14,0,Math.PI),toon(0x1c140f),x,2.1,-2.98,g,true);}
+   // spalti con il pubblico
+   for(let k=0;k<3;k++){const z=-4.6-k*1.6,y=5.6+k*1.5;mesh(new THREE.BoxGeometry(hw*2+30,1.5,1.6),toon(0x5a4e40),c,y-0.75,z,g);
+     for(let x=c-hw-12;x<=c+hw+12;x+=0.62+r()*0.3){const col=[0x3a2a22,0x4a3020,0x2e2630,0x503a28][Math.floor(r()*4)];
+       mesh(new THREE.CapsuleGeometry?new THREE.CapsuleGeometry(0.17,0.3,3,6):new THREE.CylinderGeometry(0.17,0.2,0.6,6),toon(col),x,y+0.35+r()*0.08,z+0.2,g,true);mesh(sph(0.15,6,5),toon(0x6a5040),x,y+0.82,z+0.2,g,true);}}
+   for(let x=c-hw-3;x<=c+hw+3;x+=4.8){aTorch(g,x,3.6,-2.9);}aLight(g,c-hw*0.5,4,-1.5,0xffa040,1.2,14);aLight(g,c+hw*0.5,4,-1.5,0xffa040,1.2,14);
+   aBanner(g,c-hw+1.4,3.3,0xc0392b,0xd9b45a);aBanner(g,c+hw-1.4,3.3,0x2e5fc0,0xd9b45a);
+   aSide(g,c-hw-0.5,0x7a6a54,5.6,0x5e5040);aSide(g,c+hw+0.5,0x7a6a54,5.6,0x5e5040);
+   aPlat(g,c,2.7,3.2,0x8a7a64,0x5e5040);}},
+ {id:'ponte',name:'Ponte sospeso',sky:0x0b0f18,fog:0x0b0f18,hemi:0x9fb4d8,build(g,c,hw,r){
+   aSky(g,c,0x101826,0x05070c);mesh(new THREE.CircleGeometry(1.6,28),aBasic(0xdfe6ff),c-hw*0.6,13,-22,g,true);mesh(new THREE.CircleGeometry(2.6,28),aGlow(0x9fb4ff,0.15),c-hw*0.6,13,-22.2,g,true);
+   for(let i=0;i<60;i++)mesh(new THREE.PlaneGeometry(0.09,0.09),aBasic(0xffffff,{transparent:true,opacity:0.4+r()*0.6}),c+(r()-0.5)*90,4+r()*22,-23,g,true);
+   mesh(new THREE.BoxGeometry(hw*2+14,1.2,4.6),toon(0x6a6470),c,-0.6,0.4,g);         // impalcato
+   for(let x=c-hw-6;x<=c+hw+6;x+=3.4){mesh(new THREE.CylinderGeometry(0.5,0.9,14,8),toon(0x3e3a44),x,-7.8,0.4,g);}  // piloni nel vuoto
+   for(let i=0;i<6;i++)mesh(new THREE.PlaneGeometry(40,3),aBasic(0x9fb0c8,{transparent:true,opacity:0.08+r()*0.06,depthWrite:false}),c+(r()-0.5)*20,-1.5-r()*3,-4-i*2,g,true);   // nebbia
+   for(let i=0;i<5;i++){const x=c+(i-2)*16+(r()-0.5)*6;mesh(new THREE.ConeGeometry(4+r()*3,14+r()*8,5),toon(0x1a1e28),x,-2,-20-r()*6,g,true);}   // rupi lontane
+   for(const s of [-1,1])for(let x=c-hw;x<=c+hw;x+=1.2){mesh(new THREE.CylinderGeometry(0.05,0.05,0.9,5),toon(0x2c2a30),x,0.45,s<0?-1.75:2.55,g,true);}
+   for(const z of [-1.75,2.55])mesh(new THREE.BoxGeometry(hw*2,0.08,0.08),toon(0x2c2a30),c,0.92,z,g,true);
+   aSide(g,c-hw-0.5,0x4a4652,7,0x35323c);aSide(g,c+hw+0.5,0x4a4652,7,0x35323c);
+   for(const x of [c-hw-0.5,c+hw+0.5]){const ch=mesh(new THREE.CylinderGeometry(0.04,0.04,9,5),toon(0x2c2a30),(x+c)/2,4.5,-1.8,g,true);ch.rotation.z=(x<c?-1:1)*1.05;}
+   for(const x of [c-hw*0.55,c,c+hw*0.55]){mesh(new THREE.CylinderGeometry(0.02,0.02,3.2,4),toon(0x2c2a30),x,7.4,-1.6,g,true);mesh(rbox(0.32,0.42,0.32,0.05),aGlow(0xffd27a,0.95),x,5.6,-1.6,g,true);aLight(g,x,5.4,-1.2,0xffc070,0.9,9);}
+   aPlat(g,c,2.6,3.0,0x6a4a2e,0x3e2715);
+   for(const s of [-1,1])mesh(new THREE.BoxGeometry(0.16,2.6,0.16),toon(0x4a3220),c+s*1.3,1.3,-0.9,g);}},
+ {id:'trono',name:'Sala del trono',sky:0x120a10,fog:0x150a12,hemi:0xffc8d8,build(g,c,hw,r){
+   aSky(g,c,0x120a10);aFloor(g,c,hw,0x2a2228);
+   const [cn,x2]=cv(64,64);for(let i=0;i<2;i++)for(let j=0;j<2;j++){x2.fillStyle=(i+j)%2?'#e8e0d0':'#2a2430';x2.fillRect(i*32,j*32,32,32);}
+   const tx=new THREE.CanvasTexture(cn);tx.wrapS=tx.wrapT=THREE.RepeatWrapping;tx.repeat.set((hw*2+14)/1.6,7.8/1.6);tx.magFilter=THREE.NearestFilter;
+   const fl=mesh(new THREE.PlaneGeometry(hw*2+14,7.8),new THREE.MeshLambertMaterial({map:tx}),c,0.005,0.6,g,true);fl.rotation.x=-Math.PI/2;
+   const cp=mesh(new THREE.PlaneGeometry(hw*2+14,1.3),toon(0xa01e2e),c,0.012,0.3,g,true);cp.rotation.x=-Math.PI/2;
+   aBack(g,c,hw,0x3a1420);
+   for(let x=c-hw-3;x<=c+hw+3;x+=3.6){mesh(new THREE.CylinderGeometry(0.38,0.44,11,10),toon(0xcfc6b8),x,5.5,-2.7,g);mesh(rbox(1.1,0.4,1.1,0.05),toon(0xd9b45a),x,0.2,-2.7,g);}
+   const gl=[0xff4a6a,0x4aa0ff,0xffd27a,0x7fe08a,0xb48cff];
+   for(let x=c-hw-1.2;x<=c+hw+1.2;x+=3.6){for(let i=0;i<4;i++)for(let j=0;j<2;j++)mesh(new THREE.PlaneGeometry(0.55,1.1),aGlow(gl[Math.floor(r()*gl.length)],0.55),x+(j-0.5)*0.6,4.2+i*1.15,-2.98,g,true);
+     mesh(new THREE.CircleGeometry(0.62,16,0,Math.PI),aGlow(0xffd27a,0.5),x,8.8,-2.98,g,true);}
+   // trono sullo sfondo
+   mesh(rbox(1.6,0.5,1.0,0.05),toon(0x6a1020),c,0.25,-2.4,g);mesh(rbox(1.5,0.9,0.9,0.05),toon(0xd9b45a),c,0.95,-2.4,g);mesh(rbox(1.6,2.6,0.25,0.05),toon(0xd9b45a),c,2.0,-2.85,g);
+   mesh(rbox(1.2,2.1,0.1,0.05),toon(0x8a1428),c,1.9,-2.7,g);mesh(new THREE.ConeGeometry(0.3,0.6,4),toon(0xd9b45a),c,3.6,-2.85,g);
+   aSide(g,c-hw-0.5,0x5a1a2a,9,0xd9b45a);aSide(g,c+hw+0.5,0x5a1a2a,9,0xd9b45a);
+   for(const x of [c-hw*0.6,c+hw*0.6]){aTorch(g,x,2.8,-2.6,0xffc070);aLight(g,x,4,-1.2,0xffb070,1.0,12);}
+   aBanner(g,c-hw+1.4,4.6,0xc0392b,0xd9b45a);aBanner(g,c+hw-1.4,4.6,0x2e5fc0,0xd9b45a);
+   aPlat(g,c,2.8,3.4,0x4a2a1c,0xd9b45a);}}];
+/* ---------- 2 contro 2 ---------- */
+const ARENAS2=[
+ {id:'tempesta',name:'Terrazza della tempesta',sky:0x0a1022,fog:0x0a1022,hemi:0xa8c0ff,storm:true,build(g,c,hw,r){
+   aSky(g,c,0x0e1630,0x05080f);aFloor(g,c,hw,0x5d5a66,0x3e3c46);
+   mesh(new THREE.CircleGeometry(2.4,32),aBasic(0xe8ecff),c+hw*0.55,12,-20,g,true);mesh(new THREE.CircleGeometry(3.6,32),aGlow(0x9fb4ff,0.18),c+hw*0.55,12,-20.2,g,true);
+   for(let i=0;i<10;i++){const cl=mesh(sph(1,10,8),aBasic(0x1c2440,{transparent:true,opacity:0.85}),c+(r()-0.5)*70,9+r()*7,-17-r()*3,g,true);cl.scale.set(4+r()*5,0.9+r()*0.8,1);}
+   // parapetto merlato
+   mesh(new THREE.BoxGeometry(hw*2+14,1.1,0.5),toon(0x4a4752),c,0.55,-2.7,g);for(let x=c-hw-6;x<=c+hw+6;x+=1.1)mesh(new THREE.BoxGeometry(0.55,0.5,0.5),toon(0x4a4752),x,1.35,-2.7,g);
+   aSide(g,c-hw-0.6,0x4a4752,8,0x35323c);aSide(g,c+hw+0.6,0x4a4752,8,0x35323c);
+   for(const x of [c-hw-0.6,c+hw+0.6])mesh(new THREE.ConeGeometry(0.9,1.6,4),toon(0x2a2440),x,8.8,-0.2,g);
+   for(const x of [c-hw*0.7,c,c+hw*0.7]){aTorch(g,x,1.7,-2.4,0x8fdcff);aLight(g,x,2.6,-1.4,0x8fb4ff,0.8,11);}
+   // fulmine
+   const pts=[];let x=0,y=0;for(let i=0;i<8;i++){pts.push(new THREE.Vector3(x,y,0));x+=(r()-0.5)*2.4;y-=1.6;}
+   const bolt=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xe8f0ff,fog:false,transparent:true}));bolt.position.set(c,22,-18);bolt.visible=false;g.add(bolt);ARENA.bolt=bolt;
+   aBanner(g,c-hw+1.6,3.2,0xc0392b,0xe8ecff);aBanner(g,c+hw-1.6,3.2,0x2e5fc0,0xe8ecff);
+   aPlat(g,c-hw*0.5,2.6,3.4,0x6a6676,0x3e3c46);aPlat(g,c+hw*0.5,2.6,3.4,0x6a6676,0x3e3c46);aPlat(g,c,4.9,3.0,0x6a6676,0x3e3c46);}},
+ {id:'tempio',name:'Tempio in rovina',sky:0x0c1a12,fog:0x0e1c14,hemi:0xc8f0b0,build(g,c,hw,r){
+   aSky(g,c,0x10241a,0x07120c);aFloor(g,c,hw,0x6a7058,0x4a5040);
+   for(let i=0;i<14;i++){const x=c+(r()-0.5)*80;mesh(new THREE.ConeGeometry(2+r()*2,10+r()*8,6),toon(0x12301c),x,4,-14-r()*8,g,true);}
+   mesh(new THREE.BoxGeometry(hw*2+14,4.5,0.6),toon(0x7a7c66),c,2.25,-3.3,g);
+   for(let x=c-hw-4;x<=c+hw+4;x+=2.8){const h=r()<0.4?2+r()*3:7+r()*2;mesh(new THREE.CylinderGeometry(0.42,0.48,h,10),toon(0x9a9a80),x,h/2,-2.6,g);
+     if(h>6)mesh(rbox(1.2,0.4,1.2,0.05),toon(0x86866e),x,h+0.2,-2.6,g);else mesh(new THREE.DodecahedronGeometry(0.5),toon(0x86866e),x+0.6,0.3,-1.9,g);}
+   for(let i=0;i<16;i++){const x=c+(r()-0.5)*(hw*2+6),L=1+r()*2.5;mesh(new THREE.BoxGeometry(0.08,L,0.08),toon(0x3f7a3a),x,4.6-L/2,-2.95,g,true);
+     mesh(sph(0.16,6,5),toon(0x4f9a46),x,4.6-L,-2.92,g,true);}
+   for(let i=0;i<20;i++)mesh(new THREE.ConeGeometry(0.12,0.3,4),toon(0x5f9a4a),c+(r()-0.5)*(hw*2),0.15,-1.8+r()*4,g,true);
+   aSide(g,c-hw-0.6,0x86866e,6,0x6a6c58);aSide(g,c+hw+0.6,0x86866e,6,0x6a6c58);
+   for(const x of [c-hw*0.65,c+hw*0.65]){aTorch(g,x,2.2,-2.3,0xffc870);aLight(g,x,3,-1.3,0xffd890,0.9,12);}
+   aBanner(g,c-hw+1.6,3.0,0xc0392b,0xd9b45a);aBanner(g,c+hw-1.6,3.0,0x2e5fc0,0xd9b45a);
+   aPlat(g,c-hw*0.5,2.6,3.2,0x86866e,0x5a6a48);aPlat(g,c+hw*0.5,2.6,3.2,0x86866e,0x5a6a48);aPlat(g,c,4.9,3.4,0x9a9a80,0x5a6a48);}},
+ {id:'fucina',name:'Fucina di lava',sky:0x1a0806,fog:0x1e0a06,hemi:0xffb080,lava:true,build(g,c,hw,r){
+   aSky(g,c,0x2a0c06,0x0a0302);aFloor(g,c,hw,0x2e2a2a,0xff6a1a);
+   for(let x=c-hw-6;x<=c+hw+6;x+=0.9)for(const z of [-1.8,3.6])mesh(sph(0.05,5,4),toon(0x6a6060),x,0.02,z,g,true);
+   const lv=mesh(new THREE.PlaneGeometry(160,6),aGlow(0xff6a1a,0.9),c,0.5,-12,g,true);ARENA.lava.push(lv);
+   const lv2=mesh(new THREE.PlaneGeometry(160,14),aGlow(0xff3a0a,0.25),c,4,-12.5,g,true);ARENA.lava.push(lv2);
+   aBack(g,c,hw,0x241a18,9);
+   for(let i=0;i<10;i++){const x=c+(r()-0.5)*(hw*2+8),y=1+r()*6,L=0.8+r()*1.6;const b=mesh(new THREE.BoxGeometry(L,0.07,0.05),aGlow(0xff7a2a,0.85),x,y,-2.98,g,true);b.rotation.z=(r()-0.5)*1.6;ARENA.lava.push(b);}
+   // fornace al centro
+   mesh(rbox(3.2,4.2,1.2,0.1),toon(0x3a2a24),c,2.1,-2.6,g);const mo=mesh(new THREE.CircleGeometry(0.9,16,0,Math.PI),aGlow(0xffa040,0.95),c,1.2,-1.98,g,true);ARENA.lava.push(mo);
+   mesh(new THREE.BoxGeometry(1.8,1.2,0.05),aGlow(0xff7a2a,0.9),c,0.6,-1.98,g,true);aLight(g,c,1.6,-0.8,0xff7a2a,1.6,12);
+   for(const x of [c-hw*0.75,c-hw*0.3,c+hw*0.3,c+hw*0.75])mesh(new THREE.CylinderGeometry(0.05,0.05,6,5),toon(0x3a3434),x,9,-2.2,g,true);
+   for(const x of [c-hw*0.6,c+hw*0.6]){mesh(rbox(0.9,0.35,0.4,0.05),toon(0x4a4444),x,0.75,-2.1,g);mesh(rbox(0.4,0.55,0.35,0.04),toon(0x3a3434),x,0.3,-2.1,g);aLight(g,x,3,-1.4,0xff8a3a,0.9,10);}
+   aSide(g,c-hw-0.6,0x3a2e2a,8,0x2a201c);aSide(g,c+hw+0.6,0x3a2e2a,8,0x2a201c);
+   aBanner(g,c-hw+1.6,3.6,0xc0392b,0x2a201c);aBanner(g,c+hw-1.6,3.6,0x2e5fc0,0x2a201c);
+   aPlat(g,c-hw*0.5,2.6,3.2,0x4a4444,0xff6a1a);aPlat(g,c+hw*0.5,2.6,3.2,0x4a4444,0xff6a1a);aPlat(g,c,4.9,3.0,0x4a4444,0xff6a1a);}}];
+function buildArena(mode,c,hw,idx){const list=mode==='1v1'?ARENAS1:ARENAS2,T=list[idx!=null?idx:((MP.seed>>>0)+(mode==='1v1'?0:7))%list.length];
+  while(levelGroup.children.length){const o=levelGroup.children.pop();disposeObj(o);}
+  G.solids=[];for(const b of G.barrels||[])b.dead=true;G.barrels=[];for(const p of G.pickups||[]){const o=p.m||p.g;if(o&&o.parent)o.parent.remove(o);}G.pickups=[];
+  ARENA={T,flames:[],lights:[],cloth:[],lava:[],bolt:null,boltT:2+Math.random()*3,flash:0};
+  towerG.visible=false;const g=new THREE.Group();levelGroup.add(g);T.build(g,c,hw,aRng((MP.seed||1)*31+7));
+  scene.background.setHex(T.sky);scene.fog.color.setHex(T.fog);scene.fog.near=26;scene.fog.far=70;hemi.color.setHex(T.hemi);G.zoneBuilt=-1;
+  const z=$('zoneName');if(z)z.textContent=T.name;return T;}
+function arenaOff(){if(ARENA){ARENA=null;hemi.intensity=0.85;}towerG.visible=true;}
+function arenaTick(dt){const A=ARENA;if(!A)return;const t=G.time;
+  for(let i=0;i<A.flames.length;i++){const f=A.flames[i];f.scale.set(1,0.85+Math.sin(t*13+i*1.7)*0.18,1);}
+  for(let i=0;i<A.lights.length;i++){const L=A.lights[i];L.l.intensity=L.b*(0.88+Math.sin(t*9+i*2.3)*0.08)+A.flash*2.5;}
+  for(let i=0;i<A.cloth.length;i++)A.cloth[i].rotation.y=Math.sin(t*1.4+i)*0.12;
+  for(let i=0;i<A.lava.length;i++){const m=A.lava[i].material;m.opacity=(m.userData.o0??(m.userData.o0=m.opacity))*(0.8+0.2*Math.sin(t*2.2+i*0.9));}
+  if(A.T.storm){A.boltT-=dt;A.flash=Math.max(0,A.flash-dt*4);if(A.boltT<=0){A.boltT=3+Math.random()*5;A.flash=1;if(A.bolt){A.bolt.visible=true;A.bolt.position.x=(PVA.c||0)+(Math.random()-0.5)*30;}
+      later(0.12,()=>{if(ARENA&&ARENA.bolt)ARENA.bolt.visible=false;});later(0.25,()=>{if(ARENA)ARENA.flash=0.6;});sfx('zap');}
+    hemi.intensity=0.85+A.flash*0.6;}}
+/* ---------- schermata dei combattenti ---------- */
+(function(){const d=document.createElement('div');d.id='pvpVs';d.hidden=true;document.body.appendChild(d);})();
+const clsName=id=>{const c=CLASSES.find(k=>k.id===id);return c?c.name:'…';};
+function vsRender(T){const me=MP.myPid,rows=Object.keys(PV.teams).map(Number),team=t=>rows.filter(p=>PV.teams[p]===t).sort((a,b)=>a-b);
+  const card=pid=>{const R=MP.players.get(pid),cid=pid===me?G.cls.id:(R&&R.c),nm=pid===me?(PV.names[pid]||store.get('mpname','Tu')):(PV.names[pid]||pName(pid));
+    return `<div class="vs-p${pid===me?' me':''}"><b>${esc(nm)}</b><span>${esc(clsName(cid))}</span></div>`;};
+  $('pvpVs').innerHTML=`<div class="vs-arena"><small>${PV.mode==='1v1'?'1 contro 1':'2 contro 2'}</small><b>${esc(T.name)}</b></div>
+    <div class="vs-row"><div class="vs-team t0">${team(0).map(card).join('')}</div><div class="vs-mid">VS</div><div class="vs-team t1">${team(1).map(card).join('')}</div></div>`;}
+const _paA=pvpArena;
+pvpArena=function(){const hw=PV.mode==='1v1'?9:14,L=-HALF+0.6,R=GATE_X-0.5,c=(L+R)/2;PVA={l:c-hw,r:c+hw,c};G.bounds.left=PVA.l;
+  _paS();const T=buildArena(PV.mode,c,hw);
+  pvpRound();clearTimeout(PV.rt);$('pvpCount').hidden=true;      // prima la presentazione, poi il conto alla rovescia
+  const v=$('pvpVs');vsRender(T);v.hidden=false;v.classList.remove('on','out');void v.offsetWidth;v.classList.add('on');sfx('roar');
+  let n=0;const iv=setInterval(()=>{if(++n>20||!PV.on){clearInterval(iv);return;}vsRender(T);},120);   // le classi degli altri arrivano dalla rete
+  clearTimeout(PV.vsT);PV.vsT=setTimeout(()=>{v.classList.add('out');setTimeout(()=>{v.hidden=true;v.classList.remove('on','out');},450);if(PV.on)pvpRound();},2700);};
+const _upA=update;update=function(dt){_upA(dt);if(G.pvp&&ARENA)arenaTick(dt);};
+const _ecAr=enterCellar;enterCellar=function(){arenaOff();const v=$("pvpVs");if(v)v.hidden=true;return _ecAr.apply(this,arguments);};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{buildArena,ARENAS1,ARENAS2,arena:()=>ARENA,vsRender,PV:()=>PV});
+const _blAr=buildLevel;buildLevel=function(){if(!G.pvp&&(ARENA||!towerG.visible))arenaOff();return _blAr.apply(this,arguments);};
+// il muro destro dell'arena blocca davvero (prima si poteva attraversare fino al cancello)
+const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA.r!=null){const R=PVA.r-b.w/2;if(b.x>R){b.x=R;b.hitWall=1;if(b.vx>0)b.vx=0;}}};
+
+/* =========================================================
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794138266';
+const BUILD_ID='1794140163';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
