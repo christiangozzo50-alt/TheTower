@@ -1483,7 +1483,7 @@ function musicTick(){
     if(s%8===0)note(mtof(ch[0]-24),{type:'triangle',dur:sd*7.5,vol:.16,at:t,dest:d,attack:.02});
     if(MUS.mood==='cellar'){if(s%4===2)note(mtof(ch[(s>>2)%3]+12),{dur:sd*3,vol:.045,at:t,dest:d,attack:.02});}
     else{if(s%2===0)note(mtof(ch[(s>>1)%3]+(s%8>=4?12:0)),{type:'triangle',dur:sd*1.6,vol:.045,at:t,dest:d});
-      if(s%4===0)note(mtof(ch[0]-12),{type:'sawtooth',dur:sd*1.5,vol:.022,at:t,dest:d,lp:600});}
+      if(s%4===0)note(mtof(ch[0]-12),{type:'sawtooth',dur:sd*1.5,vol:.022,at:t,dest:d,lp:600});if(typeof battleLayer==='function')battleLayer(s,t,sd,d,ch);}
     MUS.step++;MUS.next+=sd;
   }
 }
@@ -5385,7 +5385,7 @@ function syncRig(e,p,dt,t,fl,k,w,st){
   const R=p.rig;R.model.rotation.y=e.face*Math.PI/2;R.model.scale.x=e.face;
   const tg=tgBase(),sp=Math.abs(e.vx),wind=st==='wind'||st.endsWith('Wind');e.walk+=dt*sp*1.5/(p.rigScale||1);
   if(e.fly){tg.hF=-0.3;tg.kF=0.5;tg.hB=0.1;tg.kB=0.4;}
-  else if(e.onGround&&sp>0.3)walkTg(tg,e.walk,Math.min(1,sp/4));else if(!e.onGround){tg.hF=-0.7;tg.kF=1.2;tg.hB=0.3;tg.kB=0.6;}
+  else if(e.onGround&&sp>0.3){if(window.__ANIMV!==1)enemyWalk(tg,e,sp,dt);else walkTg(tg,e.walk,Math.min(1,sp/4));}else if(!e.onGround){tg.hF=-0.7;tg.kF=1.2;tg.hB=0.3;tg.kB=0.6;}
   else tg.crouch=0.02+Math.sin(t*2)*0.01;
   let kk=damp(dt,14),ka=damp(dt,14);
   if(e.stunT>0){tg.head=0.45;tg.shF=-0.1;tg.elF=-0.2;tg.shB=-0.1;tg.elB=-0.2;tg.crouch=0.08;}
@@ -9173,10 +9173,71 @@ const _hudJ=updHud;updHud=function(){_hudJ.apply(this,arguments);comboUi();parUi
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{perfectDodge,gemFly,floorClearCheck,hitEnemy:(...a)=>hitEnemy(...a),hurtPlayer:(...a)=>hurtPlayer(...a)});
 
 /* =========================================================
+   NEMICI PIÙ VIVI · ENTRATE SCENOGRAFICHE · MUSICA DI BATTAGLIA
+   ========================================================= */
+/* ---------- camminata dei nemici con il nuovo ciclo a pose chiave, piedi piatti ---------- */
+let CUR_E=null;
+function enemyWalk(tg,e,sp,dt){const amp=Math.min(1,sp/5.5),sc=(e.parts&&e.parts.rigScale)||1,len=RUN_LEN*(0.4+0.6*amp)*sc;
+  e.cyc=((e.cyc||0)+dt*sp/len)%1;const G2=runLegs(e.cyc),bl=(b,v)=>b+(v-b)*amp*0.85;
+  tg.hF=bl(-0.1,G2.a[0]);tg.kF=bl(0.2,G2.a[1]);tg.fF=bl(-0.1,G2.a[2]);tg.hB=bl(0.08,G2.b[0]);tg.kB=bl(0.16,G2.b[1]);tg.fB=bl(-0.24,G2.b[2]);
+  tg.crouch=bl(0.02,0.95-G2.H);tg.lean=(tg.lean||0)+0.14*amp;tg.twist=Math.sin(2*Math.PI*e.cyc-Math.PI)*0.14*amp;}
+const _apE=applyPose;
+applyPose=function(R,t,k,ka){_apE(R,t,k,ka);
+  if(!AV2()||!CUR_E||R!==CUR_E.parts.rig)return;const gr=CUR_E.onGround,flat=(h,kn)=>clamp(-(h+kn),-0.9,0.9);
+  const fF=t.fF!=null?t.fF:(gr?flat(t.hF,t.kF):0.35),fB=t.fB!=null?t.fB:(gr?flat(t.hB,t.kB):0.25);
+  const j=(o,v)=>{if(o)o.rotation.x+=wrapA(v-o.rotation.x)*k;};if(R.legs){j(R.legs[0].foot,fF);j(R.legs[1].foot,fB);}};
+// colpo ricevuto: contraccolpo nella direzione del colpo, testa che scatta, braccio che vola
+const _srE=syncRig;
+syncRig=function(e,p,dt,t,fl,k,w,st){const R=p.rig;
+  if(e.rOff&&R){R.torso.rotation.x-=e.rOff.l;R.head.rotation.x-=e.rOff.h;R.arms[1].sh.rotation.x-=e.rOff.a;e.rOff=null;}
+  CUR_E=e;try{_srE(e,p,dt,t,fl,k,w,st);}finally{CUR_E=null;}
+  if(!AV2()||!R||!(fl>0)||e.dead)return;const s=e.lastDir===e.face?1:-1,q=fl*fl;
+  const o={l:0.55*q*s,h:-0.5*q*s,a:-1.1*q};R.torso.rotation.x+=o.l;R.head.rotation.x+=o.h;R.arms[1].sh.rotation.x+=o.a;e.rOff=o;};
+const _seE=syncEnemy;
+syncEnemy=function(e,dt){_seE(e,dt);
+  if(e.wallIn&&e.spawnT>0){const r=e.parts.root,k=1-e.spawnT/e.spawnMax,q=easeOutCubic(k);r.position.z=-2.7*(1-q);r.scale.setScalar(e.sc*Math.min(1,0.55+k));}
+  else if(e.wallIn&&e.parts.root.position.z!==0){e.parts.root.position.z=0;e.wallIn=false;}};
+
+/* ---------- entrate: dal soffitto o da una crepa nel muro ---------- */
+function wallCrack(x,col){const g=new THREE.Group();g.position.set(x,0,-2.93);levelGroup.add(g);
+  const dark=new THREE.MeshBasicMaterial({color:0x07050a}),glow=new THREE.MeshBasicMaterial({color:col||0xff7a2e,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false});
+  mesh(new THREE.CircleGeometry(0.75,7),dark,0,1.15,0.01,g,true).scale.set(0.8,1.25,1);
+  const gl=mesh(new THREE.CircleGeometry(0.62,7),glow,0,1.15,0.02,g,true);gl.scale.set(0.75,1.2,1);
+  for(let i=0;i<7;i++){const a=i/7*TAU+rand(-0.3,0.3),L=rand(0.5,1.1),b=mesh(new THREE.BoxGeometry(L,0.05,0.02),dark,Math.cos(a)*(0.55+L/2),1.15+Math.sin(a)*(0.8+L/2),0.015,g,true);b.rotation.z=a+rand(-0.25,0.25);}
+  burst(x,1.2,0x5a5148,18,6,2);burst(x,1.2,0xb9ad98,12,4,1.5);sfx('land');shake(0.12);
+  later(1.6,()=>{gl.visible=false;});}
+const _spE=spawnEnemy;
+spawnEnemy=function(type,o){const e=_spE.apply(this,arguments);o=o||{};
+  if(!e||!AV2()||type==='boss'||o.summon||G.scene!=='tower'||G.state!=='play'||G.tutorial||G.pvp||(MP.live()&&!MP.host)||e.fly||e.elite)return e;
+  const r=Math.random();
+  if(r<0.3){const top=groundAt(e.x,99);e.y=Math.min(CEIL-2,top+rand(5,7));e.vy=-2;e.onGround=false;e.dropIn=true;e.spawnT=e.spawnMax=0.12;}
+  else if(r<0.6){e.wallIn=true;e.spawnT=e.spawnMax=0.75;wallCrack(e.x,ZONES[zoneIndex(G.floor)].accent);}
+  return e;};
+const _ueE=updEnemy;
+updEnemy=function(e,dt){const r=_ueE.apply(this,arguments);
+  if(e.dropIn&&e.onGround&&!(e.spawnT>0)){e.dropIn=false;e.landT=0.25;burst(e.x,e.y+0.05,0xb9ad98,14,5,1.2);shake(0.14);sfx('land');}
+  return r;};
+
+/* ---------- musica di battaglia: batteria e basso che entrano quando ci sono nemici ---------- */
+const BAT={I:0};
+function battleLayer(s,t,sd,d,ch){const I=BAT.I;if(I<0.08)return;
+  if(s%4===0)note(58,{dur:.2,vol:.26*I,f2:36,at:t,dest:d});
+  if(s%8===4){hiss({dur:.13,vol:.13*I,f:1900,f2:700,q:1,at:t,dest:d});note(190,{type:'triangle',dur:.07,vol:.05*I,f2:120,at:t,dest:d});}
+  if(I>0.45)hiss({dur:.035,vol:(s%2?0.022:0.04)*I,f:7500,q:.8,at:t,dest:d});
+  if(I>0.3&&s%2===0)note(mtof(ch[0]-24+(s%8===6?7:0)),{type:'sawtooth',dur:sd*0.85,vol:.05*I,at:t,dest:d,lp:520});
+  if(I>0.75&&s%8===0)note(mtof(ch[1]+12),{type:'square',dur:sd*0.6,vol:.028*I,at:t,dest:d,lp:1600});}
+function battleIntensity(dt){let tgt=0;
+  if(G.scene==='tower'&&(G.state==='play'||G.state==='upgrade')&&MUS.mood==='tower'&&!G.safe){const alive=(G.enemies||[]).filter(e=>!e.dead).length,q=(G.queue||[]).length;
+    if(alive>0||(!G.cleared&&q>0))tgt=Math.min(1,0.45+alive*0.07+Math.min(0.25,(G.cmb||0)*0.012)+(G.horde?0.2:0));}
+  BAT.I+=(tgt-BAT.I)*Math.min(1,dt*(tgt>BAT.I?2.5:0.8));}
+const _upE=update;update=function(dt){_upE(dt);battleIntensity(dt);};
+const _ecE=enterCellar;enterCellar=function(){BAT.I=0;return _ecE.apply(this,arguments);};
+
+/* =========================================================
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794137704';
+const BUILD_ID='1794138266';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
