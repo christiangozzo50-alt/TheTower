@@ -5402,7 +5402,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;dropXP(e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1));}
-  if(!boss&&!e.summon&&Math.random()<0.045)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.03)spawnBandage(e.x,0);
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
@@ -6401,12 +6401,19 @@ function updFloor(dt){
 }
 function startClimb(){
   if(!G.cleared||aliveCount()>0||G.queue.length>0||G.floor>=TOP_FLOOR){G.gateOpen=false;return;}   // si sale solo con il piano vuoto
-  collectAllItems();G.state='climb';G.climbT=0;P.atk=null;P.dragon=null;P.flipT=0;P.climbTurn=0;P.cvx=clamp(Math.abs(P.vx),2.5,4.2);P.chargeT=P.spinT=0;
+  collectAllItems();G.state='climb';G.climbBack=false;G.climbT=0;P.atk=null;P.dragon=null;P.flipT=0;P.climbTurn=0;P.cvx=clamp(Math.abs(P.vx),2.5,4.2);P.chargeT=P.spinT=0;
   clearInput();setHint('',0);$('prompt').hidden=true;$('bUse').hidden=true;
 }
 // salita morbida: accelera, segue una rampa continua sui gradini, rallenta e si gira verso la porta
 function updClimb(dt){
-  G.climbT+=dt;P.onGround=true;P.face=1;
+  G.climbT+=dt;P.onGround=true;
+  // tornare indietro sui gradini annulla la salita: vale finché non stai già entrando nella porta
+  if(P.climbTurn<0.35&&!G.climbFaded){if(input.left&&!input.right)G.climbBack=true;else if(input.right&&!input.left)G.climbBack=false;}
+  if(G.climbBack){P.face=-1;P.climbTurn=approach(P.climbTurn,0,dt*4);P.cvx=approach(P.cvx,4.2,dt*10);P.x-=P.cvx*dt;P.vx=-P.cvx;
+    const ramp=clamp(((P.x-STAIR_X0)/STAIR_W+0.5)*STAIR_RISE,0,STAIR_TOP);P.y+=(ramp-P.y)*damp(dt,12);
+    if(P.x<=GATE_X+0.2){G.climbBack=false;P.y=0;P.vy=0;input.jumpPressed=input.atkPressed=input.dashPressed=input.abilPressed=input.abil2Pressed=input.abil3Pressed=input.usePressed=false;G.state='play';}
+    return;}
+  P.face=1;
   if(P.z>-0.02&&P.x<DOOR_X-0.04){
     P.cvx=approach(P.cvx,4.2,dt*6);
     const slow=clamp((DOOR_X-P.x)/1.4,0.3,1);P.x=Math.min(DOOR_X,P.x+P.cvx*slow*dt);P.vx=P.cvx*slow;
@@ -6997,6 +7004,7 @@ addEventListener('keydown',e=>{
   }
   if(!a)return;
   if(G.state==='play'||G.state==='cellar'){e.preventDefault();if(!e.repeat)press(a,true);}
+  else if(G.state==='climb'&&(a==='left'||a==='right')){e.preventDefault();if(!e.repeat)press(a,true);}   // sulle scale: indietro annulla la salita
 });
 addEventListener('keyup',e=>{const a=actionFor(e.code);if(a)press(a,false);});
 canvas.addEventListener('pointerdown',e=>{audioInit();if(G.state==='intro'||G.state==='waking')return;if(G.state==='bossintro'){if(G.bi&&G.bi.t>0.4)finishBossIntro();return;}
@@ -7213,7 +7221,7 @@ function updHeroVisual(dt){
   else if(st==='select'){const b=Math.sin(G.time*2);t.crouch=0.02+b*0.012;t.hF=-0.12;t.kF=0.2;t.hB=0.1;t.kB=0.12;t.head=-0.05+b*0.03;t.lean=-0.04;
     show=selShow(dt,t);rx=PED_X+show.ox;ry=0.52+show.oy;rz=PED_Z;
     {const tr=show.rot!=null?show.rot:0.55+Math.sin(G.time*0.7)*0.2;G.selRot=G.selRot==null?tr:lerp(G.selRot,tr,damp(dt,10));rotY=G.selRot+show.spin;}sx=1;special='pose';}
-  else if(st==='climb'){rotY=lerp(Math.PI/2,Math.PI,easeInOutCubic(P.climbTurn));sx=1;}
+  else if(st==='climb'){rotY=lerp(P.face<0?-Math.PI/2:Math.PI/2,Math.PI,easeInOutCubic(P.climbTurn));sx=1;}
   else if(st==='enter'){rotY=lerp(0,P.face*Math.PI/2,easeInOutCubic(clamp((G.enterT-0.85)/0.4,0,1)));sx=P.face;}
   else if(st==='wardrobe'){const b=Math.sin(G.time*2);t.crouch=0.02+b*0.012;t.hF=-0.12;t.kF=0.2;t.hB=0.1;t.kB=0.12;t.head=b*0.03;rotY=Math.sin(G.time*0.5)*0.3;sx=1;special='pose';}
   const A=P.atk;
@@ -7521,6 +7529,7 @@ function pollPad(){const gp=padGet();
     if(edge('st',P_('pause'))){if(G.state==='play')pause();else if(G.state==='cellar')openSettings('cellar');}
     if(edge('view',B(8))&&G.state==='cellar')$('coopBtn').click();
     return;}
+  if(G.state==='climb'){for(const a of PAD_ACTS){const v=a==='left'?L:a==='right'?R:false;if(v!==!!PAD.prev['g_'+a]){PAD.prev['g_'+a]=v;press(a,v);}}return;}   // sulle scale conta solo la direzione: indietro annulla la salita
   padRelease();
   if(G.state==='cine'&&!$('cineSkip').hidden&&edge('st',B(9))){$('cineSkip').click();return;}
   if(G.state==='bossintro'){if(edge('a',B(0))|edge('st',B(9))){if(G.bi&&G.bi.t>0.4)finishBossIntro();}return;}
@@ -9933,7 +9942,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794169143';
+const BUILD_ID='1794173725';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
