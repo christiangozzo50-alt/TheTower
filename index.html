@@ -491,7 +491,9 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 /* tasto "Apri il forziere" su mobile: più piccolo e appena sopra la barra delle abilità */
 #bUse{bottom:calc(66px + env(safe-area-inset-bottom,0px));padding:7px 14px;font-size:11px;z-index:7}
 /* cartello sul cancello: solo il contatore; all'apertura compare un messaggio a schermo */
-#sChat{position:fixed;z-index:9;left:max(16px,env(safe-area-inset-left));bottom:22px;width:min(350px,42vw);pointer-events:none;font-size:14px;line-height:1.3}
+/* su PC, nei santuari la chat prende il posto delle abilità (in basso al centro); su telefono resta in alto a sinistra */
+#sChat{position:fixed;z-index:9;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:clamp(230px,calc(100vw - 420px),460px);pointer-events:none;font-size:14px;line-height:1.3;text-align:center}
+#scLog{text-align:left}
 #sChat[hidden]{display:none}
 #scLog{max-height:150px;overflow:hidden;margin-bottom:8px}
 #scLog p{margin:3px 0 0;padding:3px 8px;background:rgba(10,8,14,.72);color:#f1ebdf;overflow-wrap:anywhere;transition:opacity .5s}
@@ -507,8 +509,8 @@ h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(26px,5v
 #scIn{flex:1;min-width:0;height:42px;padding:0 10px;background:rgba(10,8,14,.94);border:2px solid #ffd27a;color:#fff;font:inherit;font-size:16px;border-radius:0;outline:none}
 #scSend{height:42px;padding:0 14px;background:#ffb347;border:0;color:#201204;font:inherit;font-weight:800;cursor:pointer}
 .mp-tag .sc-bub{position:absolute;left:50%;bottom:calc(100% + 7px);transform:translateX(-50%);width:max-content;max-width:220px;padding:4px 9px;background:#f4eddc;color:#201204;font-size:13px;font-weight:600;white-space:normal;overflow-wrap:anywhere;text-align:center}
-@media (hover:none),(pointer:coarse){#sChat{top:68px;bottom:auto;width:min(320px,46vw)}#scLog{max-height:92px;margin-bottom:6px}#scBtn kbd{display:none}
-#sChat.open{position:fixed;top:6px;left:8px;right:8px;width:auto;display:flex;flex-direction:column-reverse}#sChat.open #scLog{max-height:30vh;margin:6px 0 0}}
+@media (hover:none),(pointer:coarse){#sChat{left:max(16px,env(safe-area-inset-left));top:68px;bottom:auto;transform:none;width:min(320px,46vw);text-align:left}#scLog{max-height:92px;margin-bottom:6px}#scBtn kbd{display:none}
+#sChat.open{position:fixed;top:6px;left:8px;right:8px;bottom:auto;transform:none;width:auto;display:flex;flex-direction:column-reverse}#sChat.open #scLog{max-height:30vh;margin:6px 0 0}}
 #chestArrow{position:fixed;left:0;top:0;z-index:8;pointer-events:none;will-change:transform}
 #chestArrow[hidden]{display:none}
 #chestArrow i{display:block;width:36px;height:36px;color:#ffd27a;filter:drop-shadow(0 3px 0 #2a1205) drop-shadow(0 0 10px rgba(255,190,90,.6));animation:chArrV .55s ease-in-out infinite alternate}
@@ -799,6 +801,18 @@ button.sh-stage:hover img,button.sh-stage:focus-visible img{transform:scale(1.06
 
 /* mercante errante */
 .mb-frame{width:min(520px,100%)}
+#merchBox{z-index:60;background:rgba(8,9,13,.93)}
+.mbx-frame{width:min(780px,100%)}
+.mbx-have{display:grid;gap:4px;justify-items:end;font-family:var(--f-display);font-size:15px;color:#f3ead7;white-space:nowrap}.mbx-have span{display:inline-flex;align-items:center;gap:6px}
+.mbx-opts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.mbx-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0;padding:10px 9px;text-align:center;background:radial-gradient(circle at 50% 16%,var(--rcg),transparent 62%),linear-gradient(180deg,#2a1d13,#18110b);border:2px solid var(--rc);box-shadow:inset 0 0 0 1px rgba(0,0,0,.5)}
+.mbx-pic{display:grid;place-items:center;width:62px;height:62px;color:var(--rc)}.mbx-pic img{width:100%;height:100%;image-rendering:pixelated}.mbx-pic svg{width:44px;height:44px}
+.mbx-card b{max-width:100%;font-family:var(--f-display);font-weight:400;font-size:15px;line-height:1.15;color:var(--rc)}
+.mbx-card small{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#b9a988}
+.mbx-card p{flex:1;margin:0;font-size:12px;line-height:1.3;color:#e6dcc6}
+.mbx-pay{display:grid;grid-template-columns:1fr 1fr;gap:6px;width:100%;margin-top:4px}
+.mbx-pay .sh-buy{padding:8px 3px;gap:5px;font-size:14px}
+@media (max-height:500px){.mbx-frame{gap:6px;padding:8px 16px}.mbx-top h2{font-size:18px;margin:0}.mbx-top .sh-port{width:42px;height:42px}.mbx-top .mb-q{margin:0;font-size:11px}.mbx-pic{width:38px;height:38px}.mbx-pic svg{width:28px;height:28px}.mbx-card{padding:6px 7px;gap:2px}.mbx-card b{font-size:13px}.mbx-card p{font-size:11px}.mbx-pay .sh-buy{padding:6px 2px;font-size:13px}#merchBox .row .ghost{padding:5px 14px}}
 .mb-q{margin:4px 0 0;font-style:italic;font-size:13px;color:#d8c8a8}
 .mb-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .mb-opts .sh-buy{padding:14px 12px}
@@ -1218,10 +1232,9 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
 </section>
 
 <section class="screen" id="merchBox" hidden>
-  <div class="sh-frame mb-frame">
-    <header class="sh-top"><img id="mbPortrait" class="sh-port" alt="" hidden><div class="sh-title"><div class="eyebrow">Mercante errante</div><h2>Un affare?</h2><p class="mb-q">«Un oggetto raro, scelto da me. Come preferisci pagare?»</p></div></header>
-    <div class="mb-opts"><button class="sh-buy mb-hp" id="mbHp"></button><button class="sh-buy" id="mbGem"></button></div>
-    <p class="mb-have" id="mbHave"></p>
+  <div class="sh-frame mbx-frame">
+    <header class="sh-top mbx-top"><img id="mbPortrait" class="sh-port" alt="" hidden><div class="sh-title"><div class="eyebrow">Mercante errante</div><h2>Tre affari, uno solo</h2><p class="mb-q">«Scegli bene, viandante: ne prendi uno e sparisco.»</p></div><div class="mbx-have" id="mbHave"></div></header>
+    <div class="mbx-opts" id="mbOpts"></div>
     <div class="row"><button class="ghost" id="mbNo">Lascia stare</button></div>
   </div>
 </section>
@@ -7459,6 +7472,7 @@ function update(dt){
     G.runTime+=dt;STATS.time+=dt;G.statSave+=dt;if(G.statSave>15){G.statSave=0;saveStats();}
     if(P.dead){G.overT-=dt;if(G.overT<=0)gameOver();}
   }else updCellar(dt);
+  if(input.usePressed&&merchant&&merchant.near&&G.state==='play'&&!P.dead)openMerch();   // va letto qui: a fine aggiornamento il tasto viene azzerato
   input.atkDir=null;input.jumpPressed=input.atkPressed=input.dashPressed=input.abilPressed=input.abil2Pressed=input.abil3Pressed=input.usePressed=false;
 }
 // ---- controller ----
@@ -7494,7 +7508,7 @@ function padMove2(dx,dy){if(dx&&dy)dx=0;const f=padFocusables();if(!f.length)ret
   for(const el of f){if(el===cur)continue;const r=el.getBoundingClientRect(),ex=r.left+r.width/2,ey=r.top+r.height/2,along=dx?(ex-ax)*dx:(ey-ay)*dy,cross=Math.abs(dx?ey-ay:ex-ax);if(along<=2)continue;const v=along+cross*2.2;if(v<bs){bs=v;best=el;}}
   if(!best){const i=f.indexOf(cur);best=f[(i+((dx||dy)>0?1:-1)+f.length)%f.length];}
   best.focus();try{best.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){}sfx('ui');}
-function padBack(){for(const id of ['wrClose','selBack','settingsClose','safeClose','resumeBtn','closeLoot','lootClose']){const b=$(id);if(b&&b.offsetParent!==null&&!b.closest('[hidden]')){b.click();return true;}}
+function padBack(){for(const id of ['wrClose','selBack','settingsClose','safeClose','resumeBtn','closeLoot','lootClose','mbNo']){const b=$(id);if(b&&b.offsetParent!==null&&!b.closest('[hidden]')){b.click();return true;}}
   const top=[...document.querySelectorAll('.screen:not([hidden])')].pop(),b=top&&[...top.querySelectorAll('button[id$="Close"],button[id$="Back"]')].find(x=>x.offsetParent!==null);if(b){b.click();return true;}return false;}
 const PAD_ACTS=['left','right','up','down','jump','atk','dash','ability','ability2','ability3','use'];
 function padRelease(){if(PAD.rk){PAD.rk='';input.atkHold=null;}for(const a of PAD_ACTS)if(PAD.prev['g_'+a]){PAD.prev['g_'+a]=false;press(a,false);}}
@@ -7813,8 +7827,9 @@ const _buildQueue=buildQueue;
 buildQueue=function(f){const q=_buildQueue(f);if(!MP.host||!MP.live()||!q.length||q[0]==='boss')return q;
   const extra=Math.round(q.length*(mpMul()-1));for(let i=0;i<extra;i++)q.push(q[Math.floor(Math.random()*q.length)]);return q;};
 function mpRemoteHit(m){if(G.scene!=='tower'||m.f!==G.floor)return;const e=G.enemies.find(x=>x.id===m.id&&!x.dead);if(!e)return;
-  const c=S.crit;S.crit=-9;
-  try{_hitEnemy(e,m.d,m.dir,{kb:m.kb,ky:m.ky,hs:m.hs,stun:m.stun,launch:m.launch,unblockable:m.unb,effect:m.eff,noCombo:true});}finally{S.crit=c;}}
+  const c=S.crit,h0=e.hp,by=MP.hitFrom;S.crit=-9;if(by!=null)e.lastBy=by;   // uccisioni e danni vanno a chi ha colpito davvero
+  try{_hitEnemy(e,m.d,m.dir,{kb:m.kb,ky:m.ky,hs:m.hs,stun:m.stun,launch:m.launch,unblockable:m.unb,effect:m.eff,noCombo:true});}finally{S.crit=c;}
+  if(by!=null)RK.dmgBy[by]=(RK.dmgBy[by]||0)+Math.max(0,h0-Math.max(0,e.hp));}
 function mpSnap(){
   const l=[];for(const e of G.enemies){if(e.dead)continue;
     l.push([e.id,e.type,r2(e.x),r2(e.y),r2(e.vx),r2(e.vy),e.face,e.state||'',r2(e.t),r2(e.warn),Math.round(e.hp),Math.round(e.maxHp),r2(e.stunT),r2(e.slowT),e.onGround?1:0,e.phased?1:0,
@@ -8213,7 +8228,7 @@ hitEnemy=function(e,base,dir,o){
     PV.dmg+=d;MP.send({t:'pvphit',to:e.pvp,from:MP.myPid,d,dir,fx:P.x});return true;}
   // statistiche per la classifica co-op
   const h0=e.hp;if(MP.host&&!e.pvp)e.lastBy=MP.hitFrom!=null?MP.hitFrom:MP.myPid;
-  const r=_hitP(e,base,dir,o);if(MP.hitFrom==null)RK.dmg+=Math.max(0,h0-Math.max(0,e.hp));return r;};
+  const r=_hitP(e,base,dir,o);if(MP.hitFrom==null){const dd=Math.max(0,h0-Math.max(0,e.hp));RK.dmg+=dd;if(MP.host)RK.dmgBy[MP.myPid]=(RK.dmgBy[MP.myPid]||0)+dd;}return r;};
 function pvpDie(){_playerDie();G.overT=1e9;const me=MP.myPid;PV.lives[me]=Math.max(0,(PV.lives[me]||1)-1);
   MP.send({t:'pvpdie',pid:me,lives:PV.lives[me],by:PV.lastBy});pvpHud();
   if(PV.lives[me]>0){toast('Sei stato abbattuto',`Vite rimaste: ${PV.lives[me]} · rientri tra poco`);
@@ -8249,8 +8264,8 @@ mpMsg=function(m,from){
     if(m.by===MP.myPid)toast('Colpo decisivo!',`Hai abbattuto ${PV.names[pid]||pName(pid)}`);
     const R=MP.players.get(pid);if(R)R.respawn=m.lives>0;if(MP.host)pvpCheck();return;}
   case 'pvpend':if(!MP.host){PV.lives=m.lives||PV.lives;pvpEnd(m.win);}return;
-  case 'stats':{const pid=MP.host?from:m.pid;if(MP.host){m.pid=pid;MP.bcast(m,pid);}RANK[pid]=m;rankRender();return;}
-  case 'kills':if(!MP.host){RK.killsBy=m.k||{};rankRender();}return;
+  case 'stats':{const pid=MP.host?from:m.pid;if(MP.host){m.pid=pid;MP.bcast(m,pid);MP.bcast({t:'kills',k:RK.killsBy,d:RK.dmgBy});}RANK[pid]=m;rankRender();return;}
+  case 'kills':if(!MP.host){RK.killsBy=m.k||{};RK.dmgBy=m.d||{};rankRender();}return;
   }
   return _mpMsgX(m,from);
 };
@@ -8263,27 +8278,27 @@ const _ecP=enterCellar;
 enterCellar=function(){G.pvp=false;PV.on=false;$('pvpHud').hidden=true;$('specHud').hidden=true;$('mpRank').hidden=true;return _ecP();};
 
 /* ---------- classifica a fine partita co-op ---------- */
-const RK={dmg:0,taken:0,cmb:0,lastHp:0,killsBy:{}};let RANK={};
+const RK={dmg:0,taken:0,cmb:0,lastHp:0,killsBy:{},dmgBy:{}};let RANK={};
 const _srR=startRun;
-startRun=function(){if(!RESUMING){Object.assign(RK,{dmg:0,taken:0,cmb:0,lastHp:0,killsBy:{}});RANK={};$('mpRank').hidden=true;}return _srR();};
+startRun=function(){if(!RESUMING){Object.assign(RK,{dmg:0,taken:0,cmb:0,lastHp:0,killsBy:{},dmgBy:{}});RANK={};$('mpRank').hidden=true;}return _srR();};
 const _keR=killEnemy;
 killEnemy=function(e){if(MP.host&&MP.live()&&!e.dead&&!e.net&&e.pvp==null){const p=e.lastBy!=null?e.lastBy:0;RK.killsBy[p]=(RK.killsBy[p]||0)+1;}return _keR(e);};
 const _goR=gameOver;
 gameOver=function(){
   if(G.items&&G.items.length)collectAllItems();   // l'equipaggiamento trovato va comunque nell'armadio
   _goR();
-  if(MP.live()&&!G.pvp){RANK={};const me={t:'stats',pid:MP.myPid,n:MP.name(),cls:G.cls.name,dmg:Math.round(RK.dmg),taken:Math.round(RK.taken),cmb:RK.cmb,fl:G.floor};
-    RANK[MP.myPid]=me;MP.send(me);if(MP.host)MP.bcast({t:'kills',k:RK.killsBy});rankRender();
-    if(MP.host)setTimeout(()=>MP.bcast({t:'kills',k:RK.killsBy}),1500);}};
+  if(MP.live()&&!G.pvp){const me={t:'stats',pid:MP.myPid,n:MP.name(),cls:G.cls.name,dmg:Math.round(RK.dmg),taken:Math.round(RK.taken),cmb:RK.cmb,fl:G.floor};
+    RANK[MP.myPid]=me;MP.send(me);if(MP.host)MP.bcast({t:'kills',k:RK.killsBy,d:RK.dmgBy});rankRender();
+    if(MP.host)setTimeout(()=>MP.bcast({t:'kills',k:RK.killsBy,d:RK.dmgBy}),1500);}};
 function rankRender(){const box=$('mpRank');const rows=Object.values(RANK);if(!rows.length){box.hidden=true;return;}
-  const K=pid=>RK.killsBy[pid]||0,score=r=>K(r.pid)*60+r.dmg/4+r.cmb*5-r.taken/6;rows.sort((a,b)=>score(b)-score(a));
+  const K=pid=>RK.killsBy[pid]||0,D=r=>RK.dmgBy[r.pid]!=null?Math.round(RK.dmgBy[r.pid]):r.dmg,score=r=>K(r.pid)*60+D(r)/4+r.cmb*5-r.taken/6;rows.sort((a,b)=>score(b)-score(a));
   box.innerHTML=`<div class="rk-h">Classifica della squadra</div><div class="rk-t"><span></span><span>Giocatore</span><span>Uccisioni</span><span>Danni</span><span>Subiti</span><span>Combo</span></div>`+
-    rows.map((r,i)=>`<div class="rk-r${r.pid===MP.myPid?' me':''}"><span>${i===0?'👑':i+1}</span><span><b>${r.pid===MP.myPid?'Tu':r.n}</b><small>${r.cls}</small></span><span>${K(r.pid)}</span><span>${r.dmg}</span><span>${r.taken}</span><span>${r.cmb}</span></div>`).join('');
+    rows.map((r,i)=>`<div class="rk-r${r.pid===MP.myPid?' me':''}"><span>${i===0?'👑':i+1}</span><span><b>${r.pid===MP.myPid?'Tu':r.n}</b><small>${r.cls}</small></span><span>${K(r.pid)}</span><span>${D(r)}</span><span>${r.taken}</span><span>${r.cmb}</span></div>`).join('');
   box.hidden=false;}
 
 /* ---------- spettatore: vita di chi stai guardando ---------- */
 setInterval(()=>{
-  if(G.state==='play'&&G.scene==='tower'&&!P.dead){if(P.hp<RK.lastHp)RK.taken+=RK.lastHp-P.hp;RK.lastHp=P.hp;RK.cmb=Math.max(RK.cmb,G.cmb||0);}else if(P.dead)RK.lastHp=0;
+  if(G.state==='play'&&G.scene==='tower'&&!P.dead){if(P.hp<RK.lastHp)RK.taken+=RK.lastHp-P.hp;RK.lastHp=P.hp;RK.cmb=Math.max(RK.cmb,G.cmb||0);}else RK.lastHp=P.dead?0:P.hp;
   const sh=$('specHud');let R=null;
   if(MP.live()&&P.dead&&G.scene==='tower'&&!(G.deathSlow>0)&&G.state==='play')for(const r of MP.players.values())if(r.sc==='tower'&&r.fl===G.floor&&!r.dead){R=r;break;}
   if(!R){sh.hidden=true;return;}
@@ -8484,13 +8499,45 @@ startFloor=function(f){
 };
 const _dxF=dropXP;
 dropXP=function(x,y,v){return _dxF(x,y,G.event==='maledetto'?v*2:v);};
-function buildMerchant(){const g=new THREE.Group(),x=GATE_X-1.6;g.position.set(x,0,-1.55);g.rotation.y=-0.3;g.visible=false;levelGroup.add(g);
-  const robe=toon(0x3a2a55),hood=toon(0x2a1e40),gold=toon(0xd9b45a,{emissive:0x5a3a00,emissiveIntensity:0.4});
-  mesh(new THREE.ConeGeometry(0.62,1.7,14),robe,0,0.85,0,g);mesh(sph(0.3,14,12),hood,0,1.85,0,g);
-  mesh(sph(0.17,10,8),new THREE.MeshBasicMaterial({color:0x0a0710}),0.08,1.83,0.17,g,true);
-  for(const s of [-1,1])mesh(sph(0.04,6,6),new THREE.MeshBasicMaterial({color:0xffd27a}),0.05+s*0.07,1.86,0.3,g,true);
-  mesh(rbox(0.7,0.5,0.45,0.06),toon(0x5a3a22),0.75,0.25,0.1,g);mesh(rbox(0.72,0.08,0.47,0.03),gold,0.75,0.52,0.1,g);
-  const lamp=mesh(sph(0.1,10,8),new THREE.MeshBasicMaterial({color:0xffc56b}),-0.55,1.25,0.2,g,true);G.props.push({o:lamp,flick:1});
+function travelMerchantModel(){const g=new THREE.Group(),B=c=>new THREE.MeshBasicMaterial({color:c}),L=(pts)=>new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),QS(24,10)),T=(r,t)=>new THREE.TorusGeometry(r,t,QS(8,6),QS(26,12)),
+    robe=toon(0x3b2a5e),robe2=toon(0x5a4392),hood=toon(0x2a1e44),gold=toon(0xd9b45a,{emissive:0x5a3a00,emissiveIntensity:0.45}),wood=toon(0x5f3f26),dark=toon(0x3a2616),leather=toon(0x7a5434),red=toon(0xa33a4a),sand=toon(0xe0c48a),hand=toon(0xc9a27a),glow=B(0xffc56b);
+  // tappeto e bancarella verso la stanza
+  mesh(rbox(3.4,0.05,1.7,0.02),red,-0.6,0.025,0.3,g);for(const z of [-0.5,1.1])mesh(rbox(3.4,0.06,0.1,0.02),gold,-0.6,0.03,z,g,true);
+  for(const [x,z] of [[-1.72,0.05],[-0.62,0.05],[-1.72,0.62],[-0.62,0.62]])mesh(rbox(0.09,0.68,0.09,0.02),wood,x,0.34,z,g);
+  mesh(rbox(1.3,0.09,0.78,0.03),wood,-1.17,0.72,0.33,g);mesh(rbox(1.34,0.36,0.03,0.01),red,-1.17,0.54,0.73,g);mesh(rbox(1.34,0.06,0.04,0.01),gold,-1.17,0.71,0.74,g);
+  // merce: pozioni, monete, scrigno e cristallo
+  const bottle=(x,z,c)=>{const m=toon(c,{emissive:c,emissiveIntensity:0.55});mesh(sph(0.1,12,10),m,x,0.87,z,g);mesh(new THREE.CylinderGeometry(0.035,0.05,0.12,10),m,x,1.0,z,g);mesh(new THREE.CylinderGeometry(0.045,0.045,0.04,10),leather,x,1.07,z,g,true);};
+  bottle(-1.62,0.3,0xe0434f);bottle(-1.42,0.46,0x6fd0ff);bottle(-1.46,0.16,0x7fe08a);
+  for(let i=0;i<5;i++)mesh(new THREE.CylinderGeometry(0.09,0.09,0.025,14),gold,-1.08+(i%2)*0.02,0.79+i*0.027,0.46,g,true);
+  mesh(rbox(0.38,0.22,0.26,0.03),leather,-0.84,0.88,0.2,g);mesh(rbox(0.4,0.05,0.28,0.02),gold,-0.84,0.99,0.2,g);mesh(rbox(0.07,0.09,0.03,0.01),gold,-0.84,0.9,0.34,g,true);
+  const gem=mesh(new THREE.OctahedronGeometry(0.13),toon(0xc7a8ff,{emissive:0x7a4aff,emissiveIntensity:0.9}),-1.1,1.18,0.2,g);
+  // tendina a strisce
+  for(const x of [-1.8,-0.54])mesh(new THREE.CylinderGeometry(0.035,0.04,2.35,10),wood,x,1.17,-0.02,g);
+  for(let i=0;i<6;i++){const c=mesh(rbox(0.235,0.04,1.0,0.01),i%2?sand:red,-1.76+i*0.236+0.0,2.3,0.32,g);c.rotation.x=0.32;}
+  // veste
+  mesh(L([[0.6,0.05],[0.56,0.18],[0.46,0.72],[0.36,1.12],[0.31,1.42],[0.18,1.58],[0.01,1.62]]),robe,0,0,0,g);
+  const hem=mesh(T(0.58,0.04),gold,0,0.14,0,g,true);hem.rotation.x=Math.PI/2;const belt=mesh(T(0.385,0.045),leather,0,1.05,0,g,true);belt.rotation.x=Math.PI/2;
+  mesh(rbox(0.13,0.72,0.04,0.015),robe2,0,0.68,0.47,g);mesh(rbox(0.2,0.14,0.05,0.02),gold,0,1.05,0.4,g,true);mesh(sph(0.11,10,8),leather,0.3,0.86,0.33,g);
+  const man=mesh(new THREE.ConeGeometry(0.47,0.46,QS(18,8)),robe2,0,1.5,0,g);man.scale.z=0.85;
+  // cappuccio, volto in ombra, occhi e cappello largo
+  mesh(sph(0.3,16,12),hood,0,1.86,-0.01,g);mesh(sph(0.2,12,10),B(0x08060c),0,1.83,0.16,g,true);for(const s of [-1,1])mesh(sph(0.042,8,6),B(0xffd27a),s*0.082,1.85,0.335,g,true);
+  mesh(new THREE.ConeGeometry(0.075,0.34,8),B(0x08060c),0,1.74,0.37,g,true).rotation.x=Math.PI*0.62;
+  mesh(new THREE.CylinderGeometry(0.62,0.66,0.04,QS(24,12)),dark,0,2.1,0,g);const hat=mesh(new THREE.ConeGeometry(0.34,0.62,QS(18,8)),dark,0.02,2.42,-0.02,g);hat.rotation.z=-0.1;const hb=mesh(T(0.285,0.03),gold,0,2.2,0,g,true);hb.rotation.x=Math.PI/2;
+  // braccia: una verso la merce, una sul bastone
+  const sl=(x,y,z,rx,rz)=>{const m=mesh(new THREE.CylinderGeometry(0.1,0.15,0.66,QS(12,6)),robe2,x,y,z,g);m.rotation.set(rx,0,rz);};
+  sl(-0.42,1.22,0.14,-0.5,-0.6);mesh(sph(0.075,10,8),hand,-0.62,0.98,0.34,g);sl(0.47,1.26,0.12,-0.3,0.55);mesh(sph(0.075,10,8),hand,0.68,1.03,0.24,g);
+  // bastone con lanterna
+  mesh(new THREE.CylinderGeometry(0.03,0.04,2.5,10),wood,0.7,1.25,0.24,g);const hook=mesh(new THREE.TorusGeometry(0.17,0.022,8,16,Math.PI),wood,0.87,2.5,0.24,g);hook.rotation.z=0;
+  mesh(new THREE.CylinderGeometry(0.008,0.008,0.26,6),leather,1.04,2.37,0.24,g,true);mesh(new THREE.ConeGeometry(0.15,0.09,8),gold,1.04,2.23,0.24,g,true);
+  const lamp=mesh(sph(0.1,10,8),glow,1.04,2.08,0.24,g,true);mesh(new THREE.CylinderGeometry(0.13,0.13,0.03,8),gold,1.04,1.95,0.24,g,true);for(let i=0;i<4;i++){const a=i*Math.PI/2+0.78;mesh(new THREE.CylinderGeometry(0.009,0.009,0.28,5),gold,1.04+Math.cos(a)*0.125,2.09,0.24+Math.sin(a)*0.125,g,true);}
+  // zaino da viaggio
+  mesh(rbox(0.74,0.92,0.42,0.08),leather,0,1.14,-0.5,g);mesh(rbox(0.8,0.08,0.46,0.03),dark,0,1.25,-0.5,g,true);const roll=mesh(new THREE.CylinderGeometry(0.15,0.15,0.92,QS(14,8)),red,0,1.74,-0.52,g);roll.rotation.z=Math.PI/2;
+  for(const s of [-1,1]){mesh(sph(0.13,10,8),dark,s*0.5,0.86,-0.46,g);mesh(new THREE.CylinderGeometry(0.06,0.07,0.08,10),gold,s*0.5,1.0,-0.46,g,true);}
+  g.userData.parts={lamp,gem};return g;}
+function travelPortrait(){if(travelPortrait.v!=null)return travelPortrait.v;try{const m=travelMerchantModel();m.rotation.y=0.3;const u=psURL(psShot(m,48,48,{cx:0.02,cy:1.9,h:1.4,dist:9,oy:0.1},false));disposeObj(m);return travelPortrait.v=u;}catch(e){return travelPortrait.v='';}}
+function buildMerchant(){const x=GATE_X-1.6,g=travelMerchantModel();g.position.set(x,0,-1.55);g.rotation.y=-0.3;g.visible=false;levelGroup.add(g);
+  const P_=g.userData.parts;G.props.push({o:P_.lamp,flick:1},{o:P_.gem,spin:1.6});
+  const l=new THREE.PointLight(0xffc56b,1.1,6,2);l.position.set(1.04,2.1,0.5);g.add(l);
   merchant={g,x,used:false,shown:false};}
 function merchantTrade(){if(!merchant||merchant.used||P.dead)return;const cost=Math.max(1,Math.round(P.hp*0.3));if(P.hp-cost<1)return;
   P.hp-=cost;merchant.used=true;popNum(P.x,P.y+2.2,'-'+cost,'hurt');const f=G.floor,r=Math.min(4,rollRarity(f,0)+1);
@@ -8648,9 +8695,9 @@ updHeroVisual=function(dt){
   // mercante
   if(merchant&&!merchant.shown&&G.gateOpen&&G.scene==='tower'){merchant.shown=true;merchant.g.visible=true;burst(merchant.x,1.2,0xc7a8ff,30,5,3);sfx('ability');popNum(merchant.x,2.6,'Il mercante è arrivato','info');}
   if(merchant&&merchant.shown&&G.state==='play'&&G.scene==='tower'&&!P.dead&&Math.abs(P.x-merchant.x)<1.7&&P.y<2.4&&!nearChest){const pr=$('prompt');pr.hidden=false;$('promptName').textContent='Mercante errante';
-    $('promptSub').textContent=`Un oggetto raro per ${Math.max(1,Math.round(P.hp*0.3))} di vita`;$('promptKey').textContent=inputLabel('use');$('promptKey').hidden=touchUI();
-    const [sx,sy]=toScreen(merchant.x,2.6,-1.55);pr.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;if(isTouch){$('bUse').hidden=false;$('bUse').textContent='Compra dal mercante';}
-    if(input.usePressed){input.usePressed=false;merchantTrade();pr.hidden=true;$('bUse').hidden=true;}merchant&&(merchant.near=true);}
+    $('promptSub').textContent='Tre affari: paga con vita o rubini';$('promptKey').textContent=inputLabel('use');$('promptKey').hidden=touchUI();
+    const [sx,sy]=toScreen(merchant.x,2.6,-1.55);pr.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;if(isTouch){$('bUse').hidden=false;$('bUse').textContent='Parla col mercante';}
+    merchant.near=true;}
   else if(merchant&&merchant.near){merchant.near=false;$('prompt').hidden=true;if(isTouch)$('bUse').hidden=true;}
   updRevive(dt);
 };
@@ -9215,23 +9262,28 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{o
    ========================================================= */
 
 /* ---------- mercante errante: scegli come pagare ---------- */
-const merchGemPrice=()=>40+2*(G.floor||1);
-const merchHpCost=()=>Math.max(1,Math.round(P.hp*0.3));
+// tre offerte decise una volta sola per mercante: arma, armatura e un potenziamento subito
+function merchOffers(){const f=G.floor,base=40+2*f,rk=[1,1,1.2,1.6,2.2],r1=Math.min(4,rollRarity(f,0)+1),r2=Math.min(4,rollRarity(f,0)+1);
+  return [{kind:'w',o:makeWeapon(G.cls.weapon,r1,f),pct:0.3,gem:Math.round(base*rk[r1])},{kind:'g',o:makeGear(pick(Object.keys(GEAR)),r2,f),pct:0.25,gem:Math.round(base*0.85*rk[r2])},{kind:'u',pct:0.2,gem:Math.round(base*0.6)}];}
+const merchHp=of=>Math.max(1,Math.round(P.hp*of.pct));
+const MB_SLOT={elmo:'Elmo',guanti:'Guanti',corazza:'Corazza'};
+function merchCard(of,i){const hc=merchHp(of),pay=`<div class="mbx-pay"><button class="sh-buy mb-hp" data-i="${i}" data-pay="hp" ${P.hp-hc<1?'disabled':''} aria-label="Paga ${hc} vita"><i class="hp-i" aria-hidden="true"></i><span>${hc}</span></button><button class="sh-buy" data-i="${i}" data-pay="gem" ${COINS.n<of.gem?'disabled':''} aria-label="Paga ${of.gem} rubini"><i class="cn" aria-hidden="true"></i><span>${fmtC(of.gem)}</span></button></div>`;
+  if(of.kind==='u')return `<article class="mbx-card" style="--rc:#b48cff;--rcg:rgba(180,140,255,.3)"><div class="mbx-pic">${svg('star')}</div><b>Patto del mercante</b><small>Potenziamento</small><p>Scegli subito un potenziamento fra 3</p>${pay}</article>`;
+  const o=of.o,R=RARITY[o.rarity],w=of.kind==='w';
+  return `<article class="mbx-card" style="--rc:${R.css};--rcg:${R.glow}"><div class="mbx-pic">${itemPic(o,w?WTYPES[o.type].icon:GEAR[o.slot].icon)}</div><b>${esc(o.name)}</b><small>${R.name} · ${w?'Arma':MB_SLOT[o.slot]||'Armatura'}</small><p>${w?`Danno ${o.dmg}${o.effect?' · '+cap(EFFECTS[o.effect].desc):''}`:gearDesc(o)}</p>${pay}</article>`;}
+function renderMerch(){$('mbOpts').innerHTML=merchant.offers.map(merchCard).join('');$('mbHave').innerHTML=`<span><i class="hp-i" aria-hidden="true"></i>${Math.ceil(P.hp)}</span><span><i class="cn" aria-hidden="true"></i>${fmtC(COINS.n)}</span>`;}
 function openMerch(){if(!merchant||merchant.used||P.dead||G.state!=='play')return;G.state='merch';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);
-  const pi=typeof portraitImg==='function'?portraitImg():'';const pe=$('mbPortrait');if(pi)pe.src=pi;pe.hidden=!pi;
-  const hc=merchHpCost(),gp=merchGemPrice();
-  $('mbHp').innerHTML=`<i class="hp-i" aria-hidden="true"></i><span>${hc} vita</span>`;$('mbHp').disabled=P.hp-hc<1;
-  $('mbGem').innerHTML=`<i class="cn" aria-hidden="true"></i><span>${fmtC(gp)} rubini</span>`;$('mbGem').disabled=COINS.n<gp;
-  $('mbHave').textContent=`Hai ${Math.ceil(P.hp)} vita e ${fmtC(COINS.n)} rubini`;$('merchBox').hidden=false;sfx('ui');}
+  merchant.offers=merchant.offers||merchOffers();const pi=travelPortrait(),pe=$('mbPortrait');if(pi)pe.src=pi;pe.hidden=!pi;renderMerch();$('merchBox').hidden=false;sfx('ui');
+  setTimeout(()=>{const b=$('mbOpts').querySelector('button:not(:disabled)');if(b&&PAD.on)b.focus();},60);}
 function closeMerch(){$('merchBox').hidden=true;if(G.state==='merch'){G.state='play';$('touch').hidden=!isTouch;clearInput();canvas.focus();}}
-function merchBuy(kind){if(!merchant||merchant.used)return closeMerch();
-  if(kind==='hp'){const c=merchHpCost();if(P.hp-c<1)return;P.hp-=c;popNum(P.x,P.y+2.2,'-'+c,'hurt');}
-  else{const c=merchGemPrice();if(COINS.n<c)return;COINS.n-=c;saveCoins();coinHud();popNum(P.x,P.y+2.2,'-'+c+' ◆','gem');}
-  merchant.used=true;closeMerch();const f=G.floor,r=Math.min(4,rollRarity(f,0)+1);
-  const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);showPick(o);sfx('pick');burst(merchant.x,1.2,0xc7a8ff,30,5,3);
-  toast('Affare fatto','Il mercante sparisce nell\'ombra');levelGroup.remove(merchant.g);merchant=null;}
+function merchBuy(i,pay){if(!merchant||merchant.used)return closeMerch();const of=merchant.offers[i];if(!of)return;
+  if(pay==='hp'){const c=merchHp(of);if(P.hp-c<1)return;P.hp-=c;RK.lastHp=P.hp;popNum(P.x,P.y+2.2,'-'+c,'hurt');}
+  else{if(COINS.n<of.gem)return;COINS.n-=of.gem;saveCoins();coinHud();popNum(P.x,P.y+2.2,'-'+of.gem+' ◆','gem');}
+  merchant.used=true;closeMerch();burst(merchant.x,1.2,0xc7a8ff,30,5,3);sfx('pick');levelGroup.remove(merchant.g);merchant=null;toast('Affare fatto','Il mercante sparisce nell\'ombra');
+  if(of.kind==='u'){openUpgrade();$('upEyebrow').textContent='Patto del mercante';}else{invAdd(of.o);showPick(of.o);}}
 merchantTrade=function(){openMerch();};
-$('mbHp').onclick=()=>merchBuy('hp');$('mbGem').onclick=()=>merchBuy('gem');$('mbNo').onclick=()=>{sfx('ui');closeMerch();};
+$('mbOpts').addEventListener('click',e=>{const b=e.target.closest('[data-pay]');if(b&&!b.disabled)merchBuy(+b.dataset.i,b.dataset.pay);});
+$('mbNo').onclick=()=>{sfx('ui');closeMerch();};
 
 /* ---------- pietra della rinascita: una volta per run rinasci dove sei caduto ---------- */
 const STONES=Object.assign({n:0},store.get('rstones',{}));const saveStones=()=>store.set('rstones',STONES);
@@ -9944,7 +9996,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794174250';
+const BUILD_ID='1794175128';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
