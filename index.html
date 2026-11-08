@@ -4555,6 +4555,7 @@ function updPlayer(dt){
   P.dropT=(P.dropT||0)-dt;
   if(input.down&&P.jumpBuf>0&&P.onGround&&P.y>0.05&&P.dashT<=0){P.dropT=0.28;P.jumpBuf=0;P.onGround=false;P.coyote=0;P.y-=0.1;}   // giù + salto: scendi dalla piattaforma
   if(P.onGround){P.coyote=0.1;P.airJumps=S.extraJumps;}
+  if(P.jumpBuf>0&&P.dashT<=0&&!P.dragon&&(P.coyote>0||P.airJumps>0)&&G.scene==='tower'&&!G.safe&&!useStam(12))P.jumpBuf=0;   // saltare consuma stamina, tranne dove non si combatte
   if(P.jumpBuf>0&&P.dashT<=0&&!P.dragon){
     if(P.coyote>0){P.vy=S.jump;P.coyote=0;P.jumpBuf=0;P.stretchT=0.16;burst(P.x,P.y+0.1,0xb9ad98,6,3,1);sfx('jump');}
     else if(P.airJumps>0){P.vy=S.jump*0.92;P.airJumps--;P.jumpBuf=0;P.flipT=0.42;burst(P.x,P.y+0.3,0x7ff0e4,12,4,0);sfx('flip');}
@@ -5099,7 +5100,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;dropXP(e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1));}
-  if(!boss&&!e.summon&&Math.random()<0.09)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.06)spawnBandage(e.x,0);
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
@@ -5681,17 +5682,17 @@ function updChests(dt){
     const [sx,sy]=toScreen(c.x,c.y+1.5,-0.5);pr.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;
     if(isTouch){$('bUse').hidden=!G.cleared;$('bUse').textContent='Apri il forziere';}
     if(input.usePressed&&G.cleared)openChest(c);
-  }else if(G.scene==='tower'){pr.hidden=true;$('bUse').hidden=true;}
+  }else if(G.scene==='tower'&&!G.safe){pr.hidden=true;$('bUse').hidden=true;}
 }
 function openChest(c){
   if(c.open)return;c.open=true;STATS.chests++;sfx('chest');burst(c.x,c.y+0.8,0xffd27a,24,5,4,0.4);$('prompt').hidden=true;$('bUse').hidden=true;
   const f=G.floor,r=Math.random(),minR=c.boss?2:0,loot=[];if(Math.random()<(c.boss?0.3:0.06))addFragment(f);
-  if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const n=1+Math.floor(f/25),mR=Math.min(maxRarity(f),1+Math.floor(f/30));
+  if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const n=1+Math.floor(f/50),mR=Math.min(maxRarity(f),1+Math.floor(f/30));
     dropXP(c.x,c.y+1.2,40+f*6);
     for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0));loot.push(Math.random()<0.5?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
     burst(c.x,c.y+1,0xffd27a,40,8,6,0.4);shake(0.3);if(f>=TOP_FLOOR)winGame();}
-  else if(r<0.3){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
-  else if(r<0.75)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,minR),f));
+  else if(r<0.55){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
+  else if(r<0.85)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,minR),f));
   else loot.push(makeWeapon(G.cls.weapon,rollRarity(f,minR),f));
   loot.forEach((o,i)=>dropItem(o,c.x,c.y+0.9,i,loot.length));
 }
@@ -5865,7 +5866,7 @@ function updBarrels(){const A=P.atk;if(!A||A.noHit||!G.barrels||!G.barrels.lengt
     for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
       G.chunks.push({m,vx:rand(-5,5)+P.face*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
     const r=Math.random(),f=G.floor;
-    if(r<0.01){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
+    if(r<0.004){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
     else if(r<0.36)dropXP(bx,1,3+Math.round(f*1.1));
     else popNum(bx,1.8,'Vuoto','info');}}
 function updSafe(){nearSafe=null;if(!G.safe||G.state!=='play')return;for(const it of G.safeInter)if(Math.abs(P.x-it.x)<1.8&&P.y<1.6){nearSafe=it;break;}
@@ -5889,7 +5890,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.45)placeBandage();if(Math.random()<0.35)placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.3)placeBandage();if(Math.random()<0.25)placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -6103,7 +6104,7 @@ $('pauseSettings').onclick=()=>{sfx('ui');openSettings('pause');};
 $('pauseQuit').onclick=()=>{sfx('ui');quitToCellar();};
 // dopo la morte: 4 secondi di schermo nero con un consiglio di gioco
 const TIPS=[
-  ()=>'Attento alla <b>stamina</b>: ogni colpo e ogni scatto la consumano. Se resti senza fiato non puoi più attaccare né scattare: fermati un attimo e lasciala ricaricare.',
+  ()=>'Attento alla <b>stamina</b>: ogni colpo, ogni scatto e ogni salto la consumano. Se resti senza fiato non puoi più attaccare, scattare né saltare: fermati un attimo e lasciala ricaricare.',
   ()=>`Salta e attacca verso il basso: piombi a terra con lo <b>${MOVES.da.name}</b>, un colpo ad area che colpisce tutti i nemici intorno a te.`,
   ()=>touchUI()?`Per lo <b>${MOVES.da.name}</b>: salta, poi trascina il tasto d'attacco verso il basso. Più salti in alto, più arrivi forte.`:`Per lo <b>${MOVES.da.name}</b>: salta, poi tieni premuto giù e attacca. Perfetto quando i nemici ti circondano.`,
   ()=>'Lo <b>scatto</b> ti rende intoccabile per un istante: usalo per passare attraverso gli attacchi, non solo per scappare.',
@@ -7818,7 +7819,7 @@ function breakBarrel(b,dir){if(b.dead)return;const bx=b.g.position.x;b.hp--;b.g.
   for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
     G.chunks.push({m,vx:rand(-5,5)+dir*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
   const r=Math.random(),f=G.floor;
-  if(r<0.01){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
+  if(r<0.004){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
   else if(r<0.36)dropXP(bx,1,3+Math.round(f*1.1));else popNum(bx,1.8,'Vuoto','info');}
 const _upP=updProjs;
 updProjs=function(dt){
@@ -7975,9 +7976,9 @@ const _keF=killEnemy;
 killEnemy=function(e){const was=e.dead;const r=_keF(e);if(was||e.pvp!=null)return r;
   const k=bestKeyOf(e),b=BEST[k]||(BEST[k]={s:1,k:0});b.k++;bestDirty=true;
   if(e.elite&&!e.summon&&G.scene==='tower'){TRO.elites++;
-    // bottino garantito: ognuno ha il suo
-    const f=G.floor,o=Math.random()<0.5?makeWeapon(G.cls.weapon,Math.min(4,rollRarity(f,0)+1),f):makeGear(pick(Object.keys(GEAR)),Math.min(4,rollRarity(f,0)+1),f);
-    try{dropItem(o,e.x,e.y+1,0,1);}catch(err){invAdd(o);showPick(o);}
+    // bottino raro: non lo lasciano tutti
+    if(Math.random()<0.2){const f=G.floor,o=Math.random()<0.5?makeWeapon(G.cls.weapon,Math.min(4,rollRarity(f,0)+1),f):makeGear(pick(Object.keys(GEAR)),Math.min(4,rollRarity(f,0)+1),f);
+    try{dropItem(o,e.x,e.y+1,0,1);}catch(err){invAdd(o);showPick(o);}}
     if(e.emod==='esplosivo'){burst(e.x,e.y+1,0xff7a2e,40,9,4,0.3);sfx('boom');shake(0.4);
       if(MP.host||!MP.live()){if(!P.dead&&Math.abs(P.x-e.x)<2.4&&P.y<3)hurtPlayer(e.dmg*1.2,e.x,null);
         for(const R of MP.players.values())if(R.sc==='tower'&&R.fl===G.floor&&!R.dead&&Math.abs(R.x-e.x)<2.4)MP.sendTo(R.pid,{t:'hurt',f:G.floor,d:e.dmg*1.2,fx:e.x});}}}
@@ -8026,7 +8027,7 @@ resetStats=function(){_rsF();const c=setCounts();for(const k in c)if(c[k]>=2&&SE
 };
 
 /* ---------- eroi liberati che restano nel seminterrato ---------- */
-const NPC_X=[-9.6,-1.9,4.3,7.9],NPC_TIPS=['La stamina è tutto: non restare mai senza.','Dall\'alto verso il basso: l\'attacco a zona colpisce tutti intorno.','Gli élite con un nome lasciano sempre un oggetto.',
+const NPC_X=[-9.6,-1.9,4.3,7.9],NPC_TIPS=['La stamina è tutto: non restare mai senza.','Dall\'alto verso il basso: l\'attacco a zona colpisce tutti intorno.','Gli élite con un nome a volte lasciano un oggetto.',
   'Il fabbro trasforma gli oggetti inutili in frammenti.','Tre pezzi dello stesso set danno un bonus enorme.','Nel buio, resta vicino ai muri.','Il mercante chiede vita: non pagarlo se sei messo male.','Un compagno a terra si rialza se lo tieni vicino 3 secondi.'];
 let npcs=[];
 function buildNpcs(){for(const n of npcs)mpRemoveHero(n);npcs=[];return;   // eroi liberati nel seminterrato: tolti
@@ -9433,7 +9434,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794147929';
+const BUILD_ID='1794149497';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
