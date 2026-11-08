@@ -766,6 +766,31 @@ button.sh-stage:hover img,button.sh-stage:focus-visible img{transform:scale(1.06
 .sh-emo{position:absolute;left:50%;top:50%;transform:translate(-50%,-55%);font-size:clamp(46px,8vw,64px);filter:drop-shadow(3px 3px 0 #000)}
 .sh-stone{position:absolute;left:50%;top:50%;width:42%;aspect-ratio:1;transform:translate(-50%,-55%) rotate(45deg);background:linear-gradient(135deg,#ffc2cc 0 18%,#ff4a64 18% 45%,#b0102c 45% 75%,#5a0414 75%);box-shadow:0 0 0 3px #000,0 0 30px rgba(255,60,90,.5)}
 .sh-cnt{position:absolute;right:8px;bottom:6px;font-family:var(--f-display);font-size:16px;color:#fff;text-shadow:2px 2px 0 #000}
+/* combo con livelli */
+#comboBar{display:block;height:4px;margin:4px 0 0 auto;width:70px;background:var(--ember);transform-origin:right center;box-shadow:0 2px 0 #3a1806}
+#comboTier{display:block;font-style:normal;font-family:var(--f-display);font-size:15px;color:#fff;text-shadow:2px 2px 0 #000;min-height:1em}
+#combo[data-tier="1"] b{color:#ffd27a}#combo[data-tier="2"] b{color:#ff9a3d}#combo[data-tier="3"] b{color:#ff5a3d;text-shadow:0 3px 0 #3a0806,0 0 18px rgba(255,90,60,.6)}
+#combo[data-tier="4"] b,#combo[data-tier="5"] b,#combo[data-tier="6"] b{color:#d58cff;text-shadow:0 3px 0 #1a0630,0 0 22px rgba(213,140,255,.7)}
+#combo[data-tier="3"] #comboBar{background:#ff5a3d}#combo[data-tier="4"] #comboBar,#combo[data-tier="5"] #comboBar,#combo[data-tier="6"] #comboBar{background:#d58cff}
+/* schivata perfetta */
+#pdFx{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(127,240,228,.35) 100%)}
+#pdFx.on{animation:pdfx .7s ease-out}
+@keyframes pdfx{0%{opacity:1}100%{opacity:0}}
+/* obiettivo di tempo */
+.par-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(255,210,122,.45);background:rgba(10,8,14,.55);color:#ffd27a;font-family:var(--f-display);font-size:15px}
+.par-chip i{width:10px;height:12px;background:currentColor;clip-path:polygon(0 0,100% 0,100% 12%,62% 50%,100% 88%,100% 100%,0 100%,0 88%,38% 50%,0 12%)}
+.par-chip.hurry{color:#ff9a3d;border-color:#ff9a3d;animation:parp .5s ease-in-out infinite alternate}.par-chip.late{color:var(--ink-2);border-color:rgba(255,255,255,.2);opacity:.6}
+@keyframes parp{to{transform:scale(1.08)}}
+.coin-chip.bump{animation:cbump .25s ease-out}@keyframes cbump{50%{transform:scale(1.18)}}
+/* resoconto della stanza */
+#clearCard{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(86px + env(safe-area-inset-top,0px));transform:translate(-12px,0);z-index:38;pointer-events:none;min-width:220px;padding:10px 16px 8px;
+  background:linear-gradient(180deg,rgba(36,25,15,.94),rgba(20,14,9,.94));border:2px solid #7a5530;box-shadow:0 0 0 2px #120a05,0 10px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .35s,transform .35s}
+#clearCard.on{opacity:1;transform:none}
+#clearCard h3{margin:0 0 6px;text-align:center;font-family:var(--f-display);font-weight:400;font-size:22px;color:#ffd27a;text-shadow:2px 2px 0 #000}
+#clearCard p{display:grid;grid-template-columns:1fr auto auto;white-space:nowrap;align-items:center;gap:8px;margin:2px 0;font-size:13px;color:var(--ink)}
+#clearCard p b{font-family:var(--f-display);font-weight:400;font-size:16px;color:#fff}#clearCard p em{font-style:normal;font-size:11px;color:var(--ink-2)}
+#clearCard p.ok b{color:#ff8a9c}#clearCard p em.cn{width:14px;height:12px}
+@media (max-height:500px){#clearCard{top:calc(70px + env(safe-area-inset-top,0px));padding:6px 12px;min-width:190px}#clearCard h3{font-size:17px}}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -9033,10 +9058,125 @@ const _drReb=deathRoot;deathRoot=function(R,an,dt){if(P.rebirth&&R.local&&rebirt
 const _rpReb=reactPose;reactPose=function(t,dt){_rpReb(t,dt);if(P.rebirth&&!P.dead)mixT(t,{fF:0.6,fB:0.65,head:0.25,lean:-0.12,hF:0.05,kF:0.3,hB:0.12,kB:0.45},clamp((REB.land-P.rebirth.t)/(REB.land-REB.rise),0,1));};
 
 /* =========================================================
+   TOCCO PIÙ AFFIDABILE: il joystick non resta più bloccato a destra o a sinistra
+   (su iPhone a volte il dito che si alza non arriva come "pointerup")
+   ========================================================= */
+let joyTid=null;
+const tAlive=(list,id)=>{for(let i=0;i<list.length;i++)if(list[i].identifier===id)return list[i];return null;};
+function releaseTouchControls(){joyTid=null;joyOff();clearInput();
+  for(const k of document.querySelectorAll('.atk-knob,#joyKnob'))k.style.transform='';}
+let atkTid=null;
+function releaseAtk(){atkTid=null;input.atkHeld=false;input.atkHold=null;const b=$('bAtk');if(b){b.classList.remove('on');const k=b.querySelector('.atk-knob');if(k)k.style.transform='';}}
+$('bAtk').addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(t)atkTid=t.identifier;},{passive:true});
+joy.addEventListener('touchstart',e=>{const t=e.changedTouches[0];if(t&&joyTid===null)joyTid=t.identifier;},{passive:true});
+// se il dito del joystick si muove ma gli eventi "pointer" si sono persi, continua a seguirlo
+addEventListener('touchmove',e=>{if(joyTid===null)return;const t=tAlive(e.touches,joyTid);if(t&&joyId===null){joy.classList.add('on');joySet(t);}},{passive:true,capture:true});
+const touchEnd=e=>{if(joyTid!==null&&!tAlive(e.touches,joyTid)){joyTid=null;joyOff();}
+  if(atkTid!==null&&!tAlive(e.touches,atkTid))releaseAtk();
+  if(e.touches.length===0&&(joyId!==null||input.left||input.right))joyOff();};
+addEventListener('touchend',touchEnd,{passive:true,capture:true});addEventListener('touchcancel',touchEnd,{passive:true,capture:true});
+// app in secondo piano, notifiche, gesti di sistema: si lascia andare tutto
+addEventListener('pagehide',releaseTouchControls);addEventListener('blur',releaseTouchControls);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouchControls();});
+const _ciT=clearInput;clearInput=function(){_ciT();if(joyId!==null){joyId=null;$('joyKnob').style.transform='';joy.classList.remove('on');}joyTid=null;};
+// controllo di sicurezza: joystick "premuto" ma nessun dito sullo schermo da un attimo → rilascio
+let lastTouchAt=0,touchesNow=0;
+for(const ev of ['touchstart','touchmove','touchend','touchcancel'])addEventListener(ev,e=>{touchesNow=e.touches.length;lastTouchAt=performance.now();},{passive:true,capture:true});
+setInterval(()=>{if(!isTouch)return;if(touchesNow===0&&performance.now()-lastTouchAt>150&&(joyId!==null||input.left||input.right||input.atkHeld)){joyOff();input.atkHeld=false;input.atkHold=null;
+  for(const k of document.querySelectorAll('.atk-knob'))k.style.transform='';const b=$('bAtk');if(b)b.classList.remove('on');}},120);
+
+/* =========================================================
+   GAMEPLAY PIÙ VIVO
+   1) combo con livelli, barra che si svuota, premi in rubini; si azzera se ti colpiscono
+   2) schivata perfetta: scattare attraverso un colpo → rallentatore e contrattacco critico
+   3) rubini che schizzano fuori e volano verso l'eroe
+   4) obiettivo di tempo per ogni stanza e resoconto a fine stanza (veloce / intoccabile)
+   ========================================================= */
+/* ---------- 1 · combo ---------- */
+const CMB_W=1.6;
+const CMB_TIERS=[{n:10,t:'Bene!',r:2},{n:20,t:'Ottimo!',r:4},{n:35,t:'Furioso!',r:7},{n:50,t:'Inarrestabile!',r:10},{n:75,t:'Leggendario!',r:15},{n:100,t:'Divino!',r:25}];
+(function(){const c=$('combo');if(!c)return;const bar=document.createElement('i');bar.id='comboBar';c.appendChild(bar);const tt=document.createElement('em');tt.id='comboTier';c.appendChild(tt);})();
+G.cmbTier=0;G.cmbMax=0;
+const _heJ=hitEnemy;
+hitEnemy=function(e,base,dir,o){o=o||{};
+  // contrattacco dopo una schivata perfetta: critico sicuro e +50%
+  if(P.pdT>0&&o.melee&&!e.dead){o.crit=true;base*=1.5;P.pdT=0;popNum(P.x,P.y+2.7,'Contrattacco!','crit');G.hitstop=Math.max(G.hitstop,0.09);shake(0.35);}
+  const before=G.cmb;const r=_heJ.call(this,e,base,dir,o);
+  if(G.cmb!==before){G.cmbMax=Math.max(G.cmbMax,G.cmb);if(G.cmb<before||G.cmb===1)G.cmbTier=0;
+    const T=CMB_TIERS[G.cmbTier];if(T&&G.cmb>=T.n&&G.scene==='tower'&&!G.pvp){G.cmbTier++;
+      popNum(P.x,P.y+3,T.t+' ×'+G.cmb,'crit');sfx('crit');burst(P.x,P.y+1.4,0xffb347,18,6,3);
+      if(!G.horde)addCoins(T.r+Math.floor(G.floor/10),P.x,P.y+2.2);const c=$('combo');c.dataset.tier=G.cmbTier;}}
+  return r;};
+function comboUi(){const c=$('combo');if(!c)return;const left=1-(G.time-G.cmbT)/CMB_W,on=G.cmb>=2&&left>0;
+  const b=$('comboBar');if(b)b.style.transform=`scaleX(${on?Math.max(0,left):0})`;
+  if(!on&&G.cmbTier){G.cmbTier=0;delete c.dataset.tier;}
+  const tt=$('comboTier');if(tt){const T=CMB_TIERS[Math.max(0,G.cmbTier-1)];tt.textContent=G.cmbTier&&on?T.t:'';}}
+
+/* ---------- 2 · schivata perfetta ---------- */
+P.pdT=0;P.dashN=0;
+const _hpJ=hurtPlayer;
+hurtPlayer=function(dmg,fromX,eff){
+  if(P.dashT>0&&!P.dead&&G.state==='play'&&P.pdDash!==P.dashN&&!G.pvp){P.pdDash=P.dashN;perfectDodge(fromX);return;}
+  const hp0=P.hp;const r=_hpJ.apply(this,arguments);
+  if(P.hp<hp0&&!P.dead){G.floorHurt=true;if(G.cmb>=5){popNum(P.x,P.y+3,'Combo persa','info');}G.cmb=0;G.cmbTier=0;const c=$('combo');if(c)delete c.dataset.tier;}
+  else if(P.hp<hp0)G.floorHurt=true;
+  return r;};
+function perfectDodge(fromX){P.pdT=1.6;G.abilSlow=Math.max(G.abilSlow||0,0.55);sfx('crit');shake(0.15);
+  popNum(P.x,P.y+2.8,'Schivata perfetta!','crit');burst(P.x,P.y+1.1,0x7ff0e4,26,7,2,0.3);burst(P.x,P.y+1.1,0xffffff,10,4,1);
+  const f=$('pdFx');if(f){f.classList.remove('on');void f.offsetWidth;f.classList.add('on');}
+  STATS.pdodge=(STATS.pdodge||0)+1;}
+(function(){const d=document.createElement('div');d.id='pdFx';document.body.appendChild(d);})();
+
+/* ---------- 3 · rubini che volano verso l'eroe ---------- */
+const GEM_GEO=new THREE.OctahedronGeometry(0.11,0);GEM_GEO.userData.keep=true;
+const GEM_MAT=new THREE.MeshBasicMaterial({color:0xff2a4a});GEM_MAT.userData.keep=true;
+const GEM_MAT2=new THREE.MeshBasicMaterial({color:0xff9aa8});GEM_MAT2.userData.keep=true;
+const GEMS=[];
+function gemFly(x,y,n){if(G.scene!=='tower'&&G.scene!=='cellar')return;const k=Math.min(10,Math.max(2,Math.ceil(n/3)));
+  for(let i=0;i<k;i++){let g=GEMS.find(q=>!q.on);if(!g){if(GEMS.length>40)break;const m=new THREE.Mesh(GEM_GEO,Math.random()<0.25?GEM_MAT2:GEM_MAT);scene.add(m);g={m};GEMS.push(g);}
+    g.on=true;g.t=0;g.m.visible=true;g.m.position.set(x+rand(-0.2,0.2),y-0.4+rand(-0.1,0.2),0.3);g.vx=rand(-3.5,3.5);g.vy=rand(4,8);g.vz=rand(-0.5,1);g.delay=rand(0.28,0.45);}}
+function updGems(dt){for(const g of GEMS){if(!g.on)continue;g.t+=dt;const p=g.m.position;g.m.rotation.y+=dt*9;g.m.rotation.x+=dt*5;
+  if(g.t<g.delay){g.vy-=26*dt;p.x+=g.vx*dt;p.y+=g.vy*dt;p.z+=g.vz*dt;const fl=groundAt(p.x,p.y+0.2)+0.1;if(p.y<fl){p.y=fl;g.vy=Math.abs(g.vy)*0.35;g.vx*=0.6;}}
+  else{const tx=P.x,ty=P.y+1.2,dx=tx-p.x,dy=ty-p.y,d=Math.hypot(dx,dy),sp=8+(g.t-g.delay)*40;
+    if(d<0.35||g.t>2){g.on=false;g.m.visible=false;burst(tx,ty,0xff4a64,3,2,1);const ch=document.querySelector('.hud-right .coin-chip');if(ch){ch.classList.remove('bump');void ch.offsetWidth;ch.classList.add('bump');}continue;}
+    p.x+=dx/d*sp*dt;p.y+=dy/d*sp*dt;p.z+=(0.3-p.z)*Math.min(1,dt*6);}}}
+const _acJ=addCoins;addCoins=function(n,x,y){_acJ(n,x,y);if(x!=null&&n>0)gemFly(x,y,n);};
+const _upPJ=updParticles;updParticles=function(dt){_upPJ(dt);updGems(dt);};
+
+/* ---------- 4 · obiettivo di tempo e resoconto della stanza ---------- */
+(function(){const hr=document.querySelector('.hud-right');if(!hr)return;const d=document.createElement('div');d.className='par-chip';d.id='parChip';d.hidden=true;d.innerHTML='<i></i><b>0</b>';d.title='Obiettivo di tempo';hr.appendChild(d);
+  const c=document.createElement('div');c.id='clearCard';c.hidden=true;document.body.appendChild(c);})();
+const _sfJ=startFloor;
+startFloor=function(f){const r=_sfJ.apply(this,arguments);
+  G.floorT0=G.time;G.floorHurt=false;G.cmbMax=0;G.clearShown=false;
+  const real=!G.tutorial&&!G.pvp&&!G.horde&&!isSafeFloor(f)&&!isBossFloor(f)&&!G.cleared;
+  G.par=real?Math.round(8+(G.queue.length+(G.enemies||[]).filter(e=>!e.dead).length)*2.1+Math.min(10,f*0.08)):0;
+  const pc=$('parChip');if(pc){pc.hidden=!G.par;pc.classList.remove('late');}return r;};
+function parUi(){const pc=$('parChip');if(!pc||pc.hidden)return;if(G.clearShown||G.cleared)return;const left=G.par-(G.time-G.floorT0);
+  pc.querySelector('b').textContent=Math.max(0,Math.ceil(left))+'s';pc.classList.toggle('late',left<=0);pc.classList.toggle('hurry',left>0&&left<6);}
+function floorClearCheck(){if(G.scene!=='tower'||G.state!=='play'||!G.par||G.clearShown||!G.cleared)return;G.clearShown=true;
+  const t=G.time-G.floorT0,fast=t<=G.par,clean=!G.floorHurt,f=G.floor;let gems=0;const rows=[];
+  rows.push(`<p><span>Tempo</span><b>${t.toFixed(1).replace('.',',')}s</b><em>${fast?'entro '+G.par+'s':'obiettivo '+G.par+'s'}</em></p>`);
+  if(G.cmbMax>=3)rows.push(`<p><span>Combo massima</span><b>×${G.cmbMax}</b><em></em></p>`);
+  if(fast){const g=5+Math.floor(f/3);gems+=g;rows.push(`<p class="ok"><span>Veloce</span><b>+${g}</b><em class="cn"></em></p>`);}
+  if(clean){const g=8+Math.floor(f/2);gems+=g;rows.push(`<p class="ok"><span>Intoccabile</span><b>+${g}</b><em class="cn"></em></p>`);}
+  const c=$('clearCard');c.innerHTML=`<h3>${fast&&clean?'Stanza perfetta!':'Stanza ripulita'}</h3>${rows.join('')}`;c.hidden=false;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');
+  if(fast&&clean){sfx('crit');burst(P.x,P.y+1.5,0xffd27a,24,6,3);}
+  if(gems)addCoins(gems,P.x,P.y+2.4);$('parChip').hidden=true;
+  clearTimeout(c._t);c._t=setTimeout(()=>{c.classList.remove('on');setTimeout(()=>{c.hidden=true;},400);},3200);}
+const _ecJ=enterCellar;enterCellar=function(){const r=_ecJ.apply(this,arguments);const pc=$('parChip');if(pc)pc.hidden=true;const c=$('clearCard');if(c)c.hidden=true;return r;};
+
+/* ---------- aggiornamento ---------- */
+const _upJ=update;
+update=function(dt){_upJ(dt);if(P.pdT>0)P.pdT-=dt;if(P.dashT>0&&!P.wasDash)P.dashN++;P.wasDash=P.dashT>0;floorClearCheck();};
+const _hudJ=updHud;updHud=function(){_hudJ.apply(this,arguments);comboUi();parUi();};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{perfectDodge,gemFly,floorClearCheck,hitEnemy:(...a)=>hitEnemy(...a),hurtPlayer:(...a)=>hurtPlayer(...a)});
+
+/* =========================================================
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794136765';
+const BUILD_ID='1794137704';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
