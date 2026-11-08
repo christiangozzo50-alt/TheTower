@@ -5399,7 +5399,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;dropXP(e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1));}
-  if(!boss&&!e.summon&&Math.random()<0.06)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.045)spawnBandage(e.x,0);
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
@@ -6275,10 +6275,12 @@ function updBarrels(){const A=P.atk;if(!A||A.noHit||!G.barrels||!G.barrels.lengt
     if(b.hp>0)continue;b.dead=true;levelGroup.remove(b.g);sfx('slam');shake(0.15);burst(bx,0.7,0x8a6a3a,26,7,3,0.6,b.g.position.z);
     for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
       G.chunks.push({m,vx:rand(-5,5)+P.face*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
-    const r=Math.random(),f=G.floor;
-    if(r<0.004){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
-    else if(r<0.36)dropXP(bx,1,3+Math.round(f*1.1));
-    else popNum(bx,1.8,'Vuoto','info');}}
+    barrelLoot(bx);}}
+// cosa c'è dentro un barile: 1,5% oggetto, 15,5% benda, 58% esperienza, 25% niente
+function barrelLoot(bx){const r=Math.random(),f=G.floor;
+  if(r<0.015){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
+  else if(r<0.17){spawnBandage(bx,0);popNum(bx,1.8,'Una benda!','info');}
+  else if(r<0.75)dropXP(bx,1,3+Math.round(f*1.1));else popNum(bx,1.8,'Vuoto','info');}
 function updSafe(){nearSafe=null;if(!G.safe||G.state!=='play')return;for(const it of G.safeInter)if(Math.abs(P.x-it.x)<1.8&&P.y<1.6){nearSafe=it;break;}
   const pr=$('prompt');if(nearSafe){pr.hidden=false;$('promptName').textContent=nearSafe.name;$('promptSub').textContent=nearSafe.sub();$('promptKey').textContent=inputLabel('use');$('promptKey').hidden=touchUI();
     const [sx,sy]=toScreen(nearSafe.x,nearSafe.y,-1.2);pr.style.transform=`translate(${sx}px,${sy}px) translate(-50%,-100%)`;if(isTouch){$('bUse').hidden=false;$('bUse').textContent='Usa: '+nearSafe.name;}
@@ -6300,7 +6302,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.3)placeBandage();if(Math.random()<0.08)placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.24)placeBandage();if(Math.random()<0.08)placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -7785,7 +7787,7 @@ const _pillar=pillar;
 pillar=function(e,x){if(MP.host&&MP.live())MP.bcast({t:'pil',f:G.floor,x,d:e.dmg*1.1,c:e.color,eff:e.eff||null});return _pillar(e,x);};
 const _spawnEnemy=spawnEnemy;
 spawnEnemy=function(type,o){const e=_spawnEnemy(type,o);if(e&&e.id==null){e.id=++MP.nid;
-  if(type==='boss'&&!G.tutorial){e.hp*=1.4;e.maxHp=e.hp;e.dmg=(e.dmg||10)*1.2;}   // guardiani più forti
+  if(type==='boss'&&!G.tutorial){e.hp*=1.4;e.maxHp=e.hp;e.dmg=(e.dmg||10)*2.4;}   // guardiani più forti
   if(type==='boss'&&MP.host&&MP.live()){const k=1+0.7*(MP.count()-1);e.hp*=k;e.maxHp=e.hp;}
   if(MP.host&&MP.live()&&!G.pvp){const n=Math.min(4,MP.count())-1,hm=(type==='boss'?[1,1.08,1.18,1.3]:[1,1.12,1.4,1.7])[n],dm=[1,1.05,1.18,1.3][n];e.hp*=hm;e.maxHp=e.hp;e.dmg=(e.dmg||10)*dm;}}return e;};
 const _buildQueue=buildQueue;
@@ -8280,9 +8282,7 @@ function breakBarrel(b,dir){if(b.dead)return;const bx=b.g.position.x;b.hp--;b.g.
   if(b.hp>0)return;b.dead=true;levelGroup.remove(b.g);sfx('slam');shake(0.15);burst(bx,0.7,0x8a6a3a,26,7,3,0.6,b.g.position.z);
   for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
     G.chunks.push({m,vx:rand(-5,5)+dir*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
-  const r=Math.random(),f=G.floor;
-  if(r<0.004){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
-  else if(r<0.36)dropXP(bx,1,3+Math.round(f*1.1));else popNum(bx,1.8,'Vuoto','info');}
+  barrelLoot(bx);}
 const _upP=updProjs;
 updProjs=function(dt){
   const bs=(G.barrels||[]).filter(b=>!b.dead);
@@ -8983,7 +8983,7 @@ function coinHud(){for(const el of document.querySelectorAll('.coin-chip b'))el.
 const _ocS=openChest;
 openChest=function(c){const was=c&&c.open;const r=_ocS(c);if(c&&!was&&c.open&&!G.tutorial){const f=G.floor||1;
   addCoins(c.boss?12+Math.floor(Math.random()*13)+Math.floor(f/3):3+Math.floor(Math.random()*4)+Math.floor(f/6),c.x,(c.y||0)+2.2);}return r;};
-function barrelCoins(){for(const b of G.barrels||[])if(b.dead&&!b.coinDone){b.coinDone=true;if(!G.tutorial&&Math.random()<0.2)addCoins(1,b.g.position.x,1.9);}}
+function barrelCoins(){for(const b of G.barrels||[])if(b.dead&&!b.coinDone){b.coinDone=true;if(!G.tutorial&&Math.random()<0.3)addCoins(1,b.g.position.x,1.9);}}
 const _keS=killEnemy;
 killEnemy=function(e){const was=e&&e.dead;const r=_keS(e);if(e&&!was&&e.elite&&!e.summon&&e.pvp==null&&G.scene==='tower')addCoins(2,e.x,e.y+e.h+1.2);return r;};
 
@@ -9926,7 +9926,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794167175';
+const BUILD_ID='1794167846';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
