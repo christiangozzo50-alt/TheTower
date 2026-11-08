@@ -847,6 +847,7 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
 @keyframes cf-spin{to{transform:rotate(360deg)}}@keyframes cf-fl{0%{opacity:.95}100%{opacity:0}}
 @media (max-height:500px){.cf-stage{width:62vh;height:62vh;margin-top:-6vh}.cf-card{padding:6px 12px 6px 6px}.cf-card b{font-size:18px}}
 .wtile.sk-t img{object-fit:contain}
+.sh-h.vn b{color:#ff4d5e}.sh-h.vn span{color:#ff4d5e;font-weight:700}
 /* fabbro: smonta per rarità */
 .fg-bulk{width:100%;text-align:left}.fg-bulk .note{margin:8px 0 4px;font-size:12px}.fg-brow{display:flex;flex-wrap:wrap;gap:6px}
 .fg-b{display:grid;padding:6px 12px;min-height:44px;background:rgba(22,25,32,.85);border:1px solid var(--edge);border-bottom:3px solid var(--rc);color:var(--ink);text-align:left}
@@ -8996,20 +8997,19 @@ killEnemy=function(e){const was=e&&e.dead;const r=_keS(e);if(e&&!was&&e.elite&&!
 
 /* ---------- skin del negozio: eroe + modello + colore, 3 nuove ogni giorno ---------- */
 const VARS={gelo:{n:'Gelo',p:2400,c:'#8fdcff'},smeraldo:{n:'Smeraldo',p:2400,c:'#7fe08a'},brace:{n:'Brace',p:2800,c:'#ff7a2e'},ombra:{n:'Ombra e oro',p:3500,c:'#ffd27a'},
-  rubino:{n:'Cremisi',p:2600,c:'#ff4d6a'},reale:{n:'Viola reale',p:2800,c:'#b88cff'},avorio:{n:'Avorio',p:3200,c:'#f3e6c8'},abisso:{n:'Abisso',p:3200,c:'#3fb8b0'}};
+  rubino:{n:'Cremisi',p:2600,c:'#ff4d6a'},reale:{n:'Viola reale',p:2800,c:'#b88cff'},avorio:{n:'Avorio',p:3200,c:'#f3e6c8'},abisso:{n:'Abisso',p:3200,c:'#3fb8b0'},venom:{n:'Venom',p:2400,c:'#ff1a2e'}};
 const OWNS=store.get('shopskins',[]),SSEL=store.get('shopskinsel',{});
 const _skOS=skinOf;
 const sKey=(cid,sk,v)=>cid+'.'+sk+'.'+v,sParse=k=>{const [c,sk,v]=k.split('.');return {cid:c,sk:+sk,v};};
 (function(){const ov=store.get('skinvars',null);if(!ov)return;const sv=store.get('skinvarsel',{});   // colori comprati con la versione di prima
   for(const cid in ov)for(const v of ov[cid]){const k=sKey(cid,_skOS(cid),v);if(!OWNS.includes(k))OWNS.push(k);if(sv[cid]===v)SSEL[cid]=k;}
   store.set('shopskins',OWNS);store.set('shopskinsel',SSEL);store.set('skinvars',null);})();
-{const vk='astromante.2.venom',i=OWNS.indexOf(vk);if(i>=0){OWNS.splice(i,1);store.set('shopskins',OWNS);COINS.n+=800;saveCoins();coinHud();}for(const c in SSEL)if(SSEL[c]===vk){delete SSEL[c];store.set('shopskinsel',SSEL);}}
 const ownsS=k=>OWNS.includes(k);
 function shopSel(cid){const k=SSEL[cid];if(!k||!ownsS(k))return null;const o=sParse(k);return SKINS[cid]&&SKINS[cid][o.sk]&&VARS[o.v]?o:null;}
 skinOf=function(id){const o=shopSel(id);return o?o.sk:_skOS(id);};
 function varOf(cid){const o=shopSel(cid);return o?o.v:'';}
 const hueW=x=>((x%1)+1)%1;
-function recolor(root,v){if(!VARS[v])return;const done=new Map(),hsl={};
+function recolor(root,v){if(!VARS[v])return;if(v==='venom')return recolorVenom(root);const done=new Map(),hsl={};
   const tf=(h,s,l)=>{const skin=h>0.02&&h<0.13&&s>0.2&&s<0.8&&l>0.42&&l<0.88;if(skin||l<0.09)return null;const g=s<0.1;
     switch(v){
     case 'gelo':return g?[0.55,0.22,Math.max(l,0.5)]:[0.52+h*0.06,Math.min(1,s*0.8+0.15),Math.min(0.9,l*0.9+0.1)];
@@ -9030,12 +9030,12 @@ buildHero=function(cls){const R=_bhS(cls);const v=varOf(cls.id);if(v)recolor(R.r
 // rotazione giornaliera: 3 eroi diversi, modello e colore diversi (uguale per tutti i giocatori)
 const dayNo=()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);};
 function dailySkins(){let s=(dayNo()*2654435761)>>>0;const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
-  const cls=CLASSES.filter(c=>SKINS[c.id]&&SKINS[c.id].length).map(c=>c.id),vs=Object.keys(VARS),out=[];
+  const cls=CLASSES.filter(c=>SKINS[c.id]&&SKINS[c.id].length).map(c=>c.id),vs=Object.keys(VARS).filter(v=>v!=='venom'),out=[];
   while(out.length<3&&cls.length){const cid=cls.splice(Math.floor(rnd()*cls.length),1)[0];const v=vs.splice(Math.floor(rnd()*vs.length),1)[0];
     out.push(sKey(cid,Math.floor(rnd()*SKINS[cid].length),v));}
   return out;}
 const skinPrice=k=>{const o=sParse(k);return VARS[o.v].p+(o.sk!==(SKINPICK[o.cid]||0)?500:0);};
-const skinName=k=>{const o=sParse(k),sk=SKINS[o.cid][o.sk];return (sk&&sk.name||'Skin')+' · '+VARS[o.v].n;};
+const skinName=k=>{const o=sParse(k),sk=SKINS[o.cid][o.sk];if(o.v==='venom')return 'Venom';return (sk&&sk.name||'Skin')+' · '+VARS[o.v].n;};
 const clsOf=id=>CLASSES.find(c=>c.id===id);
 function untilNew(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const h=Math.floor((m-n)/36e5),mi=Math.floor((m-n)%36e5/6e4);return h+'h '+mi+'m';}
 // anteprime in pixel art: stessa pipeline del gioco (render a bassa risoluzione + retino + contorni)
@@ -9100,7 +9100,7 @@ const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o 
   {id:'leggenda',n:'Cassa leggendaria',p:2400,min:3,leg:0.2,d:'Almeno Epica, 20% di trovarla Leggendaria'}];
 function dailyOffer(){return 'c:'+CRATES[dayNo()%CRATES.length].id;}
 const FRAG_P=[1200,2000,3500];
-const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
+const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
 function openCrate(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,rollRarity(f,0));if(cr.leg&&Math.random()<cr.leg)r=4;r=Math.min(4,r);
   const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();crateShow(cr,o);return o;}
 
@@ -9165,14 +9165,14 @@ function renderShop(){$('shCoins').textContent=fmtC(COINS.n);for(const b of docu
       <div class="sh-info"><b>${esc(skinName(k))}</b><span>${esc(c.name)}${unl?'':' <i class="sh-lock">da sbloccare</i>'}</span></div>
       ${own?`<button class="sh-buy ${on?'off':'wear'}" data-wear="${k}" ${unl?'':'disabled'}>${on?'Togli':'Indossa'}</button>`:buyBtn('s:'+k,p)}</article>`;};
     const day=dailySkins();
-    box.innerHTML=`<div class="sh-h"><b>Skin di oggi</b><span>nuove tra ${untilNew()}</span></div>${day.map(k=>card(k,true)).join('')}`
+    box.innerHTML=(venomCan()?`<div class="sh-h vn"><b>Recupera Venom</b><span>restituisci il rimborso</span></div>${card(VENOM_K,false)}`:'')+`<div class="sh-h"><b>Skin di oggi</b><span>nuove tra ${untilNew()}</span></div>${day.map(k=>card(k,true)).join('')}`
       
       +'<p class="note">Tocca una skin per guardarla da vicino. Ogni giorno ne arrivano 3 nuove, quelle comprate le trovi nell\'armadio.</p>';}}
 /* ---------- vista ingrandita della skin ---------- */
 const SV={k:null,m:null,fr:null,a:0.5,spin:0.6,drag:null,raf:0};
 function openView(k){closeView(true);try{SV.m=skinModel(k);}catch(e){return;}SV.k=k;SV.a=SV.m.userData.ry||0.5;SV.spin=0.6;SV.fr=psFrame(SV.m,1.14,0.8);SV.fr.cy-=0.08;
-  const o=sParse(k),c=clsOf(o.cid),sk=SKINS[o.cid][o.sk];$('svHero').textContent=c.name+' · '+VARS[o.v].n;$('svName').textContent=sk.name||'Skin';$('svName').style.color=VARS[o.v].c;
-  $('svDesc').textContent=sk.desc||'';$('shView').style.setProperty('--vc',VARS[o.v].c);svAct();$('shView').hidden=false;sfx('ui');
+  const o=sParse(k),c=clsOf(o.cid),sk=SKINS[o.cid][o.sk];$('svHero').textContent=o.v==='venom'?c.name+' · Edizione limitata':c.name+' · '+VARS[o.v].n;$('svName').textContent=o.v==='venom'?'Venom':(sk.name||'Skin');$('svName').style.color=VARS[o.v].c;
+  $('svDesc').textContent=o.v==='venom'?'Interamente nera, con occhi, dettagli e magia rosso sangue.':(sk.desc||'');$('shView').style.setProperty('--vc',VARS[o.v].c);svAct();$('shView').hidden=false;sfx('ui');
   let last=performance.now();const loop=t=>{if(!SV.m)return;const dt=Math.min(0.05,(t-last)/1000);last=t;if(!SV.drag)SV.a+=SV.spin*dt;SV.m.rotation.y=SV.a;
     try{const img=psShot(SV.m,112,140,SV.fr,true);$('svCan').getContext('2d').putImageData(img,0,0);}catch(e){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
 function svAct(){const k=SV.k,o=sParse(k),c=clsOf(o.cid),own=ownsS(k),on=SSEL[o.cid]===k&&own,unl=isUnlocked(c),p=priceOf('s:'+k);
@@ -9184,7 +9184,7 @@ function closeView(quiet){cancelAnimationFrame(SV.raf);if(SV.m){disposeObj(SV.m)
   c.addEventListener('pointerdown',e=>{c.setPointerCapture&&c.setPointerCapture(e.pointerId);down(e);});c.addEventListener('pointermove',move);c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
   $('shView').addEventListener('click',e=>{const r=e.target.closest('[data-rot]');if(r){SV.a+=+r.dataset.rot*0.6;SV.spin=0;return;}if(e.target.id==='shView'||e.target.closest('#svClose'))closeView();});})();
 $('shop').addEventListener('click',e=>{const vw=e.target.closest('[data-view]');if(vw){openView(vw.dataset.view);return;}const t=e.target.closest('.tab');if(t){shTab=t.dataset.st;sfx('ui');renderShop();return;}
-  const b=e.target.closest('[data-buy]');if(b&&!b.disabled){const k=b.dataset.buy,p=priceOf(k);if(COINS.n<p)return;COINS.n-=p;saveCoins();coinHud();sfx('pick');
+  const b=e.target.closest('[data-buy]');if(b&&!b.disabled){const k=b.dataset.buy,p=priceOf(k);if(COINS.n<p||(k==='s:'+VENOM_K&&!venomCan()))return;COINS.n-=p;saveCoins();coinHud();sfx('pick');
     if(k.startsWith('c:')){openCrate(CRATES.find(c=>'c:'+c.id===k));}
     else if(k.startsWith('o:frag:')){const c=clsOf(k.slice(7));if(isUnlocked(c)||c.tier>=3||(UNL.frag[c.id]||0)>=fragNeed(c)){COINS.n+=p;saveCoins();coinHud();return;}UNL.frag[c.id]=(UNL.frag[c.id]||0)+1;saveUnl();toast(UNL.frag[c.id]>=fragNeed(c)?`${c.name}: frammenti completi!`:'Frammento comprato',UNL.frag[c.id]>=fragNeed(c)?'Sbloccala al piedistallo nel seminterrato':`${c.name} ${UNL.frag[c.id]}/${fragNeed(c)}`);}
     else if(k==='o:stone'){if(STONES.n>=STONE_MAX){COINS.n+=p;saveCoins();coinHud();return;}STONES.n++;saveStones();toast('Pietra della rinascita',`Ne hai ${STONES.n}`);}
@@ -9933,7 +9933,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794168880';
+const BUILD_ID='1794169143';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10220,6 +10220,21 @@ function cfClose(quiet){cancelAnimationFrame(CF.raf);if(CF.m){disposeObj(CF.m);C
 $('cfSkip').onclick=()=>{if(CF.boom)CF.boom();};$('cfOk').onclick=()=>{cfClose();renderShop();};
 const _pbCF=padBack;padBack=function(){if(!$('crateFx').hidden){if(!$('cfOk').hidden)$('cfOk').click();else $('cfSkip').click();return true;}return _pbCF();};
 
+/* ---------- Venom: non è più in vendita, ma chi l'ha comprata la tiene per sempre ---------- */
+// chi era stato rimborsato può riaverla restituendo gli 800 rubini; la carta compare solo a chi aveva visto l'offerta
+var VENOM_K='astromante.2.venom',VENOM_P=800,VENOM_RED=0xff1a2e;
+function venomCan(){return !ownsS(VENOM_K)&&store.get('venom-t0',0)>0;}
+function recolorVenom(root){const done=new Map(),red=new THREE.Color(0xd80e20),glowE=new THREE.Color(0xff1626),eyeHex=0xc7a8ff,starHex=0xfff3c4,all=[];root.traverse(o=>{if(o.isMesh&&o.material&&!Array.isArray(o.material))all.push(o);});
+  // occhi grandi e volto nero: spariscono le stelle sul viso
+  const faces=new Set();for(const o of all)if(o.material.color&&o.material.color.getHex()===eyeHex&&o.material.emissive&&o.scale.x===1&&o.parent&&o.parent.children.some(c=>c.isMesh&&c.material.color&&c.material.color.getHex()===starHex))faces.add(o.parent);
+  for(const o of all){const m=o.material;if(faces.has(o.parent)&&m.color&&m.color.getHex()===starHex)o.visible=false;if(faces.has(o.parent)&&m.color&&m.color.getHex()===eyeHex)o.scale.set(1.9,1.9,1);}
+  for(const o of all){const m=o.material;if(!m||!m.color||(m.userData&&m.userData.keep))continue;let c=done.get(m);
+    if(!c){c=m.clone();c.userData=Object.assign({},m.userData);const glow=m.blending===THREE.AdditiveBlending||(m.emissive&&m.emissive.getHex()!==0&&m.emissiveIntensity>=0.9);
+      if(glow){c.color.copy(red);if(c.emissive){c.emissive.copy(glowE);c.emissiveIntensity=0.85;c.userData.baseE=glowE.clone();c.userData.baseI=0.85;}}
+      else{c.color.setHex(m.isMeshBasicMaterial?0x05040a:0x0d0c12);if(c.emissive){c.emissive.setHex(0);c.userData.baseE=new THREE.Color(0);c.userData.baseI=1;}}done.set(m,c);}
+    o.material=c;}}
+// con Venom indossata anche la magia dell'astromante diventa rossa
+{const ast=CLASSES.find(c=>c.id==='astromante'),base=ast.fx,_bhV=buildHero;buildHero=function(cls){if(cls===ast)ast.fx=varOf('astromante')==='venom'?VENOM_RED:base;return _bhV(cls);};}
 /* ---------- PvP e co-op: i colpi normali (magie, frecce) si vedono anche dagli altri, senza fare danno da quel lato ---------- */
 const _spNet=spawnProj;spawnProj=function(o){
   if(o&&MP.ghost&&o.owner!=='e'&&G.pvp&&MP.ghostR){o.foe=PV.teams[MP.ghostR.pid]!==PV.teams[MP.myPid];if(!o.foe)o.homing=0;}
