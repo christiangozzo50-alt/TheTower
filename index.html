@@ -776,21 +776,7 @@ button.sh-stage:hover img,button.sh-stage:focus-visible img{transform:scale(1.06
 #pdFx{position:fixed;inset:0;pointer-events:none;z-index:40;opacity:0;background:radial-gradient(ellipse at center,transparent 45%,rgba(127,240,228,.35) 100%)}
 #pdFx.on{animation:pdfx .7s ease-out}
 @keyframes pdfx{0%{opacity:1}100%{opacity:0}}
-/* obiettivo di tempo */
-.par-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border:1px solid rgba(255,210,122,.45);background:rgba(10,8,14,.55);color:#ffd27a;font-family:var(--f-display);font-size:15px}
-.par-chip i{width:10px;height:12px;background:currentColor;clip-path:polygon(0 0,100% 0,100% 12%,62% 50%,100% 88%,100% 100%,0 100%,0 88%,38% 50%,0 12%)}
-.par-chip.hurry{color:#ff9a3d;border-color:#ff9a3d;animation:parp .5s ease-in-out infinite alternate}.par-chip.late{color:var(--ink-2);border-color:rgba(255,255,255,.2);opacity:.6}
-@keyframes parp{to{transform:scale(1.08)}}
 .coin-chip.bump{animation:cbump .25s ease-out}@keyframes cbump{50%{transform:scale(1.18)}}
-/* resoconto della stanza */
-#clearCard{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(86px + env(safe-area-inset-top,0px));transform:translate(-12px,0);z-index:38;pointer-events:none;min-width:220px;padding:10px 16px 8px;
-  background:linear-gradient(180deg,rgba(36,25,15,.94),rgba(20,14,9,.94));border:2px solid #7a5530;box-shadow:0 0 0 2px #120a05,0 10px 30px rgba(0,0,0,.5);opacity:0;transition:opacity .35s,transform .35s}
-#clearCard.on{opacity:1;transform:none}
-#clearCard h3{margin:0 0 6px;text-align:center;font-family:var(--f-display);font-weight:400;font-size:22px;color:#ffd27a;text-shadow:2px 2px 0 #000}
-#clearCard p{display:grid;grid-template-columns:1fr auto auto;white-space:nowrap;align-items:center;gap:8px;margin:2px 0;font-size:13px;color:var(--ink)}
-#clearCard p b{font-family:var(--f-display);font-weight:400;font-size:16px;color:#fff}#clearCard p em{font-style:normal;font-size:11px;color:var(--ink-2)}
-#clearCard p.ok b{color:#ff8a9c}#clearCard p em.cn{width:14px;height:12px}
-@media (max-height:500px){#clearCard{top:calc(70px + env(safe-area-inset-top,0px));padding:6px 12px;min-width:190px}#clearCard h3{font-size:17px}}
 /* presentazione dei combattenti PvP */
 #pvpVs{position:fixed;inset:0;z-index:45;display:grid;align-content:center;justify-items:center;gap:18px;pointer-events:none;
   background:linear-gradient(90deg,rgba(120,20,20,.55),rgba(8,6,12,.75) 42%,rgba(8,6,12,.75) 58%,rgba(20,50,120,.55));opacity:0;transition:opacity .4s}
@@ -9112,19 +9098,18 @@ setInterval(()=>{if(!isTouch)return;if(touchesNow===0&&performance.now()-lastTou
    1) combo con livelli, barra che si svuota, premi in rubini; si azzera se ti colpiscono
    2) schivata perfetta: scattare attraverso un colpo → rallentatore e contrattacco critico
    3) rubini che schizzano fuori e volano verso l'eroe
-   4) obiettivo di tempo per ogni stanza e resoconto a fine stanza (veloce / intoccabile)
    ========================================================= */
 /* ---------- 1 · combo ---------- */
 const CMB_W=1.6;
 const CMB_TIERS=[{n:10,t:'Bene!',r:2},{n:20,t:'Ottimo!',r:4},{n:35,t:'Furioso!',r:7},{n:50,t:'Inarrestabile!',r:10},{n:75,t:'Leggendario!',r:15},{n:100,t:'Divino!',r:25}];
 (function(){const c=$('combo');if(!c)return;const bar=document.createElement('i');bar.id='comboBar';c.appendChild(bar);const tt=document.createElement('em');tt.id='comboTier';c.appendChild(tt);})();
-G.cmbTier=0;G.cmbMax=0;
+G.cmbTier=0;
 const _heJ=hitEnemy;
 hitEnemy=function(e,base,dir,o){o=o||{};
   // contrattacco dopo una schivata perfetta: critico sicuro e +50%
   if(P.pdT>0&&o.melee&&!e.dead){o.crit=true;base*=1.5;P.pdT=0;popNum(P.x,P.y+2.7,'Contrattacco!','crit');G.hitstop=Math.max(G.hitstop,0.09);shake(0.35);}
   const before=G.cmb;const r=_heJ.call(this,e,base,dir,o);
-  if(G.cmb!==before){G.cmbMax=Math.max(G.cmbMax,G.cmb);if(G.cmb<before||G.cmb===1)G.cmbTier=0;
+  if(G.cmb!==before){if(G.cmb<before||G.cmb===1)G.cmbTier=0;
     const T=CMB_TIERS[G.cmbTier];if(T&&G.cmb>=T.n&&G.scene==='tower'&&!G.pvp){G.cmbTier++;
       popNum(P.x,P.y+3,T.t+' ×'+G.cmb,'crit');sfx('crit');burst(P.x,P.y+1.4,0xffb347,18,6,3);
       if(!G.horde)addCoins(T.r+Math.floor(G.floor/10),P.x,P.y+2.2);const c=$('combo');c.dataset.tier=G.cmbTier;}}
@@ -9140,8 +9125,7 @@ const _hpJ=hurtPlayer;
 hurtPlayer=function(dmg,fromX,eff){
   if(P.dashT>0&&!P.dead&&G.state==='play'&&P.pdDash!==P.dashN&&!G.pvp){P.pdDash=P.dashN;perfectDodge(fromX);return;}
   const hp0=P.hp;const r=_hpJ.apply(this,arguments);
-  if(P.hp<hp0&&!P.dead){G.floorHurt=true;if(G.cmb>=5){popNum(P.x,P.y+3,'Combo persa','info');}G.cmb=0;G.cmbTier=0;const c=$('combo');if(c)delete c.dataset.tier;}
-  else if(P.hp<hp0)G.floorHurt=true;
+  if(P.hp<hp0&&!P.dead){if(G.cmb>=5){popNum(P.x,P.y+3,'Combo persa','info');}G.cmb=0;G.cmbTier=0;const c=$('combo');if(c)delete c.dataset.tier;}
   return r;};
 function perfectDodge(fromX){P.pdT=1.6;G.abilSlow=Math.max(G.abilSlow||0,0.55);sfx('crit');shake(0.15);
   popNum(P.x,P.y+2.8,'Schivata perfetta!','crit');burst(P.x,P.y+1.1,0x7ff0e4,26,7,2,0.3);burst(P.x,P.y+1.1,0xffffff,10,4,1);
@@ -9165,37 +9149,14 @@ function updGems(dt){for(const g of GEMS){if(!g.on)continue;g.t+=dt;const p=g.m.
 const _acJ=addCoins;addCoins=function(n,x,y){_acJ(n,x,y);if(x!=null&&n>0)gemFly(x,y,n);};
 const _upPJ=updParticles;updParticles=function(dt){_upPJ(dt);updGems(dt);};
 
-/* ---------- 4 · obiettivo di tempo e resoconto della stanza ---------- */
-(function(){const hr=document.querySelector('.hud-right');if(!hr)return;const d=document.createElement('div');d.className='par-chip';d.id='parChip';d.hidden=true;d.innerHTML='<i></i><b>0</b>';d.title='Obiettivo di tempo';hr.appendChild(d);
-  const c=document.createElement('div');c.id='clearCard';c.hidden=true;document.body.appendChild(c);})();
-const _sfJ=startFloor;
-startFloor=function(f){const r=_sfJ.apply(this,arguments);
-  G.floorT0=G.time;G.floorHurt=false;G.cmbMax=0;G.clearShown=false;
-  const real=!G.tutorial&&!G.pvp&&!G.horde&&!isSafeFloor(f)&&!isBossFloor(f)&&!G.cleared;
-  G.par=real?Math.round(8+(G.queue.length+(G.enemies||[]).filter(e=>!e.dead).length)*2.1+Math.min(10,f*0.08)):0;
-  const pc=$('parChip');if(pc){pc.hidden=!G.par;pc.classList.remove('late');}return r;};
-function parUi(){const pc=$('parChip');if(!pc||pc.hidden)return;if(G.clearShown||G.cleared)return;const left=G.par-(G.time-G.floorT0);
-  pc.querySelector('b').textContent=Math.max(0,Math.ceil(left))+'s';pc.classList.toggle('late',left<=0);pc.classList.toggle('hurry',left>0&&left<6);}
-function floorClearCheck(){if(G.scene!=='tower'||G.state!=='play'||!G.par||G.clearShown||!G.cleared)return;G.clearShown=true;
-  const t=G.time-G.floorT0,fast=t<=G.par,clean=!G.floorHurt,f=G.floor;let gems=0;const rows=[];
-  rows.push(`<p><span>Tempo</span><b>${t.toFixed(1).replace('.',',')}s</b><em>${fast?'entro '+G.par+'s':'obiettivo '+G.par+'s'}</em></p>`);
-  if(G.cmbMax>=3)rows.push(`<p><span>Combo massima</span><b>×${G.cmbMax}</b><em></em></p>`);
-  if(fast){const g=5+Math.floor(f/3);gems+=g;rows.push(`<p class="ok"><span>Veloce</span><b>+${g}</b><em class="cn"></em></p>`);}
-  if(clean){const g=8+Math.floor(f/2);gems+=g;rows.push(`<p class="ok"><span>Intoccabile</span><b>+${g}</b><em class="cn"></em></p>`);}
-  const c=$('clearCard');c.innerHTML=`<h3>${fast&&clean?'Stanza perfetta!':'Stanza ripulita'}</h3>${rows.join('')}`;c.hidden=false;c.classList.remove('on');void c.offsetWidth;c.classList.add('on');
-  if(fast&&clean){sfx('crit');burst(P.x,P.y+1.5,0xffd27a,24,6,3);}
-  if(gems)addCoins(gems,P.x,P.y+2.4);$('parChip').hidden=true;
-  clearTimeout(c._t);c._t=setTimeout(()=>{c.classList.remove('on');setTimeout(()=>{c.hidden=true;},400);},3200);}
-const _ecJ=enterCellar;enterCellar=function(){const r=_ecJ.apply(this,arguments);const pc=$('parChip');if(pc)pc.hidden=true;const c=$('clearCard');if(c)c.hidden=true;return r;};
-
 /* ---------- aggiornamento ---------- */
 const _upJ=update;
-update=function(dt){_upJ(dt);if(P.pdT>0)P.pdT-=dt;if(P.dashT>0&&!P.wasDash)P.dashN++;P.wasDash=P.dashT>0;floorClearCheck();};
-const _hudJ=updHud;updHud=function(){_hudJ.apply(this,arguments);comboUi();parUi();};
-if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{perfectDodge,gemFly,floorClearCheck,hitEnemy:(...a)=>hitEnemy(...a),hurtPlayer:(...a)=>hurtPlayer(...a)});
+update=function(dt){_upJ(dt);if(P.pdT>0)P.pdT-=dt;if(P.dashT>0&&!P.wasDash)P.dashN++;P.wasDash=P.dashT>0;};
+const _hudJ=updHud;updHud=function(){_hudJ.apply(this,arguments);comboUi();};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{perfectDodge,gemFly,hitEnemy:(...a)=>hitEnemy(...a),hurtPlayer:(...a)=>hurtPlayer(...a)});
 
 /* =========================================================
-   NEMICI PIÙ VIVI · ENTRATE SCENOGRAFICHE · MUSICA DI BATTAGLIA
+   NEMICI PIÙ VIVI · MUSICA DI BATTAGLIA
    ========================================================= */
 /* ---------- camminata dei nemici con il nuovo ciclo a pose chiave, piedi piatti ---------- */
 let CUR_E=null;
@@ -9215,31 +9176,6 @@ syncRig=function(e,p,dt,t,fl,k,w,st){const R=p.rig;
   CUR_E=e;try{_srE(e,p,dt,t,fl,k,w,st);}finally{CUR_E=null;}
   if(!AV2()||!R||!(fl>0)||e.dead)return;const s=e.lastDir===e.face?1:-1,q=fl*fl;
   const o={l:0.55*q*s,h:-0.5*q*s,a:-1.1*q};R.torso.rotation.x+=o.l;R.head.rotation.x+=o.h;R.arms[1].sh.rotation.x+=o.a;e.rOff=o;};
-const _seE=syncEnemy;
-syncEnemy=function(e,dt){_seE(e,dt);
-  if(e.wallIn&&e.spawnT>0){const r=e.parts.root,k=1-e.spawnT/e.spawnMax,q=easeOutCubic(k);r.position.z=-2.7*(1-q);r.scale.setScalar(e.sc*Math.min(1,0.55+k));}
-  else if(e.wallIn&&e.parts.root.position.z!==0){e.parts.root.position.z=0;e.wallIn=false;}};
-
-/* ---------- entrate: dal soffitto o da una crepa nel muro ---------- */
-function wallCrack(x,col){const g=new THREE.Group();g.position.set(x,0,-2.93);levelGroup.add(g);
-  const dark=new THREE.MeshBasicMaterial({color:0x07050a}),glow=new THREE.MeshBasicMaterial({color:col||0xff7a2e,transparent:true,opacity:0.9,blending:THREE.AdditiveBlending,depthWrite:false});
-  mesh(new THREE.CircleGeometry(0.75,7),dark,0,1.15,0.01,g,true).scale.set(0.8,1.25,1);
-  const gl=mesh(new THREE.CircleGeometry(0.62,7),glow,0,1.15,0.02,g,true);gl.scale.set(0.75,1.2,1);
-  for(let i=0;i<7;i++){const a=i/7*TAU+rand(-0.3,0.3),L=rand(0.5,1.1),b=mesh(new THREE.BoxGeometry(L,0.05,0.02),dark,Math.cos(a)*(0.55+L/2),1.15+Math.sin(a)*(0.8+L/2),0.015,g,true);b.rotation.z=a+rand(-0.25,0.25);}
-  burst(x,1.2,0x5a5148,18,6,2);burst(x,1.2,0xb9ad98,12,4,1.5);sfx('land');shake(0.12);
-  later(1.6,()=>{gl.visible=false;});}
-const _spE=spawnEnemy;
-spawnEnemy=function(type,o){const e=_spE.apply(this,arguments);o=o||{};
-  if(!e||!AV2()||type==='boss'||o.summon||G.scene!=='tower'||G.state!=='play'||G.tutorial||G.pvp||(MP.live()&&!MP.host)||e.fly||e.elite)return e;
-  const r=Math.random();
-  if(r<0.3){const top=groundAt(e.x,99);e.y=Math.min(CEIL-2,top+rand(5,7));e.vy=-2;e.onGround=false;e.dropIn=true;e.spawnT=e.spawnMax=0.12;}
-  else if(r<0.6){e.wallIn=true;e.spawnT=e.spawnMax=0.75;wallCrack(e.x,ZONES[zoneIndex(G.floor)].accent);}
-  return e;};
-const _ueE=updEnemy;
-updEnemy=function(e,dt){const r=_ueE.apply(this,arguments);
-  if(e.dropIn&&e.onGround&&!(e.spawnT>0)){e.dropIn=false;e.landT=0.25;burst(e.x,e.y+0.05,0xb9ad98,14,5,1.2);shake(0.14);sfx('land');}
-  return r;};
-
 /* ---------- musica di battaglia: batteria e basso che entrano quando ci sono nemici ---------- */
 const BAT={I:0};
 function battleLayer(s,t,sd,d,ch){const I=BAT.I;if(I<0.08)return;
