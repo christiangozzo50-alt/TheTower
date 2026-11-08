@@ -5083,7 +5083,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;dropXP(e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1));}
-  if(!boss&&!e.summon&&Math.random()<0.04)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.09)spawnBandage(e.x,0);
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
@@ -5872,7 +5872,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.22)placeBandage();if(Math.random()<0.35)placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.45)placeBandage();if(Math.random()<0.35)placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -9413,7 +9413,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794146687';
+const BUILD_ID='1794147120';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
