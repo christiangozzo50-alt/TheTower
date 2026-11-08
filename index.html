@@ -166,6 +166,8 @@ kbd{font-family:var(--f-body);font-weight:700;font-size:11px;color:var(--ink);ba
 .wtile img{width:100%;height:100%;image-rendering:pixelated;display:block}
 .wtile.on::after{content:"";position:absolute;right:3px;top:3px;width:9px;height:9px;border-radius:50%;background:var(--teal);box-shadow:0 0 6px var(--teal)}
 .wtile[aria-pressed="true"]{outline:2px solid var(--ember);outline-offset:1px}
+.wtile.taken{opacity:.42;filter:grayscale(.7)}.wtile.taken[aria-pressed="true"]{opacity:.8}
+.wr-own{color:var(--ember);font-size:11px;line-height:1.25}
 .wr-detail{background:rgba(18,20,27,.88);border:1px solid var(--edge);padding:10px;display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--ink-2);min-width:0}
 .wr-detail b.n{font-size:14px;color:var(--rc)}
 .wr-detail .row{justify-content:flex-start;gap:6px;margin:0}
@@ -6166,6 +6168,11 @@ const INV=Object.assign({items:[],eq:{}},store.get('inv',{}));
 const saveInv=()=>store.set('inv',INV);
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
+// un oggetto sta addosso a una sola classe alla volta
+const eqOwner=(id,skip)=>{for(const k in INV.eq){if(k===skip)continue;if(Object.values(INV.eq[k]).includes(id))return k;}return null;};
+const eqClsName=cid=>(CLASSES.find(c=>c.id===cid)||{name:cid}).name;
+// vecchi salvataggi: se un oggetto era su più classi resta su quella in uso (o sulla prima che lo aveva)
+(function(){const seen=new Set();let ch=false;for(const k of [G.cls.id,...Object.keys(INV.eq).filter(x=>x!==G.cls.id)]){const e=INV.eq[k];if(!e)continue;for(const q in e){if(seen.has(e[q])){delete e[q];ch=true;}else seen.add(e[q]);}}if(ch)store.set('inv',INV);})();
 function invAdd(o){const it={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6)};if(o.slot)it.g=o;else it.w=o;INV.items.push(it);
   if(INV.items.length>80){const used=new Set(Object.values(INV.eq).flatMap(e=>Object.values(e)));const i=INV.items.findIndex(x=>!used.has(x.id)&&(x.w||x.g).rarity===0);if(i>=0)INV.items.splice(i,1);}
   saveInv();return it;}
@@ -6207,22 +6214,22 @@ function fuseItems(selId){const sel=itemById(selId);if(!sel)return;const o=sel.w
   const eqIds=new Set(Object.values(INV.eq).flatMap(e=>Object.values(e)));const pickN=[sel,...grp.filter(i=>i!==sel&&!eqIds.has(i.id)),...grp.filter(i=>i!==sel&&eqIds.has(i.id))].slice(0,5);
   const ids=new Set(pickN.map(i=>i.id)),f=Math.max(1,UNL.best||1),nw=sel.w?makeWeapon(o.type,o.rarity+1,f,o.v):makeGear(o.slot,o.rarity+1,f);
   INV.items=INV.items.filter(i=>!ids.has(i.id));const it=invAdd(nw);
-  for(const k in INV.eq)for(const q in INV.eq[k])if(ids.has(INV.eq[k][q]))INV.eq[k][q]=it.id;
+  {let done=false;for(const k of [G.cls.id,...Object.keys(INV.eq).filter(x=>x!==G.cls.id)]){const e=INV.eq[k];if(!e)continue;for(const q in e)if(ids.has(e[q])){if(done)delete e[q];else{e[q]=it.id;done=true;}}}}   // l'oggetto fuso va su una classe sola
   wrSel=it.id;saveInv();sfx('legend');burst(P.x,1.4,RARITY[nw.rarity].hex,40,6,3,0.3);toast('Fusione riuscita!',`${nw.name} · ${RARITY[nw.rarity].name}`);}
 function renderWardrobe(){
   const c=G.cls,eq=eqOf(c.id);
   $('wrL').innerHTML=slotHTML('weapon','Arma')+slotHTML('elmo','Elmo');$('wrR').innerHTML=slotHTML('guanti','Guanti')+slotHTML('corazza','Corazza');
   $('wrL').insertAdjacentHTML('beforeend',skinSlotHTML());if(wrSlot==='skin'){renderWrSkins();return;}
-  const list=INV.items.filter(it=>wrSlot==='weapon'?(it.w&&it.w.type===c.weapon):(it.g&&it.g.slot===wrSlot)).sort((a,b)=>(b.w||b.g).rarity-(a.w||a.g).rarity);
+  const list=INV.items.filter(it=>wrSlot==='weapon'?(it.w&&it.w.type===c.weapon):(it.g&&it.g.slot===wrSlot)).sort((a,b)=>(eqOwner(a.id,c.id)?1:0)-(eqOwner(b.id,c.id)?1:0)||(b.w||b.g).rarity-(a.w||a.g).rarity);
   if(!wrSel||!list.some(i=>i.id===wrSel))wrSel=(list.find(i=>i.id===eq[wrSlot])||list[0]||{}).id||null;
   $('wrTitle').textContent={weapon:'Armi · '+WTYPES[c.weapon].label,elmo:'Elmi',guanti:'Guanti',corazza:'Corazze'}[wrSlot]+` (${list.length})`;
-  $('wrList').innerHTML=list.map(it=>{const o=it.w||it.g,R=RARITY[o.rarity];return `<button class="wtile${eq[wrSlot]===it.id?' on':''}" data-id="${it.id}" aria-pressed="${it.id===wrSel}" title="${o.name}" style="--rc:${R.css};--rcg:${R.glow}">${itemPic(o,SLOT_ICON(wrSlot))}</button>`;}).join('')
+  $('wrList').innerHTML=list.map(it=>{const o=it.w||it.g,R=RARITY[o.rarity];const own=eqOwner(it.id,c.id);return `<button class="wtile${eq[wrSlot]===it.id?' on':''}${own?' taken':''}" data-id="${it.id}" aria-pressed="${it.id===wrSel}" title="${o.name}${own?' · in uso su '+eqClsName(own):''}" style="--rc:${R.css};--rcg:${R.glow}">${itemPic(o,SLOT_ICON(wrSlot))}</button>`;}).join('')
     ||`<p class="note">Ancora niente: lo trovi nei forzieri della torre.</p>`;
   const sel=itemById(wrSel);
-  if(sel){const o=sel.w||sel.g,R=RARITY[o.rarity],on=eq[wrSlot]===sel.id;
+  if(sel){const o=sel.w||sel.g,R=RARITY[o.rarity],on=eq[wrSlot]===sel.id,own=eqOwner(sel.id,c.id);
     $('wrDetail').innerHTML=`<b class="n" style="--rc:${R.css}">${o.name}</b><span>${R.name}</span>
       <span>${sel.w?`Danno <b>${o.dmg}</b>${o.effect?'<br>'+cap(EFFECTS[o.effect].desc):''}${o.perk?'<br><b style="color:var(--teal)">'+PERKS[o.perk].name+'</b>: '+PERKS[o.perk].desc:''}`:gearDesc(o)}</span>
-      <div class="row">${on?'<button class="mini" data-un="1">Togli</button>':`<button class="mini" data-eq="${sel.id}">Indossa</button>`}<button class="mini del" data-del="${sel.id}">Scarta</button></div>
+      <div class="row">${on?'<button class="mini" data-un="1">Togli</button>':own?`<button class="mini" disabled>In uso</button>`:`<button class="mini" data-eq="${sel.id}">Indossa</button>`}<button class="mini del" data-del="${sel.id}">Scarta</button></div>${own?`<span class="wr-own">Lo indossa ${esc(eqClsName(own))}: toglilo da quella classe per usarlo qui.</span>`:''}
       ${(()=>{const same=fuseGroup(sel);return o.rarity<MAX_R?`<div class="fuse"><span>Fusione: ${Math.min(5,same.length)}/5 «${o.name}» · servono 5 oggetti con lo stesso nome</span>${same.length>=5?`<button class="mini fz" data-fuse="${sel.id}" style="--rc:${RARITY[o.rarity+1].css}">Fondi 5 → ${RARITY[o.rarity+1].name}</button>`:''}</div>`:'';})()}`;}
   else $('wrDetail').innerHTML=`<span>Tocca uno spazio ai lati per vedere gli oggetti di quel tipo.</span>`;
   const other=INV.items.filter(it=>it.w&&it.w.type!==c.weapon).length;
@@ -6232,7 +6239,7 @@ $('wardrobe').addEventListener('click',e=>{const eq=eqOf(G.cls.id);
   const s=e.target.closest('.wslot');if(s){wrSlot=s.dataset.slot;wrSel=null;sfx('ui');renderWardrobe();return;}
   const tl=e.target.closest('.wtile');if(tl){wrSel=tl.dataset.id;sfx('ui');renderWardrobe();return;}
   const b=e.target.closest('#wrDetail button');if(!b)return;
-  if(b.dataset.eq){eq[wrSlot]=b.dataset.eq;sfx('equip');burst(P.x,1.2,0xffd27a,16,3,2,0.3);}
+  if(b.dataset.eq){if(eqOwner(b.dataset.eq,G.cls.id))return;eq[wrSlot]=b.dataset.eq;sfx('equip');burst(P.x,1.2,0xffd27a,16,3,2,0.3);}
   else if(b.dataset.un){delete eq[wrSlot];sfx('ui');}
   else if(b.dataset.fuse){fuseItems(b.dataset.fuse);}
   else if(b.dataset.del){if(!b.dataset.armed){b.dataset.armed=1;b.textContent='Sicuro?';return;}
@@ -9926,7 +9933,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794167846';
+const BUILD_ID='1794168880';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
