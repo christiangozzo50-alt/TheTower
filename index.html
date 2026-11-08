@@ -782,6 +782,22 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
 .q-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;font-size:14px}.q-btns{display:flex;gap:4px}
 .q-btns button{min-height:36px;padding:0 12px;background:rgba(22,25,32,.85);border:1px solid var(--edge);color:var(--ink-2);font:inherit;font-size:13px}.q-btns button.on{border-color:var(--ember);color:var(--ember)}
 #ctxBox{position:fixed;inset:0;z-index:1200;display:grid;place-items:center;background:rgba(6,5,10,.92);color:var(--ink);text-align:center;font-size:15px}#ctxBox button{margin-top:12px}
+/* apertura delle casse del negozio */
+#crateFx{z-index:60;overflow:hidden;background:radial-gradient(ellipse at 50% 55%,rgba(30,22,40,.86),rgba(4,3,8,.97))}
+.cf-stage{position:relative;width:min(70vh,520px);height:min(70vh,520px);display:grid;place-items:center}
+.cf-rays{position:absolute;left:50%;top:50%;width:190vmax;height:190vmax;margin:-95vmax 0 0 -95vmax;background:repeating-conic-gradient(from 0deg,color-mix(in srgb,var(--rc) 34%,transparent) 0 7deg,transparent 7deg 19deg);opacity:0;transition:opacity .25s;animation:cf-spin 14s linear infinite;pointer-events:none}
+.cf-glow{position:absolute;inset:-10%;border-radius:50%;background:radial-gradient(circle,var(--rc),transparent 62%);opacity:0;pointer-events:none}
+#cfCan{position:relative;width:100%;height:100%;image-rendering:pixelated;transition:transform .45s cubic-bezier(.3,1.3,.5,1)}
+#cfFx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#cfFlash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none}#cfFlash.on{animation:cf-fl .55s ease-out}
+.cf-card{position:absolute;left:50%;top:8%;transform:translateX(-50%) scale(.4);opacity:0;transition:transform .4s cubic-bezier(.2,1.6,.4,1),opacity .2s;display:flex;align-items:center;gap:12px;padding:10px 18px 10px 10px;min-width:min(330px,80vw);background:rgba(12,10,18,.94);border:2px solid var(--rc);box-shadow:0 0 0 3px #000,0 0 34px var(--rc);text-align:left}
+#crateFx.show .cf-card{transform:translateX(-50%) scale(1);opacity:1}#crateFx.show #cfCan{transform:translateY(26%) scale(.72)}#crateFx.open .cf-rays{opacity:1}
+.cf-card small{display:block;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--rc)}.cf-card b{display:block;font-family:var(--f-display);font-weight:400;font-size:22px;color:#fff}.cf-card em{font-style:normal;font-size:12px;color:var(--ink-2)}
+#cfOk,#cfSkip{position:absolute;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%)}
+@keyframes cf-spin{to{transform:rotate(360deg)}}@keyframes cf-fl{0%{opacity:.95}100%{opacity:0}}
+@media (max-height:500px){.cf-stage{width:62vh;height:62vh;margin-top:-6vh}.cf-card{padding:6px 12px 6px 6px}.cf-card b{font-size:18px}}
+.wtile.sk-t img{object-fit:contain}
+.sh-h.vn b{color:#ff4d5e}.sh-h.vn span{color:#ff4d5e;font-weight:700;font-variant-numeric:tabular-nums}
 /* fabbro: smonta per rarità */
 .fg-bulk{width:100%;text-align:left}.fg-bulk .note{margin:8px 0 4px;font-size:12px}.fg-brow{display:flex;flex-wrap:wrap;gap:6px}
 .fg-b{display:grid;padding:6px 12px;min-height:44px;background:rgba(22,25,32,.85);border:1px solid var(--edge);border-bottom:3px solid var(--rc);color:var(--ink);text-align:left}
@@ -1825,7 +1841,7 @@ const isUnlocked=c=>!!UNL.u[c.id]||(!UNL.starter&&c.id==='cavaliere');
 function unlockReq(c){const u=UNLOCK[c.id];if(!u)return {txt:'',p:1};
   if(u.t==='floor')return {txt:`Raggiungi il piano ${u.n}`,p:Math.min(1,UNL.best/u.n),num:`${Math.min(UNL.best,u.n)}/${u.n}`};
   if(u.t==='cage'||u.t==='starter'){const n=cageFloorOf(c.id);return {txt:`Sconfiggi il boss del piano ${n} e liberalo dalla cella`,p:Math.min(1,UNL.best/n),num:`piano ${Math.min(UNL.best,n)}/${n}`};}
-  if(u.t==='feat')return {txt:'Uccidi 5000 nemici in totale, oppure sconfiggi un boss senza farti colpire',p:Math.min(1,UNL.kills/5000),num:`${Math.min(UNL.kills,5000)}/5000`};
+  if(u.t==='feat')return {txt:'Uccidi 5000 nemici in totale e sconfiggi un guardiano dal piano 50 in su senza farti colpire',p:(Math.min(1,UNL.kills/5000)+(UNL.nohit?1:0))/2,num:`${Math.min(UNL.kills,5000)}/5000 · guardiano ${UNL.nohit?'fatto':'da fare'}`};
   return {txt:'',p:1};}
 function unlockClass(id,why){if(UNL.u[id])return;UNL.u[id]=true;saveUnl();const c=CLASSES.find(c=>c.id===id);if(!c)return;
   const RC=clsRar(c),el=$('unlockFx');el.style.setProperty('--rc',RC.css);$('unlockName').textContent=c.name;$('unlockRar').textContent=RC.name;$('unlockWhy').textContent=why||'';
@@ -1833,10 +1849,10 @@ function unlockClass(id,why){if(UNL.u[id])return;UNL.u[id]=true;saveUnl();const 
   clearTimeout(unlockClass.tm);unlockClass.tm=setTimeout(()=>{el.classList.remove('on');setTimeout(()=>el.hidden=true,400);},3000);}
 function checkUnlocks(){for(const c of CLASSES){const u=UNLOCK[c.id];if(!u||UNL.u[c.id])continue;
   if(u.t==='floor'&&UNL.best>=u.n)unlockClass(c.id,`Hai raggiunto il piano ${u.n}`);
-  if(u.t==='feat'&&UNL.kills>=5000)unlockClass(c.id,'5000 nemici sconfitti');}}
+  if(u.t==='feat'&&UNL.kills>=5000&&UNL.nohit)unlockClass(c.id,'5000 nemici e un guardiano sconfitto senza un graffio');}}
 function addFragment(f){const locked=CLASSES.filter(c=>!UNL.u[c.id]&&UNLOCK[c.id]);if(!locked.length)return;
   const c=pick(locked);UNL.frag[c.id]=(UNL.frag[c.id]||0)+1;saveUnl();if(UNL.frag[c.id]===10)toast(`${c.name}: frammenti completi!`,'Sbloccala al piedistallo nel seminterrato');popNum(P.x,P.y+2.6,`Frammento: ${c.name} ${Math.min(10,UNL.frag[c.id])}/10`,'xp');sfx('pick');}
-for(const c of CLASSES){const u=UNLOCK[c.id];if(u&&((u.t==='floor'&&UNL.best>=u.n)||(u.t==='feat'&&UNL.kills>=5000)))UNL.u[c.id]=true;}
+for(const c of CLASSES){const u=UNLOCK[c.id];if(u&&((u.t==='floor'&&UNL.best>=u.n)||(u.t==='feat'&&UNL.kills>=5000&&UNL.nohit)))UNL.u[c.id]=true;}
 function classStats(cls,pr){const tr=cls.tier||0,s={maxHp:Math.round(cls.hp*(1+0.1*tr)),lvDmg:0.08*tr,atkSpd:1,speed:cls.speed,armor:cls.armor,crit:cls.crit,stamMax:100,reach:1};
   for(const k in pr.alloc)applyPoint(s,k,pr.alloc[k],cls);return s;}
 const S={};   // statistiche dell'eroe in questa scalata
@@ -5087,7 +5103,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
-  if(boss&&G.scene==='tower'){bossBlast(e);if(!G.bossHit)unlockClass('astromante','Boss sconfitto senza farti colpire');spawnCage(G.floor);scene.remove(e.parts.root);disposeObj(e.parts.root);}
+  if(boss&&G.scene==='tower'){bossBlast(e);if(!G.bossHit&&G.floor>=50&&!G.horde&&!UNL.nohit){UNL.nohit=true;saveUnl();checkUnlocks();}spawnCage(G.floor);scene.remove(e.parts.root);disposeObj(e.parts.root);}
   else if(e.critKill&&G.scene==='tower'){
     const others=foes().length,combo=G.cmb>=3&&G.time-G.cmbT<1.6;
     if(!G.killcam&&(G.killcamCd||0)<=0&&(G.cmb>=2||others>=1)){G.killcam={e,t:0.95,x:e.x,y:e.y+e.h/2};G.killcamCd=2.2;G.hitstop=0;sfx('crit');
@@ -5785,6 +5801,7 @@ function fuseItems(selId){const sel=itemById(selId);if(!sel)return;const o=sel.w
 function renderWardrobe(){
   const c=G.cls,eq=eqOf(c.id);
   $('wrL').innerHTML=slotHTML('weapon','Arma')+slotHTML('elmo','Elmo');$('wrR').innerHTML=slotHTML('guanti','Guanti')+slotHTML('corazza','Corazza');
+  $('wrL').insertAdjacentHTML('beforeend',skinSlotHTML());if(wrSlot==='skin'){renderWrSkins();return;}
   const list=INV.items.filter(it=>wrSlot==='weapon'?(it.w&&it.w.type===c.weapon):(it.g&&it.g.slot===wrSlot)).sort((a,b)=>(b.w||b.g).rarity-(a.w||a.g).rarity);
   if(!wrSel||!list.some(i=>i.id===wrSel))wrSel=(list.find(i=>i.id===eq[wrSlot])||list[0]||{}).id||null;
   $('wrTitle').textContent={weapon:'Armi · '+WTYPES[c.weapon].label,elmo:'Elmi',guanti:'Guanti',corazza:'Corazze'}[wrSlot]+` (${list.length})`;
@@ -8484,7 +8501,7 @@ killEnemy=function(e){const was=e&&e.dead;const r=_keS(e);if(e&&!was&&e.elite&&!
 
 /* ---------- skin del negozio: eroe + modello + colore, 3 nuove ogni giorno ---------- */
 const VARS={gelo:{n:'Gelo',p:1400,c:'#8fdcff'},smeraldo:{n:'Smeraldo',p:1400,c:'#7fe08a'},brace:{n:'Brace',p:1600,c:'#ff7a2e'},ombra:{n:'Ombra e oro',p:2000,c:'#ffd27a'},
-  rubino:{n:'Cremisi',p:1500,c:'#ff4d6a'},reale:{n:'Viola reale',p:1600,c:'#b88cff'},avorio:{n:'Avorio',p:1800,c:'#f3e6c8'},abisso:{n:'Abisso',p:1800,c:'#3fb8b0'}};
+  rubino:{n:'Cremisi',p:1500,c:'#ff4d6a'},reale:{n:'Viola reale',p:1600,c:'#b88cff'},avorio:{n:'Avorio',p:1800,c:'#f3e6c8'},abisso:{n:'Abisso',p:1800,c:'#3fb8b0'},venom:{n:'Venom',p:2400,c:'#ff1a2e'}};
 const OWNS=store.get('shopskins',[]),SSEL=store.get('shopskinsel',{});
 const _skOS=skinOf;
 const sKey=(cid,sk,v)=>cid+'.'+sk+'.'+v,sParse=k=>{const [c,sk,v]=k.split('.');return {cid:c,sk:+sk,v};};
@@ -8496,7 +8513,7 @@ function shopSel(cid){const k=SSEL[cid];if(!k||!ownsS(k))return null;const o=sPa
 skinOf=function(id){const o=shopSel(id);return o?o.sk:_skOS(id);};
 function varOf(cid){const o=shopSel(cid);return o?o.v:'';}
 const hueW=x=>((x%1)+1)%1;
-function recolor(root,v){if(!VARS[v])return;const done=new Map(),hsl={};
+function recolor(root,v){if(!VARS[v])return;if(v==='venom')return recolorVenom(root);const done=new Map(),hsl={};
   const tf=(h,s,l)=>{const skin=h>0.02&&h<0.13&&s>0.2&&s<0.8&&l>0.42&&l<0.88;if(skin||l<0.09)return null;const g=s<0.1;
     switch(v){
     case 'gelo':return g?[0.55,0.22,Math.max(l,0.5)]:[0.52+h*0.06,Math.min(1,s*0.8+0.15),Math.min(0.9,l*0.9+0.1)];
@@ -8517,12 +8534,12 @@ buildHero=function(cls){const R=_bhS(cls);const v=varOf(cls.id);if(v)recolor(R.r
 // rotazione giornaliera: 3 eroi diversi, modello e colore diversi (uguale per tutti i giocatori)
 const dayNo=()=>{const d=new Date();return Math.floor(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);};
 function dailySkins(){let s=(dayNo()*2654435761)>>>0;const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
-  const cls=CLASSES.filter(c=>SKINS[c.id]&&SKINS[c.id].length).map(c=>c.id),vs=Object.keys(VARS),out=[];
+  const cls=CLASSES.filter(c=>SKINS[c.id]&&SKINS[c.id].length).map(c=>c.id),vs=Object.keys(VARS).filter(v=>v!=='venom'),out=[];
   while(out.length<3&&cls.length){const cid=cls.splice(Math.floor(rnd()*cls.length),1)[0];const v=vs.splice(Math.floor(rnd()*vs.length),1)[0];
     out.push(sKey(cid,Math.floor(rnd()*SKINS[cid].length),v));}
   return out;}
 const skinPrice=k=>{const o=sParse(k);return VARS[o.v].p+(o.sk!==(SKINPICK[o.cid]||0)?300:0);};
-const skinName=k=>{const o=sParse(k),sk=SKINS[o.cid][o.sk];return (sk&&sk.name||'Skin')+' · '+VARS[o.v].n;};
+const skinName=k=>{const o=sParse(k),sk=SKINS[o.cid][o.sk];if(o.v==='venom')return 'Venom';return (sk&&sk.name||'Skin')+' · '+VARS[o.v].n;};
 const clsOf=id=>CLASSES.find(c=>c.id===id);
 function untilNew(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const h=Math.floor((m-n)/36e5),mi=Math.floor((m-n)%36e5/6e4);return h+'h '+mi+'m';}
 // anteprime in pixel art: stessa pipeline del gioco (render a bassa risoluzione + retino + contorni)
@@ -8569,7 +8586,7 @@ const SHOP_POSE={
  monaco:{crouch:.04,fb:.02,kick:[-1.75,.2],lean:-.3,twist:.4,head:-.1,shF:-1.5,elF:-.5,wrF:0,shB:-2.2,elB:-1.9,wrB:0,ry:.8}};
 // gamba in piedi: dato quanto si abbassa il bacino e dove sta il piede, calcola anca e ginocchio
 function legIK(crouch,z){const L1=.48,L2=.43,h=Math.max(.3,.95-crouch-.09),d=clamp(Math.hypot(z,h),.2,L1+L2-.005),kn=Math.PI-Math.acos(clamp((L1*L1+L2*L2-d*d)/(2*L1*L2),-1,1)),a=Math.atan2(z,h),al=Math.acos(clamp((L1*L1+d*d-L2*L2)/(2*L1*d),-1,1));return [-(a+al),kn];}
-function poseShop(R,cls){const t=Object.assign({crouch:.1,ff:.3,fb:-.3,lean:0,head:0,twist:0,shF:-2,elF:-.2,wrF:0,shB:-1,elB:-.5,wrB:0,sF:0,sB:0,ry:.5},SHOP_POSE[cls.id]);
+function poseShop(R,cls,over){const t=Object.assign({crouch:.1,ff:.3,fb:-.3,lean:0,head:0,twist:0,shF:-2,elF:-.2,wrF:0,shB:-1,elB:-.5,wrB:0,sF:0,sB:0,ry:.5},SHOP_POSE[cls.id],over);
   const [hF,kF]=t.kick||legIK(t.crouch,t.ff),[hB,kB]=legIK(t.crouch,t.fb);Object.assign(t,{hF,kF,hB,kB});
   try{const a=buildWeaponMesh(cls.weapon,3,null);R.arms[0].wr.add(a.g);if(cls.weapon==='pugnali'){const b=buildWeaponMesh(cls.weapon,3,null);R.arms[1].wr.add(b.g);}}catch(e){}
   applyPose(R,t,1,1);R.arms[0].sh.rotation.z=t.sF;R.arms[1].sh.rotation.z=t.sB;
@@ -8577,7 +8594,7 @@ function poseShop(R,cls){const t=Object.assign({crouch:.1,ff:.3,fb:-.3,lean:0,he
   for(const f of R.flows||[])f.segs.forEach((g,i)=>{g.rotation.x=(i===0?f.base:0.1)+(i===0?.75:.2)*f.amp;});
   R.root.updateMatrixWorld(true);let low=Infinity;const v=new THREE.Vector3();for(const l of R.legs){if(!l.foot)continue;l.foot.getWorldPosition(v);low=Math.min(low,v.y-0.07);}if(low<Infinity)R.model.position.y-=low;
   R.root.userData.ry=t.ry;}
-function skinModel(k){const o=sParse(k),c=clsOf(o.cid),R=buildSkin(c,o.sk);poseShop(R,c);recolor(R.root,o.v);return R.root;}
+function skinModel(k){const o=sParse(k),c=clsOf(o.cid),R=buildSkin(c,o.sk);poseShop(R,c,o.v==='venom'?{head:.12,twist:.05,ry:.08}:null);recolor(R.root,o.v);return R.root;}
 const THUMB={};
 function thumbOf(k){if(THUMB[k]!=null)return THUMB[k];try{const m=skinModel(k);m.rotation.y=m.userData.ry||0.5;const fr=psFrame(m,1.12,0.75);fr.cy-=0.06;const u=psURL(psShot(m,72,96,fr,true));disposeObj(m);return THUMB[k]=u;}catch(e){return THUMB[k]='';}}
 
@@ -8586,9 +8603,9 @@ const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o 
   {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
   {id:'leggenda',n:'Cassa leggendaria',p:2400,min:3,leg:0.2,d:'Almeno Epica, 20% di trovarla Leggendaria'}];
 function dailyOffer(){return 'c:'+CRATES[dayNo()%CRATES.length].id;}
-const priceOf=key=>{const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
+const priceOf=key=>{if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
 function openCrate(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,rollRarity(f,0));if(cr.leg&&Math.random()<cr.leg)r=4;r=Math.min(4,r);
-  const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();showPick(o);return o;}
+  const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();crateShow(cr,o);return o;}
 
 /* ---------- il mercante ---------- */
 const SHOP_X=-12.0;
@@ -8605,10 +8622,13 @@ function merchantModel(){const g=new THREE.Group();
   mesh(sph(0.09,10,8),new THREE.MeshBasicMaterial({color:0xffc56b}),-0.42,1.3,0.75,g,true);return g;}
 function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a44,0x8a8a96],eroe:[0x2e3f5c,0xa9b3c4,0x5fb0ff],leggenda:[0x2a1830,0xd9b45a,0xff7ad9]}[id];
   const body=toon(T[0]),band=toon(T[1],{metalness:0.4}),gem=toon(T[2],{emissive:T[2],emissiveIntensity:0.5});
-  mesh(rbox(1.3,0.72,0.86,0.06),body,0,0.36,0,g);const lid=mesh(new THREE.CylinderGeometry(0.43,0.43,1.3,16,1,false,0,Math.PI),body,0,0.72,0,g);lid.rotation.z=Math.PI/2;
-  for(const x of [-0.45,0.45]){mesh(rbox(0.1,0.76,0.9,0.02),band,x,0.38,0,g);const b=mesh(new THREE.CylinderGeometry(0.45,0.45,0.1,16,1,true,0,Math.PI),band,x,0.72,0,g);b.rotation.z=Math.PI/2;}
-  mesh(rbox(0.26,0.3,0.08,0.03),band,0,0.66,0.45,g);mesh(sph(0.075,8,6),gem,0,0.68,0.5,g,true);
-  if(id==='leggenda')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);return g;}
+  mesh(rbox(1.3,0.72,0.86,0.06),body,0,0.36,0,g);
+  const lid=new THREE.Group();lid.position.set(0,0.72,-0.43);g.add(lid);   // perno sul retro: il coperchio si apre davvero
+  const top=mesh(new THREE.CylinderGeometry(0.43,0.43,1.3,16,1,false,0,Math.PI),body,0,0,0.43,lid);top.rotation.z=Math.PI/2;
+  for(const x of [-0.45,0.45]){mesh(rbox(0.1,0.76,0.9,0.02),band,x,0.38,0,g);const b=mesh(new THREE.CylinderGeometry(0.45,0.45,0.1,16,1,true,0,Math.PI),band,x,0,0.43,lid);b.rotation.z=Math.PI/2;}
+  const lock=[mesh(rbox(0.26,0.3,0.08,0.03),band,0,0.66,0.45,g),mesh(sph(0.075,8,6),gem,0,0.68,0.5,g,true)];
+  if(id==='leggenda')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);
+  g.userData.parts={lid,lock,gem,w:1.15};return g;}
 const CRATE_IMG={},PORTRAIT={v:null};
 function crateImg(id){if(CRATE_IMG[id]!=null)return CRATE_IMG[id];try{const m=crateModel(id);m.rotation.y=-0.55;m.position.y=0.06;const u=psURL(psShot(m,72,96,{cx:0,cy:0.55,h:2.5,dist:9,oy:2.2},true));disposeObj(m);return CRATE_IMG[id]=u;}catch(e){return CRATE_IMG[id]='';}}
 function portraitImg(){if(PORTRAIT.v!=null)return PORTRAIT.v;try{const m=merchantModel();m.rotation.y=0.35;const u=psURL(psShot(m,48,48,{cx:0.05,cy:1.65,h:1.15,dist:9,oy:0.1},false));disposeObj(m);return PORTRAIT.v=u;}catch(e){return PORTRAIT.v='';}}
@@ -8624,7 +8644,7 @@ function portraitImg(){if(PORTRAIT.v!=null)return PORTRAIT.v;try{const m=merchan
   INTER.push({id:'shop',x:SHOP_X,y:2.6,name:'Mercante',sub:()=>`${fmtC(COINS.n)} rubini · casse e skin`,ring:r,act:openShop});})();
 
 let shTab='casse';
-function openShop(){if(G.state!=='cellar')return;G.state='shop';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);shTab='casse';renderShop();$('shop').hidden=false;}
+function openShop(){if(G.state!=='cellar')return;G.state='shop';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);shTab='casse';venomStart();if(venomLive())shTab='skin';renderShop();$('shop').hidden=false;}
 function closeShop(){closeView(true);$('shop').hidden=true;if(G.state==='shop'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}}
 const SH_QUOTES=['«Rubini lucenti, merce rara.»','«Tutto ha un prezzo, eroe. Anche la gloria.»','«Questa l\'ho trovata al piano cento. Forse.»','«Ogni rubino ha una storia. La tua quanti ne vale?»','«Oggi ho roba che domani non avrò.»'];
 const coinI='<i class="cn" aria-hidden="true"></i>';
@@ -8640,19 +8660,19 @@ function renderShop(){$('shCoins').textContent=fmtC(COINS.n);for(const b of docu
     box.innerHTML=`<div class="sh-h"><b>Oggetti</b></div><article class="sh-card" style="--vc:#ff4a64"><div class="sh-stage"><i class="sh-stone"></i><span class="sh-cnt">${STONES.n}/${STONE_MAX}</span></div>
       <div class="sh-info"><b>Pietra della rinascita</b><span>Quando muori nella torre rinasci sul posto con metà vita. Una volta per run, si consuma.</span></div>
       ${full?'<button class="sh-buy off" disabled>Ne hai già 3</button>':buyBtn('o:stone',sp)}</article>`;}
-  else{const card=(k,daily)=>{const o=sParse(k),c=clsOf(o.cid),own=ownsS(k),on=SSEL[o.cid]===k&&own,unl=isUnlocked(c),p=priceOf('s:'+k),im=thumbOf(k);
-      return `<article class="sh-card sh-sk${on?' on':''}" style="--vc:${VARS[o.v].c}"><button class="sh-stage" data-view="${k}" aria-label="Guarda da vicino">${im?`<img src="${im}" alt="">`:`<i class="sh-sw"></i>`}<i class="sh-zoom" aria-hidden="true"></i>${on?'<em class="sh-rib">Indossata</em>':''}</button>
+  else{const card=(k,daily,was)=>{const o=sParse(k),c=clsOf(o.cid),own=ownsS(k),on=SSEL[o.cid]===k&&own,unl=isUnlocked(c),p=priceOf('s:'+k),im=thumbOf(k);
+      return `<article class="sh-card sh-sk${on?' on':''}" style="--vc:${VARS[o.v].c}"><button class="sh-stage" data-view="${k}" aria-label="Guarda da vicino">${im?`<img src="${im}" alt="">`:`<i class="sh-sw"></i>`}<i class="sh-zoom" aria-hidden="true"></i>${on?'<em class="sh-rib">Indossata</em>':was?'<em class="sh-rib">−67%</em>':''}</button>
       <div class="sh-info"><b>${esc(skinName(k))}</b><span>${esc(c.name)}${unl?'':' <i class="sh-lock">da sbloccare</i>'}</span></div>
-      ${own?`<button class="sh-buy ${on?'off':'wear'}" data-wear="${k}" ${unl?'':'disabled'}>${on?'Togli':'Indossa'}</button>`:buyBtn('s:'+k,p)}</article>`;};
+      ${was?`<s class="sh-was">${fmtC(was)}</s>`:''}${own?`<button class="sh-buy ${on?'off':'wear'}" data-wear="${k}" ${unl?'':'disabled'}>${on?'Togli':'Indossa'}</button>`:buyBtn('s:'+k,p)}</article>`;};
     const day=dailySkins(),mine=OWNS.filter(k=>!day.includes(k)&&shopSelOk(k));
-    box.innerHTML=`<div class="sh-h"><b>Skin di oggi</b><span>nuove tra ${untilNew()}</span></div>${day.map(k=>card(k,true)).join('')}`
+    box.innerHTML=(venomLive()?`<div class="sh-h vn"><b>Offerta a tempo</b><span id="vnT">${venomLeft()}</span></div>${card(VENOM_K,false,VARS.venom.p)}`:'')+`<div class="sh-h"><b>Skin di oggi</b><span>nuove tra ${untilNew()}</span></div>${day.map(k=>card(k,true)).join('')}`
       +(mine.length?`<div class="sh-h"><b>Le tue skin</b></div>${mine.map(k=>card(k)).join('')}`:'')
       +'<p class="note">Tocca una skin per guardarla da vicino. Ogni giorno ne arrivano 3 nuove, quelle comprate restano tue.</p>';}}
 /* ---------- vista ingrandita della skin ---------- */
 const SV={k:null,m:null,fr:null,a:0.5,spin:0.6,drag:null,raf:0};
 function openView(k){closeView(true);try{SV.m=skinModel(k);}catch(e){return;}SV.k=k;SV.a=SV.m.userData.ry||0.5;SV.spin=0.6;SV.fr=psFrame(SV.m,1.14,0.8);SV.fr.cy-=0.08;
-  const o=sParse(k),c=clsOf(o.cid),sk=SKINS[o.cid][o.sk];$('svHero').textContent=c.name+' · '+VARS[o.v].n;$('svName').textContent=sk.name||'Skin';$('svName').style.color=VARS[o.v].c;
-  $('svDesc').textContent=sk.desc||'';$('shView').style.setProperty('--vc',VARS[o.v].c);svAct();$('shView').hidden=false;sfx('ui');
+  const o=sParse(k),c=clsOf(o.cid),sk=SKINS[o.cid][o.sk];$('svHero').textContent=o.v==='venom'?c.name+' · Offerta a tempo':c.name+' · '+VARS[o.v].n;$('svName').textContent=o.v==='venom'?'Venom':(sk.name||'Skin');$('svName').style.color=VARS[o.v].c;
+  $('svDesc').textContent=o.v==='venom'?'Interamente nera, con occhi, dettagli e magia rosso sangue.':(sk.desc||'');$('shView').style.setProperty('--vc',VARS[o.v].c);svAct();$('shView').hidden=false;sfx('ui');
   let last=performance.now();const loop=t=>{if(!SV.m)return;const dt=Math.min(0.05,(t-last)/1000);last=t;if(!SV.drag)SV.a+=SV.spin*dt;SV.m.rotation.y=SV.a;
     try{const img=psShot(SV.m,112,140,SV.fr,true);$('svCan').getContext('2d').putImageData(img,0,0);}catch(e){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
 function svAct(){const k=SV.k,o=sParse(k),c=clsOf(o.cid),own=ownsS(k),on=SSEL[o.cid]===k&&own,unl=isUnlocked(c),p=priceOf('s:'+k);
@@ -8664,7 +8684,7 @@ function closeView(quiet){cancelAnimationFrame(SV.raf);if(SV.m){disposeObj(SV.m)
   c.addEventListener('pointerdown',e=>{c.setPointerCapture&&c.setPointerCapture(e.pointerId);down(e);});c.addEventListener('pointermove',move);c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up);
   $('shView').addEventListener('click',e=>{const r=e.target.closest('[data-rot]');if(r){SV.a+=+r.dataset.rot*0.6;SV.spin=0;return;}if(e.target.id==='shView'||e.target.closest('#svClose'))closeView();});})();
 $('shop').addEventListener('click',e=>{const vw=e.target.closest('[data-view]');if(vw){openView(vw.dataset.view);return;}const t=e.target.closest('.tab');if(t){shTab=t.dataset.st;sfx('ui');renderShop();return;}
-  const b=e.target.closest('[data-buy]');if(b&&!b.disabled){const k=b.dataset.buy,p=priceOf(k);if(COINS.n<p)return;COINS.n-=p;saveCoins();coinHud();sfx('pick');
+  const b=e.target.closest('[data-buy]');if(b&&!b.disabled){const k=b.dataset.buy,p=priceOf(k);if(COINS.n<p||(k==='s:'+VENOM_K&&!venomLive()))return;COINS.n-=p;saveCoins();coinHud();sfx('pick');
     if(k.startsWith('c:')){openCrate(CRATES.find(c=>'c:'+c.id===k));}
     else if(k==='o:stone'){if(STONES.n>=STONE_MAX){COINS.n+=p;saveCoins();coinHud();return;}STONES.n++;saveStones();toast('Pietra della rinascita',`Ne hai ${STONES.n}`);}
     else{const sk=k.slice(2),o=sParse(sk),c=clsOf(o.cid);if(!OWNS.includes(sk))OWNS.push(sk);store.set('shopskins',OWNS);if(isUnlocked(c)){SSEL[o.cid]=sk;store.set('shopskinsel',SSEL);if(G.cls.id===o.cid)setHero(G.cls);}toast('Nuova skin!',skinName(sk)+' per '+c.name);}
@@ -9413,7 +9433,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794147120';
+const BUILD_ID='1794147929';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -9655,6 +9675,70 @@ setQuality(SETTINGS.q==null?'auto':SETTINGS.q);
   $('ctxReload').onclick=()=>{try{Promise.race([cloudSave(true),new Promise(r=>setTimeout(r,1500))]).finally(()=>location.reload());}catch(e){location.reload();}};
   canvas.addEventListener('webglcontextlost',e=>{e.preventDefault();pause();box.hidden=false;$('ctxMore').hidden=true;clearTimeout(tm);tm=setTimeout(()=>{$('ctxMore').hidden=false;},7000);});
   canvas.addEventListener('webglcontextrestored',()=>{clearTimeout(tm);box.hidden=true;resize();renderer.shadowMap.needsUpdate=true;});}
+
+/* ---------- armadio: le skin che possiedi del personaggio equipaggiato ---------- */
+function wrSkins(){const c=G.cls,out=[];(SKINS[c.id]||[]).forEach((s,i)=>{if(skinUnlocked(c.id,i))out.push({id:'b'+i,sk:i,k:null,name:s.name||('Skin '+(i+1)),sub:'Aspetto base'});});
+  for(const k of OWNS){const o=sParse(k);if(o.cid===c.id&&SKINS[c.id]&&SKINS[c.id][o.sk]&&VARS[o.v])out.push({id:'s'+k,k,sk:o.sk,name:skinName(k),sub:'Dal negozio',col:VARS[o.v].c});}return out;}
+const wrSkinOn=x=>x.k?SSEL[G.cls.id]===x.k&&ownsS(x.k):(!shopSel(G.cls.id)&&skinOf(G.cls.id)===x.sk);
+function skinThumb(x){if(x.k)return thumbOf(x.k);const key='b.'+G.cls.id+'.'+x.sk;if(THUMB[key]!=null)return THUMB[key];
+  try{const c=G.cls,R=buildSkin(c,x.sk);poseShop(R,c);R.root.rotation.y=R.root.userData.ry||0.5;const fr=psFrame(R.root,1.12,0.75);fr.cy-=0.06;const u=psURL(psShot(R.root,72,96,fr,true));disposeObj(R.root);return THUMB[key]=u;}catch(e){return THUMB[key]='';}}
+function skinSlotHTML(){const list=wrSkins(),cur=list.find(wrSkinOn)||list[0],im=cur?skinThumb(cur):'';
+  return `<button class="wslot" data-slot="skin" aria-pressed="${wrSlot==='skin'}" style="--rc:#c7a8ff;--rcg:rgba(199,168,255,.28)"><span class="thumb">${im?`<img src="${im}" alt="" style="width:100%;height:100%;object-fit:contain;image-rendering:pixelated">`:''}</span><span><small>Skin (${list.length})</small><b>${esc(cur?cur.name:'Base')}</b></span></button>`;}
+function renderWrSkins(){const list=wrSkins();if(!list.some(x=>x.id===wrSel))wrSel=(list.find(wrSkinOn)||list[0]||{}).id||null;
+  $('wrTitle').textContent=`Skin di ${G.cls.name} (${list.length})`;
+  $('wrList').innerHTML=list.map(x=>`<button class="wtile sk-t${wrSkinOn(x)?' on':''}" data-id="${x.id}" aria-pressed="${x.id===wrSel}" title="${esc(x.name)}" style="--rc:${x.col||'#b4ab9b'};--rcg:rgba(199,168,255,.2)">${skinThumb(x)?`<img src="${skinThumb(x)}" alt="">`:''}</button>`).join('');
+  const x=list.find(y=>y.id===wrSel);$('wrDetail').innerHTML=x?`<b class="n" style="--rc:${x.col||'#f3ead7'}">${esc(x.name)}</b><span>${x.sub}</span><div class="row">${wrSkinOn(x)?'<button class="mini" disabled>Indossata</button>':`<button class="mini" data-skinwear="${x.id}">Indossa</button>`}</div>`:'';
+  $('wrNote').textContent='Altre skin le trovi nel Negozio e nei Trofei della Bacheca.';}
+$('wardrobe').addEventListener('click',e=>{const b=e.target.closest('[data-skinwear]');if(!b)return;e.stopPropagation();const x=wrSkins().find(y=>y.id===b.dataset.skinwear);if(!x)return;const id=G.cls.id;
+  if(x.k)SSEL[id]=x.k;else{delete SSEL[id];SKINSEL[id]=x.sk;store.set('skinsel',SKINSEL);}store.set('shopskinsel',SSEL);setHero(G.cls);sfx('equip');burst(P.x,1.2,0xc7a8ff,16,3,2,0.3);renderWardrobe();},true);
+
+/* ---------- casse del negozio: cade, trema, esplode di luce del colore della rarità e mostra l'oggetto ---------- */
+const CF={m:null,raf:0,o:null,cr:null,sparks:[]};
+(function(){const d=document.createElement('section');d.className='screen';d.id='crateFx';d.hidden=true;d.innerHTML='<div class="cf-rays"></div><div class="cf-stage"><div class="cf-glow" id="cfGlow"></div><canvas id="cfCan" width="168" height="168"></canvas><div class="cf-card" id="cfCard"></div></div><canvas id="cfFx"></canvas><div id="cfFlash"></div><button class="ghost" id="cfSkip">Salta</button><button class="big" id="cfOk" hidden>Continua</button>';document.body.appendChild(d);})();
+const cfDrop=0.38;
+function crateShow(cr,o){cfClose(true);const R=RARITY[o.rarity],m=crateModel(cr.id),P_=m.userData.parts,box=$('crateFx');CF.m=m;CF.o=o;CF.cr=cr;CF.sparks=[];
+  const W=cfDrop+(1.0+Math.max(0,o.rarity-2)*0.3),fr={cx:0,cy:0.72,h:2.9,dist:9,oy:1.7},cv=$('cfCan'),gx=cv.getContext('2d'),fx=$('cfFx'),fg=fx.getContext('2d');
+  m.rotation.y=-0.5;box.style.setProperty('--rc',R.css);box.classList.remove('open','show');box.hidden=false;$('cfOk').hidden=true;$('cfSkip').hidden=false;
+  $('cfCard').innerHTML=`<span class="thumb" style="--rc:${R.css};--rcg:${R.glow}">${itemPic(o,o.slot?GEAR[o.slot].icon:WTYPES[o.type].icon)}</span><span><small>${R.name}</small><b>${esc(o.name)}</b><em>Lo trovi nell'armadio</em></span>`;
+  const inner=mesh(new THREE.PlaneGeometry(1.18,0.74),new THREE.MeshBasicMaterial({color:R.hex}),0,0.725,0,m,true);inner.rotation.x=-Math.PI/2;inner.visible=false;
+  const st={t:0,rat:0,burst:false,ang:0,vel:0,show:false,bt:0};CF.st=st;CF.W=W;let last=performance.now(),land=false;
+  const spark=(n,sp)=>{const w=fx.width/2,h=fx.height*0.56;for(let i=0;i<n;i++){const a=Math.random()*TAU,s=(0.3+Math.random())*sp;CF.sparks.push({x:w,y:h,vx:Math.cos(a)*s,vy:Math.sin(a)*s-sp*0.55,l:0.5+Math.random()*0.8,c:Math.random()<0.6?R.css:'#ffd27a',z:2+Math.random()*3});}};
+  fx.width=Math.ceil(innerWidth/2);fx.height=Math.ceil(innerHeight/2);
+  const boom=()=>{st.burst=true;st.bt=0;st.ang=-0.15;st.vel=-24;P_.lock.forEach(x=>x.visible=false);inner.visible=true;box.classList.add('open');const f=$('cfFlash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');
+    spark(70+o.rarity*40,fx.height*(0.9+o.rarity*0.12));sfx('chestBurst');sfx('chest');if(o.rarity>=3)sfx('chestEpic');padRumble(0.5+o.rarity*0.12);$('cfSkip').hidden=true;};
+  CF.boom=()=>{if(!st.burst){st.t=Math.max(st.t,W);boom();}};
+  const loop=n=>{if(!CF.m)return;CF.raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(n-last)/1000);last=n;st.t+=dt;const t=st.t,sc=1;
+    if(t<cfDrop){const u=t/cfDrop;m.position.y=3.2*(1-u*u);}else{if(!land){land=true;sfx('slam');spark(16,fx.height*0.35);padRumble(0.3);}m.position.y=0;}
+    if(!st.burst){if(t>=cfDrop){const k=Math.min(1,(t-cfDrop)/(W-cfDrop)),q=k*k;m.position.x=Math.sin(t*63)*0.05*q;m.rotation.z=Math.sin(t*43)*0.09*q;m.scale.set(sc*(1+0.07*q),sc*(1-0.12*q),sc*(1+0.07*q));P_.lid.rotation.x=-0.16*q-Math.abs(Math.sin(t*31))*0.08*q;P_.gem.emissiveIntensity=0.5+q*4;$('cfGlow').style.opacity=0.12+q*0.5;
+        st.rat-=dt;if(st.rat<=0){st.rat=lerp(0.18,0.06,k);sfx('chestRattle');spark(1+Math.round(q*5),fx.height*0.3);}}if(t>=W){m.position.x=0;m.rotation.z=0;m.scale.setScalar(sc);boom();}}
+    else{st.bt+=dt;const T=st.bt,b=Math.exp(-T*7),s=Math.cos(T*18)*b;st.vel+=(-2.0-st.ang)*190*dt;st.vel*=Math.exp(-11*dt);st.ang+=st.vel*dt;P_.lid.rotation.x=st.ang;m.scale.set(sc*(1-0.1*s),sc*(1+0.18*s),sc*(1-0.1*s));m.position.x=0;m.rotation.z=0;$('cfGlow').style.opacity=Math.max(0.3,0.95*Math.exp(-T*1.8));
+      if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>0.32){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
+    try{gx.putImageData(psShot(m,168,168,fr,false),0,0);}catch(e){}
+    fg.clearRect(0,0,fx.width,fx.height);for(const p of CF.sparks){p.l-=dt;if(p.l<=0)continue;p.vy+=fx.height*1.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;fg.globalAlpha=Math.min(1,p.l*2);fg.fillStyle=p.c;fg.fillRect(p.x|0,p.y|0,p.z|0,p.z|0);}fg.globalAlpha=1;if(CF.sparks.length>400||st.bt>3)CF.sparks=CF.sparks.filter(p=>p.l>0);};
+  CF.raf=requestAnimationFrame(loop);}
+function cfClose(quiet){cancelAnimationFrame(CF.raf);if(CF.m){disposeObj(CF.m);CF.m=null;}const b=$('crateFx');if(b&&!b.hidden){b.hidden=true;b.classList.remove('open','show');if(!quiet)sfx('ui');}}
+$('cfSkip').onclick=()=>{if(CF.boom)CF.boom();};$('cfOk').onclick=()=>{cfClose();renderShop();};
+const _pbCF=padBack;padBack=function(){if(!$('crateFx').hidden){if(!$('cfOk').hidden)$('cfOk').click();else $('cfSkip').click();return true;}return _pbCF();};
+
+function shopSelOk(k){const o=sParse(k);return !!(SKINS[o.cid]&&SKINS[o.cid][o.sk]&&VARS[o.v]);}
+/* ---------- offerta a tempo: Venom per l'astromante, nera con magia e occhi rossi ---------- */
+var VENOM_K='astromante.2.venom',VENOM_P=800,VENOM_RED=0xff1a2e,VENOM_MS=300000;
+function venomStart(){if(!ownsS(VENOM_K)&&store.get('venom-t0',0)===0)store.set('venom-t0',Date.now());}
+function venomMsLeft(){const t=store.get('venom-t0',0);return t?VENOM_MS-(Date.now()-t):VENOM_MS;}
+function venomLive(){return !ownsS(VENOM_K)&&store.get('venom-t0',0)>0&&venomMsLeft()>0;}
+function venomLeft(){const m=Math.max(0,Math.ceil(venomMsLeft()/1000));return Math.floor(m/60)+':'+String(m%60).padStart(2,'0');}
+{let was=false;setInterval(()=>{if($('shop').hidden)return;const on=venomLive(),t=$('vnT');if(t&&on)t.textContent=venomLeft();if(was&&!on){if(SV.k===VENOM_K)closeView(true);renderShop();}was=on;},1000);}
+function recolorVenom(root){const done=new Map(),red=new THREE.Color(0xd80e20),glowE=new THREE.Color(0xff1626),eyeHex=0xc7a8ff,starHex=0xfff3c4,all=[];root.traverse(o=>{if(o.isMesh&&o.material&&!Array.isArray(o.material))all.push(o);});
+  // occhi grandi e volto nero: spariscono le stelle sul viso
+  const faces=new Set();for(const o of all)if(o.material.color&&o.material.color.getHex()===eyeHex&&o.material.emissive&&o.scale.x===1&&o.parent&&o.parent.children.some(c=>c.isMesh&&c.material.color&&c.material.color.getHex()===starHex))faces.add(o.parent);
+  for(const o of all){const m=o.material;if(faces.has(o.parent)&&m.color&&m.color.getHex()===starHex)o.visible=false;if(faces.has(o.parent)&&m.color&&m.color.getHex()===eyeHex)o.scale.set(1.9,1.9,1);}
+  for(const o of all){const m=o.material;if(!m||!m.color||(m.userData&&m.userData.keep))continue;let c=done.get(m);
+    if(!c){c=m.clone();c.userData=Object.assign({},m.userData);const glow=m.blending===THREE.AdditiveBlending||(m.emissive&&m.emissive.getHex()!==0&&m.emissiveIntensity>=0.9);
+      if(glow){c.color.copy(red);if(c.emissive){c.emissive.copy(glowE);c.emissiveIntensity=0.85;c.userData.baseE=glowE.clone();c.userData.baseI=0.85;}}
+      else{c.color.setHex(m.isMeshBasicMaterial?0x05040a:0x0d0c12);if(c.emissive){c.emissive.setHex(0);c.userData.baseE=new THREE.Color(0);c.userData.baseI=1;}}done.set(m,c);}
+    o.material=c;}}
+// con Venom indossata anche la magia dell'astromante diventa rossa
+{const ast=CLASSES.find(c=>c.id==='astromante'),base=ast.fx,_bhV=buildHero;buildHero=function(cls){if(cls===ast)ast.fx=varOf('astromante')==='venom'?VENOM_RED:base;return _bhV(cls);};}
 
 /* ---------- Avvio ---------- */
 resetStats();G.weapon=makeWeapon(G.cls.weapon,0,1);setHero(G.cls);
