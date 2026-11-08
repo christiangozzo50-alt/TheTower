@@ -638,6 +638,8 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #bossCard{bottom:calc(11dvh + 18px + env(safe-area-inset-bottom,0px))}
   #cine.boss #cineSub{top:calc(11dvh + 18px + env(safe-area-inset-top,0px))}
 }
+/* scelta dei potenziamenti: fondo pieno e sopra nomi e numeri, così dietro non si vede nessuno */
+#upgrade{z-index:60;background:#0b0c11;-webkit-backdrop-filter:none;backdrop-filter:none}
 #cards .card.padsel{border-color:var(--ember);transform:translateY(-6px);box-shadow:0 0 0 3px rgba(255,179,71,.35),0 10px 30px rgba(255,140,40,.25)}
 /* blocco "installa l'app" */
 #installGate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow-y:auto;touch-action:pan-y;background:radial-gradient(ellipse at 50% 30%,#241a30,#07060d 70%);
@@ -889,8 +891,8 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
   <div class="hud-left">
     <div class="bar hp"><i class="lag" id="hpLag"></i><i class="fill" id="hpFill"></i><span id="hpText">100 / 100</span></div>
     <div class="bar stam" id="stamBar"><i class="fill" id="stamFill"></i></div>
-    <div id="mpMate" hidden></div>
     <div class="bar upb" title="Prossimo potenziamento"><i class="fill" id="upFill"></i></div>
+    <div id="mpMate" hidden></div>
   </div>
   <div class="hud-center">
     <div class="floor-label"><span>PIANO</span><b id="floorNum">1</b><time id="runClock"></time></div>
@@ -1937,7 +1939,7 @@ for(const c of CLASSES){const u=UNLOCK[c.id];if(u&&((u.t==='floor'&&UNL.best>=u.
 function classStats(cls,pr){const tr=cls.tier||0,s={maxHp:Math.round(cls.hp*(1+0.1*tr)),lvDmg:0.08*tr,atkSpd:1,speed:cls.speed,armor:cls.armor,crit:cls.crit,stamMax:100,reach:1};
   for(const k in pr.alloc)applyPoint(s,k,pr.alloc[k],cls);return s;}
 const S={};   // statistiche dell'eroe in questa scalata
-function resetStats(){const c=G.cls;Object.assign(S,classStats(c,prog(c.id)),{dmgMul:1,jump:17,extraJumps:c.jumps,lifesteal:0,wave:0,cdMul:1,stamRegen:46});
+function resetStats(){const c=G.cls;Object.assign(S,classStats(c,prog(c.id)),{dmgMul:1,jump:17,extraJumps:c.jumps,lifesteal:0,lsUp:0,wave:0,cdMul:1,stamRegen:46});
   if(G.gear)for(const k in G.gear)gearMod(G.gear[k],1);}
 const nxLv=id=>(G.lv[id]||0)+1;
 // ogni potenziamento ha un tetto: solo Forza, Cuore di ferro e Pozione si possono prendere sempre (servono a reggere i piani alti)
@@ -1948,7 +1950,7 @@ const UPG=[
   {id:'stam', name:"Fiato lungo",      icon:'wind',  max:3,  desc:()=>"+25 stamina massima e recupero più rapido del 20%", apply(){S.stamMax+=25;S.stamRegen*=1.2;P.stam=Math.min(S.stamMax,P.stam+25)}},
   {id:'move', name:"Passo leggero",    icon:'boot',  max:2,  desc:()=>"+12% velocità di movimento", apply(){S.speed*=1.12}},
   {id:'jump', name:"Ali di piuma",     icon:'wing',  max:1,  desc:()=>"Un salto in più a mezz'aria", apply(){S.extraJumps++}},
-  {id:'steal',name:"Sete di sangue",   icon:'drop',  max:3,  desc:()=>"Ogni colpo ti cura di 2 vita", apply(){S.lifesteal+=2}},
+  {id:'steal',name:"Sete di sangue",   icon:'drop',  max:2,  desc:()=>"I colpi ti curano di 1 vita, al massimo 2 volte al secondo", apply(){S.lsUp+=1}},
   {id:'crit', name:"Occhio del falco", icon:'star',  max:3,  desc:()=>"+10% probabilità di critico (danno doppio)", apply(){S.crit+=0.1}},
   {id:'armor',name:"Pelle di bronzo",  icon:'shield',max:3,  desc:()=>"-12% danni subiti", apply(){S.armor=Math.max(S.armor,Math.min(0.6,S.armor+0.12))}},
   {id:'reach',name:"Braccio lungo",    icon:'arc',   max:2,  desc:()=>"+20% portata dell'arma", apply(){S.reach*=1.2;refreshWeaponScale()}},
@@ -5373,7 +5375,7 @@ function hitEnemy(e,base,dir,o){
   popNum(e.x,e.y+e.h+0.3,String(d),crit?'crit':'');
   burst(e.x-dir*0.1,e.y+e.h*0.55,crit?0xffb347:0xffffff,crit?8:4,6,2);
   bleed(e,dir,crit);
-  if(o.melee){G.hitstop=Math.max(G.hitstop,crit?0.07:0.04);sfx(o&&o.melee?((WSND[G.weapon.type]||{}).hit||'hit'):'hit');if(crit)sfx('crit');const ls=S.lifesteal+(P.rageT>0?3:0);if(ls>0)heal(ls,true);}
+  if(o.melee){G.hitstop=Math.max(G.hitstop,crit?0.07:0.04);sfx(o&&o.melee?((WSND[G.weapon.type]||{}).hit||'hit'):'hit');if(crit)sfx('crit');let ls=S.lifesteal+(P.rageT>0?3:0);if(S.lsUp>0&&G.time>=(P.lsNext||0)){ls+=S.lsUp;P.lsNext=G.time+0.5;}if(ls>0)heal(ls,true);}
   if(crit)shake(0.18);
   if(o.effect)applyEffect(e,o.effect,base,dir,o);
   if(e.type==='boss'&&!e.dropped&&e.hp<e.maxHp*0.5){e.dropped=true;spawnBandage(clamp(P.x-P.face*2,-HALF+2,GATE_X-2),0);popNum(P.x,P.y+2.6,'Una benda!','info');}
@@ -7841,7 +7843,7 @@ hitEnemy=function(e,base,dir,o){
   const crit=!!o.crit||Math.random()<S.crit+(o.critBonus||0)+(o.melee?(G.weapon.critB||0):0),d=Math.max(1,Math.round(base*(crit?2:1)));
   e.hp-=d;e.flash=0.1;e.flinch=0.2;e.lastDir=dir;
   popNum(e.x,e.y+e.h+0.3,String(d),crit?'crit':'');burst(e.x-dir*0.1,e.y+e.h*0.55,crit?0xffb347:0xffffff,crit?8:4,6,2);bleed(e,dir,crit);
-  if(o.melee){G.hitstop=Math.max(G.hitstop,crit?0.07:0.04);sfx((WSND[G.weapon.type]||{}).hit||'hit');if(crit)sfx('crit');const ls=S.lifesteal+(P.rageT>0?3:0);if(ls>0)heal(ls,true);}
+  if(o.melee){G.hitstop=Math.max(G.hitstop,crit?0.07:0.04);sfx((WSND[G.weapon.type]||{}).hit||'hit');if(crit)sfx('crit');let ls=S.lifesteal+(P.rageT>0?3:0);if(S.lsUp>0&&G.time>=(P.lsNext||0)){ls+=S.lsUp;P.lsNext=G.time+0.5;}if(ls>0)heal(ls,true);}
   else sfx('hit');
   if(crit)shake(0.18);
   if(o.effect==='vampiro')heal(Math.max(1,Math.round(base*0.08)),true);
@@ -9942,7 +9944,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794173725';
+const BUILD_ID='1794174250';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
