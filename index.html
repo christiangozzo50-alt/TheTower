@@ -10083,7 +10083,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794692384';
+const BUILD_ID='1794692650';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10103,7 +10103,7 @@ async function token(){if(!logged())return null;if(AUTH.idToken&&Date.now()<AUTH
 // quello che facevi sul PC (e poteva anche sovrascriverlo). Ora ogni dispositivo controlla il cloud all'avvio, quando torni
 // nell'app e quando torni al seminterrato: se un altro dispositivo ha salvato qualcosa di più recente lo scarica.
 // Le impostazioni del dispositivo (comandi, tasti, grafica, volume) restano di ciascun dispositivo.
-const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v']);
+const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-bak','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v']);
 const SY=Object.assign({dev:'',t:0,h:'',lt:0},store.get('sync',{}));if(!SY.dev)SY.dev=Math.random().toString(36).slice(2,10);
 const SYNC={ready:false,busy:false,ask:false,last:0};
 const syncPersist=()=>{try{localStorage.setItem('torre-sync',JSON.stringify(SY));}catch(e){}};syncPersist();
@@ -10121,7 +10121,19 @@ async function cloudPush(){const s=JSON.stringify(collectSave()),h=hashS(s),t=Da
   if(r.ok){SY.t=t;SY.h=h;lastSync=s;syncPersist();}return r.ok;}
 async function cloudLoad(){const t=await token();const r=await fetch(`${savesUrl()}.json?auth=${t}`);if(!r.ok)throw new Error('lettura non riuscita');return r.json();}
 const syncSafe=()=>(G.scene==='cellar'||['intro','waking','cine'].includes(G.state))&&!inGroup()&&$('account').hidden&&$('nameGate').hidden&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
-function applySaveSynced(sv,msg){const o=cloudContent(sv);for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)localStorage.setItem(k,o[k]);
+// ---------- copie di sicurezza: prima di sostituire i progressi di questo dispositivo ne tengo una copia (le ultime 3) ----------
+const jget=(o,k,d)=>{try{const v=o[k];return v==null?d:JSON.parse(v);}catch(e){return d;}};
+function saveSummary(o){const st=jget(o,'torre-stats',{})||{},pr=jget(o,'torre-prog',{})||{};let lv=0,top=0;for(const id in pr){const l=+(pr[id]&&pr[id].lv)||1;lv+=l;top=Math.max(top,l);}
+  const best=+st.best||0,runs=+st.runs||0;return {best,lv,top,runs,score:best*100+lv*10+runs};}
+const sumTxt=s=>`piano record ${s.best}, livello più alto ${s.top||1}, ${s.runs} scalate`;
+const backups=()=>{const b=store.get('bak',[]);return Array.isArray(b)?b:[];};
+function backupLocal(why){const o=collectSave(),sm=saveSummary(o);if(!sm.runs&&!sm.best)return;   // niente da salvare
+  const b=backups();b.unshift({t:Date.now(),why,d:JSON.stringify(o)});while(b.length>3)b.pop();
+  try{localStorage.setItem('torre-bak',JSON.stringify(b));}catch(e){b.pop();try{localStorage.setItem('torre-bak',JSON.stringify(b));}catch(_){}}}
+function restoreBackup(i){const b=backups()[i];if(!b)return;backupLocal('prima del ripristino');const o=JSON.parse(b.d);
+  for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)if(!SYNC_SKIP.has(k))localStorage.setItem(k,o[k]);
+  SY.lt=Date.now();SY.h='';syncPersist();showUpd('Ripristino i progressi…');setTimeout(()=>location.reload(),700);}
+function applySaveSynced(sv,msg){backupLocal('sostituiti dall\'account');const o=cloudContent(sv);for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)localStorage.setItem(k,o[k]);
   SY.t=sv.t||Date.now();SY.h=hashS(JSON.stringify(collectSave()));SY.lt=0;syncPersist();
   showUpd(msg||'Progressi aggiornati dall\'altro dispositivo…');setTimeout(()=>location.reload(),900);}
 // mode: 'overwrite' = carica i progressi di questo dispositivo senza controllare (scelta esplicita del giocatore)
@@ -10135,13 +10147,14 @@ async function cloudSave(mode){if(!authOn()||!logged())return;
       if(hashS(JSON.stringify(cloudContent(sv)))===h){SY.t=sv.t;SY.h=h;syncPersist();return;}   // stessi dati: niente da fare
       if(sv.dev===SY.dev&&!localNew){SY.t=sv.t;syncPersist();return;}
       if(!syncSafe())return;   // ci riprova al seminterrato
-      if(localNew){syncAsk(sv);return;}   // modifiche sia qui sia altrove: decide il giocatore
+      const ls=saveSummary(collectSave()),cs=saveSummary(cloudContent(sv));
+      if(localNew||ls.score>cs.score){syncAsk(sv,ls,cs);return;}   // modifiche sia qui sia altrove, o qui hai fatto di più: decide il giocatore
       applySaveSynced(sv);return;}
     if(dirty&&(SY.lt>SY.t||!ct))await cloudPush();}   // solo modifiche vere fatte qui (non le scritture dell'avvio)
   catch(e){}finally{SYNC.busy=false;SYNC.last=Date.now();SYNC.ready=true;}}
-function syncAsk(sv){if(SYNC.ask)return;SYNC.ask=true;const a=$('account');a.hidden=false;$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='';
-  const c=$('acChoice');c.hidden=false;const p=c.querySelector('.ig-lead'),old=p.textContent;p.textContent='Hai giocato sia qui sia su un altro dispositivo. Quali progressi vuoi tenere?';
-  const done=()=>{c.hidden=true;p.textContent=old;SYNC.ask=false;renderAccount();};
+function syncAsk(sv,ls,cs){if(SYNC.ask)return;ls=ls||saveSummary(collectSave());cs=cs||saveSummary(cloudContent(sv));SYNC.ask=true;const a=$('account');a.hidden=false;$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='';
+  const c=$('acChoice');c.hidden=false;const p=c.querySelector('.ig-lead'),old=p.textContent;p.innerHTML=`L'account ha progressi diversi da questo dispositivo. Quali vuoi tenere?<br><small>Account: ${sumTxt(cs)}<br>Questo dispositivo: ${sumTxt(ls)}</small>`;
+  const done=()=>{c.hidden=true;p.textContent=old;SYNC.ask=false;SY.t=Math.max(SY.t,sv.t||0);syncPersist();renderAccount();};
   $('acUseCloud').onclick=()=>{done();a.hidden=true;applySaveSynced(sv,'Carico i progressi dell\'altro dispositivo…');};
   $('acUseLocal').onclick=async()=>{await cloudSave('overwrite');done();a.hidden=true;toast('Fatto','Ora l\'account ha i progressi di questo dispositivo');};}
 setInterval(()=>cloudSave(),60000);setTimeout(()=>{SYNC.ready=false;cloudSave().finally(()=>{SYNC.ready=true;});},1500);
@@ -10149,9 +10162,14 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){if(logged(
 function applySave(sv){applySaveSynced(sv,'Carico i tuoi progressi…');}
 
 /* ---------- schermata account ---------- */
+function renderBak(){let box=$('acBak');if(!box){box=document.createElement('div');box.id='acBak';box.style.cssText='display:grid;gap:6px;width:100%;margin-top:4px';$('acMsg').before(box);}
+  const b=backups();if(!b.length){box.innerHTML='';return;}
+  box.innerHTML='<p class="ig-lead" style="font-size:12px;opacity:.8">Copie dei progressi di questo dispositivo, fatte prima di sostituirli:</p>'+b.map((x,i)=>{const sm=saveSummary(JSON.parse(x.d)),d=new Date(x.t);
+    return `<button class="ghost" data-bak="${i}">Ripristina: ${sumTxt(sm)} <small>(${d.toLocaleDateString('it-IT')} ${d.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'})})</small></button>`;}).join('');
+  box.querySelectorAll('[data-bak]').forEach(bt=>bt.onclick=()=>{if(bt.dataset.ok){restoreBackup(+bt.dataset.bak);return;}bt.dataset.ok=1;const t=bt.innerHTML;bt.textContent='Tocca di nuovo per confermare';setTimeout(()=>{delete bt.dataset.ok;bt.innerHTML=t;},4000);});}
 function openAccount(){const a=$('account');a.hidden=false;$('acMsg').textContent='';renderAccount();}
 function closeAccount(){$('account').hidden=true;}
-function renderAccount(){const on=logged();$('acForm').hidden=on;$('acIn').hidden=!on;
+function renderAccount(){const on=logged();$('acForm').hidden=on;$('acIn').hidden=!on;renderBak();
   if(!authOn()){$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='Gli account non sono ancora attivi.';return;}
   if(on){$('acWho').textContent=AUTH.user||MP.name();}
   else{if(!$('acUser').value)$('acUser').value=store.get('mpname','')||'';}}
