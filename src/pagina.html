@@ -1,0 +1,379 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="The Tower"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
+<title>The Tower</title>
+<meta name="theme-color" content="#0c0e13">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;600;700&family=Chakra+Petch:wght@500;600;700&display=swap">
+<style>
+/*@STILE@*/
+</style>
+
+<canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
+<div id="fx"></div>
+<div id="soft"></div><div id="darkFx" hidden></div><div id="curseFx" hidden></div><div id="bossVig"></div>
+<div id="hurt"></div>
+
+<div id="cellarHud" hidden>
+  <div class="place"><span>Seminterrato del castello</span><b>The Tower</b></div>
+  <div class="cls-chip" id="clsChip"></div>
+  <button class="mini coop-btn" id="coopBtn">Co-op</button>
+</div>
+<div class="prompt" id="prompt" hidden><kbd id="promptKey">E</kbd><span><b id="promptName"></b><small id="promptSub"></small></span></div>
+
+<div id="hud" hidden>
+  <div class="hud-left">
+    <div class="bar hp"><i class="lag" id="hpLag"></i><i class="fill" id="hpFill"></i><span id="hpText">100 / 100</span></div>
+    <div class="bar stam" id="stamBar"><i class="fill" id="stamFill"></i></div>
+    <div class="bar upb" title="Prossimo potenziamento"><i class="fill" id="upFill"></i></div>
+    <div id="mpMate" hidden></div>
+  </div>
+  <div class="hud-center">
+    <div class="floor-label"><span>PIANO</span><b id="floorNum">1</b><time id="runClock"></time></div>
+    <div class="zone" id="zoneName">Cantine</div>
+    <div class="boss" id="bossBar" hidden><div class="boss-name" id="bossName"></div><div class="boss-track"><div class="boss-fill" id="bossFill"></div></div></div>
+  </div>
+  <div class="hud-right"><div class="foes" id="foes">Nemici <b>0</b></div>
+    <button id="pauseBtn" aria-label="Pausa"><svg viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg></button></div>
+</div>
+<div class="med" id="abilMed" hidden><div class="med-ring"><span id="medIco"></span><i id="medCd"></i></div><div class="med-txt"><b id="medName">Abilità</b><span><kbd id="medKey">L</kbd><small id="medState">Pronta</small></span></div></div>
+<div class="med med3" id="abilMed3" hidden><div class="med-ring"><span id="med3Ico"></span><i id="med3Cd"></i></div><div class="med-txt"><b id="med3Name">Abilità 3</b><span><kbd id="med3Key">O</kbd><small id="med3State">Pronta</small></span></div></div>
+<div class="med med2" id="abilMed2" hidden><div class="med-ring"><span id="med2Ico"></span><i id="med2Cd"></i></div><div class="med-txt"><b id="med2Name">Abilità 2</b><span><kbd id="med2Key">I</kbd><small id="med2State">Pronta</small></span></div></div>
+<div id="toast"><b id="toastT"></b><small id="toastS"></small></div>
+<div id="banner"><div class="b1" id="b1"></div><div class="b2" id="b2"></div></div>
+<div id="hint"></div>
+<div id="combo"><b id="comboN">0</b><span>combo</span></div>
+<div id="gateMsg"><b>Il cancello si è aperto</b><span>Sali le scale verso il piano successivo</span></div><div id="fightMsg">Combatti!</div>
+<div id="pickMsg"><span class="thumb" id="pickPic"></span><span><b id="pickName"></b><small id="pickSub"></small></span></div>
+<div id="tipScreen" aria-live="polite"><div class="tip-in"><div class="tip-ico"><span>!</span></div><div class="tip-lab">Consiglio</div><p id="tipText"></p><div class="tip-bar"><i></i></div></div></div>
+
+<div id="touch" hidden>
+  <div class="joy" id="joy" data-ed="joy" aria-label="Movimento"><div class="joy-knob" id="joyKnob"></div></div>
+  <button class="tbtn" id="bJump" data-ed="bJump" aria-label="Salta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>Salta</button>
+  <button class="tbtn" id="bAtk" data-ed="bAtk" aria-label="Attacca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4l-9 9M19 4h-4M19 4v4M10 13l-2 2M6 12l6 6M5 19l2-2"/></svg>Attacca</button>
+  <button class="tbtn" id="bDash" data-ed="bDash" aria-label="Scatto"><span class="cd" id="dashCd"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M2 12h11M4 16h9M15 7l5 5-5 5"/></svg>Scatto</button>
+  <button class="tbtn" id="bAbil" data-ed="bAbil" aria-label="Abilità"><span class="cd" id="abilCdT"></span><span id="bAbilIco"></span><span id="bAbilName">Abilità</span></button>
+  <button class="tbtn" id="bAbil3" data-ed="bAbil3" aria-label="Abilità 3" hidden><span class="cd" id="abil3CdT"></span><span id="bAbil3Ico"></span><span id="bAbil3Name">Abilità</span></button>
+  <button class="tbtn" id="bAbil2" data-ed="bAbil2" aria-label="Abilità 2" hidden><span class="cd" id="abil2CdT"></span><span id="bAbil2Ico"></span><span id="bAbil2Name">Abilità</span></button>
+  <button id="bUse" hidden>Usa</button>
+</div>
+<div id="abilBar" data-ed="abilBar" hidden><button class="ab" data-slot="1"></button><button class="ab" data-slot="2"></button><button class="ab" data-slot="3"></button></div>
+<div id="abilSplash"><b></b></div><div id="abilFlash"></div>
+<div id="fade"></div><div id="interLabels"></div>
+<div id="cine" hidden><div id="cineBlack"></div><div id="bossCard" hidden><div class="bcb"></div><div class="bct"><small id="bcTag"></small><b id="bcName"></b><em id="bcTitle"></em></div></div><div id="cineCut"></div><div id="cineCard" hidden><div class="ccb"></div><div class="cct"><b id="ccName"></b><span id="ccTag"></span></div></div><div class="cb top"></div><div class="cb bot"></div><div id="cineSub"></div><div id="cineChoice" hidden></div><button class="ghost" id="cineSkip" hidden>Salta</button></div>
+<div id="tutBox" hidden><span id="tutStep"></span><b id="tutTitle"></b><p id="tutText"></p><i class="tut-ok">✓</i></div><div id="unlockFx" hidden><div class="u-rays"></div><div class="u-card"><div class="u-top">Nuova classe</div><div class="u-ico" id="unlockIco"></div><div class="u-name" id="unlockName"></div><div class="u-rar" id="unlockRar"></div><div class="u-why" id="unlockWhy"></div></div></div><div id="deathFx"></div>
+<div id="tedit" hidden><span>Trascina i tasti per spostarli · tocca un tasto e cambia la grandezza</span><label>Grandezza <input type="range" id="tedSize" min="60" max="170" value="100"></label><button class="ghost" id="tedReset">Ripristina</button><button class="big" id="tedDone">Fatto</button></div>
+
+<div id="opener">
+  <div class="op-cam"><canvas id="opCanvas" aria-hidden="true"></canvas><svg id="opScene" viewBox="0 -40 1600 940" width="1600" height="940" aria-hidden="true"></svg></div>
+  <div class="op-flash"></div>
+  <div class="op-embers" id="opEmbers"></div>
+  <div class="op-vig"></div>
+  <div class="op-text">
+    <h1 class="op-title" aria-label="The Tower"><span class="t1"><span style="--d:1.5s">THE</span></span><span class="t2"><span style="--d:1.8s">T</span><span style="--d:1.9s">O</span><span style="--d:2s">W</span><span style="--d:2.1s">E</span><span style="--d:2.2s">R</span></span></h1>
+    <button class="big op-play" id="opPlay">Gioca</button>
+    <div class="op-rec" id="opRecord"></div>
+  </div>
+  <div class="op-black"></div>
+</div>
+
+<section class="screen" id="settings" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">Banco da lavoro</div>
+    <h2>Impostazioni</h2>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="audio" aria-selected="true">Audio</button>
+      <button class="tab" role="tab" data-tab="gfx" aria-selected="false">Grafica</button>
+      <button class="tab" role="tab" data-tab="keys" aria-selected="false">Comandi</button>
+      <button class="tab" role="tab" data-tab="stats" aria-selected="false">Statistiche</button>
+    </div>
+    <div class="pane" id="pane-audio">
+      <label class="slider"><span>Volume generale</span><input type="range" id="volMaster" min="0" max="100"><output id="volMasterV"></output></label>
+      <label class="slider"><span>Musica</span><input type="range" id="volMusic" min="0" max="100"><output id="volMusicV"></output></label>
+      <label class="slider"><span>Effetti</span><input type="range" id="volSfx" min="0" max="100"><output id="volSfxV"></output></label>
+    </div>
+    <div class="pane" id="pane-gfx" hidden>
+      <div class="q-row"><span>Qualità grafica</span><div class="q-btns" id="optQ"><button data-q="auto">Auto</button><button data-q="2">Alta</button><button data-q="1">Media</button><button data-q="0">Bassa</button></div></div>
+      <label class="slider"><span>Zoom telecamera</span><input type="range" id="optZoom" min="80" max="140" step="5"><output id="optZoomV"></output></label>
+      <p class="note" style="margin:0">Più alto avvicina la visuale, più basso la allontana.</p>
+      <label class="check"><input type="checkbox" id="optShake"><span>Scuotimento dello schermo</span></label>
+    </div>
+    <div class="pane" id="pane-keys" hidden>
+      <label class="check"><input type="checkbox" id="optRumble"><span>Vibrazione del controller</span></label>
+      <div class="row" style="justify-content:flex-start"><button class="ghost" id="keysToggle" aria-expanded="false">Assegnazione tasti PC <span>▾</span></button></div>
+      <div id="keysBox" hidden>
+        <p class="note" id="keysNote">Clicca su un tasto e premi quello nuovo. Il clic sinistro del mouse attacca sempre.</p>
+        <div id="keytable"></div>
+        <div class="row" style="justify-content:flex-start"><button class="ghost" id="keysReset">Ripristina predefiniti</button></div>
+      </div>
+      <div class="row" style="justify-content:flex-start"><button class="ghost" id="padToggle" aria-expanded="false">Assegnazione tasti controller <span>▾</span></button></div>
+      <div id="padBox" hidden>
+        <p class="note" id="padNote">Clicca un'azione e premi il tasto del controller da assegnare. Movimento: levetta sinistra o croce direzionale.</p>
+        <div id="padtable" class="padtable"></div>
+        <div class="row" style="justify-content:flex-start"><button class="ghost" id="padReset">Ripristina predefiniti</button></div>
+      </div>
+      <div class="row" style="justify-content:flex-start"><button class="ghost" id="touchEdit">Sposta e ridimensiona i tasti a schermo</button></div>
+    </div>
+    <div class="pane" id="pane-stats" hidden>
+      <div class="statgrid" id="statgrid"></div>
+      <div class="eyebrow" style="letter-spacing:.2em">Classi</div>
+      <div class="classrec" id="classrec"></div>
+      <div class="row" style="margin-top:12px"><button class="ghost" id="replayCine">Rivedi il filmato</button></div>
+    </div>
+    <div class="row"><button class="big" id="settingsClose">Chiudi</button></div>
+  </div>
+</section>
+
+<section class="screen" id="wardrobe" hidden>
+  <aside class="wr-side wr-l" id="wrL"></aside>
+  <aside class="wr-side wr-r" id="wrR"></aside>
+  <div class="wr-bottom">
+    <div class="wr-inv"><div class="eyebrow" id="wrTitle">Armadio</div><div class="wr-grid" id="wrList"></div><p class="note" id="wrNote"></p></div>
+    <div class="wr-detail" id="wrDetail"></div>
+  </div>
+  <button class="big wr-close" id="wrClose">Chiudi</button>
+</section>
+
+<section class="screen" id="classes" hidden>
+  <aside class="sel-list"><div class="eyebrow">Piedistallo delle classi</div><div id="clist" style="display:contents"></div></aside>
+  <aside class="sel-stats" id="cstats"></aside>
+  <div class="sel-actions row"><button class="big" id="selOk">Conferma</button><button class="ghost" id="selBack">Annulla</button></div>
+</section>
+
+<section class="screen" id="upgrade" hidden>
+  <div class="panel">
+    <div class="eyebrow" id="upEyebrow">Piano 1 superato</div>
+    <h2>Scegli un premio</h2>
+    <div class="cards" id="cards"></div>
+    <div class="lead" id="upNext"></div>
+  </div>
+</section>
+
+<section class="screen" id="pause" hidden>
+  <div class="panel">
+    <h2>Pausa</h2>
+    <div class="row"><button class="big" id="resumeBtn">Riprendi</button><button class="ghost" id="pauseSettings">Impostazioni</button><button class="ghost" id="pauseQuit">Torna al seminterrato</button></div>
+    <div class="pinfo" id="pauseInfo"></div>
+  </div>
+</section>
+
+<section class="screen" id="loot" hidden>
+  <div class="panel">
+    <div class="eyebrow" id="lootEye">Forziere aperto</div>
+    <h2>Hai trovato</h2>
+    <div class="cards" id="lootCards" style="grid-template-columns:repeat(2,minmax(0,1fr));max-width:560px"></div>
+    <div class="row"><button class="big" id="lootTake">Equipaggia</button><button class="ghost" id="lootLeave">Metti nell'armadio</button></div>
+    <p class="note">Tutto quello che trovi resta tuo: lo ritrovi nell'armadio del seminterrato.</p>
+  </div>
+</section>
+
+<section class="screen" id="win" hidden>
+  <div class="panel">
+    <div class="eyebrow">Piano 100</div>
+    <h1>Torre<small>conquistata</small></h1>
+    <p class="lead" id="winText"></p>
+    <div class="stats">
+      <div class="stat"><b id="wnKills">0</b><span>Nemici</span></div>
+      <div class="stat"><b id="wnTime">0</b><span>Tempo</span></div>
+      <div class="stat"><b id="wnXp">0</b><span>XP</span></div>
+      <div class="stat"><b id="wnWins">1</b><span>Vittorie</span></div>
+    </div>
+    <div class="row"><button class="big" id="winCellar">Torna al seminterrato</button></div>
+  </div>
+</section>
+
+<section class="screen" id="safePed" hidden><div class="panel"><div class="eyebrow">Santuario</div><h2>Potenzia la classe</h2><div id="safePts"></div><div class="row"><button class="big" id="safeClose">Torna alla scalata</button></div></div></section>
+<div id="sChat" hidden><div id="scLog" aria-live="polite"></div><button id="scBtn" type="button">Chat <small id="scWho">Solo tu, per ora</small><kbd>Invio</kbd></button><form id="scForm" hidden autocomplete="off"><input id="scIn" maxlength="100" placeholder="Scrivi a chi è su questo piano" enterkeyhint="send" autocomplete="off" spellcheck="false" aria-label="Messaggio nella chat del santuario"><button id="scSend" type="submit">Invia</button></form></div>
+<div id="chestArrow" hidden><i><svg viewBox="0 0 24 24" fill="currentColor" stroke="#2a1205" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 22 3 11h5V2h8v9h5z"/></svg></i></div>
+<section class="screen" id="over" hidden>
+  <div id="drips"></div>
+  <div class="panel">
+    <div class="eyebrow" id="overClass">Fine della scalata</div>
+    <h2 id="overTitle">Sei morto</h2><div class="over-sub" id="overSub">Caduto al piano 1</div>
+    <div id="newRecord" hidden><span class="badge">Nuovo record</span></div>
+    <div class="stats">
+      <div class="stat"><b id="stFloor">1</b><span>Piano</span></div>
+      <div class="stat"><b id="stKills">0</b><span>Nemici</span></div>
+      <div class="stat"><b id="stXp">0</b><span>XP</span></div>
+      <div class="stat"><b id="stBest">1</b><span>Record</span></div>
+    </div>
+    <div id="hordePrize" hidden></div>
+    <div id="mpRank" hidden></div>
+    <div class="row"><button class="big" id="againBtn">Riprova</button><button class="ghost" id="overCellar">Torna al seminterrato</button></div>
+  </div>
+</section>
+
+<div id="rotate" hidden>
+  <div class="panel">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+    <h2>Gira il telefono</h2>
+    <p class="lead">La torre si gioca in orizzontale.</p>
+  </div>
+</div>
+
+<section class="screen" id="coop" hidden>
+  <div class="panel">
+    <div class="eyebrow">Gioca con gli amici · fino a 4</div>
+    <h2>Co-op online</h2>
+    <p class="lead">Ognuno gioca dal proprio telefono o PC. Uno crea la partita e manda il codice, gli altri lo scrivono qui sotto. Più siete, più nemici ci sono.</p>
+    <label class="coop-row">Il tuo nome <input id="coopName" maxlength="14" placeholder="Giocatore" autocomplete="off"></label>
+    <div class="row"><button class="big" id="coopHost">Crea partita</button></div>
+    <div id="coopCodeBox" hidden><small>Codice della partita</small><b id="coopCodeTxt" title="Tocca per copiarlo"></b></div>
+    <div class="or">oppure</div>
+    <div class="coop-row"><input id="coopCode" placeholder="CODICE" maxlength="5" autocomplete="off" autocapitalize="characters" spellcheck="false"><button class="ghost" id="coopJoin">Entra</button></div>
+    <p class="note" id="coopStatus" aria-live="polite"></p>
+    <div class="row"><button class="ghost" id="coopLeave" hidden>Esci dalla co-op</button><button class="ghost" id="coopClose">Chiudi</button></div>
+  </div>
+</section>
+<section class="screen" id="climbAsk" hidden>
+  <div class="panel">
+    <div class="eyebrow">Scala della torre</div>
+    <h2>Vuoi salire la torre?</h2>
+    <p class="lead" id="caText"></p>
+    <div class="row"><button class="big" id="caResume" hidden>Riprendi</button><button class="big" id="caNew">Inizia la scalata</button></div>
+    <div class="row"><button class="ghost" id="caHorde">Modalità Orda · ondate infinite</button></div>
+    <div class="row"><button class="ghost" id="caCancel">Non ancora</button></div>
+  </div>
+</section>
+<section class="screen" id="online" hidden>
+  <div class="panel">
+    <div class="eyebrow">Porta online</div>
+    <h2>Gioca online</h2>
+    <div id="onModes" class="on-modes">
+      <button class="on-mode" id="onCoop"><b>Co-op</b><span>Con i tuoi amici, fino a 4, usando un codice</span></button>
+      <button class="on-mode" id="on1v1"><b>1 contro 1</b><span>Un giocatore contro un altro · 3 vite a testa · ricerca automatica</span></button>
+      <button class="on-mode" id="on2v2"><b>2 contro 2</b><span>Due squadre da due · 3 vite a testa · ricerca automatica</span></button>
+    </div>
+    <div id="onSearch" hidden><div class="on-spin"></div><b id="onMode"></b></div>
+    <p class="note" id="onRank"></p>
+    <p class="note" id="onStatus" aria-live="polite"></p>
+    <div class="row"><button class="ghost" id="onCancel">Annulla ricerca</button><button class="ghost" id="onClose">Chiudi</button></div>
+  </div>
+</section>
+<section class="screen" id="pvpEnd" hidden>
+  <div class="panel">
+    <div class="eyebrow">Fine della sfida</div>
+    <h2 id="pvpTitle">Vittoria!</h2>
+    <div id="pvpList"></div>
+    <div class="row"><button class="big" id="pvpBack">Torna al seminterrato</button></div>
+  </div>
+</section>
+<div id="pvpHud" hidden></div>
+<div id="specHud" hidden><small>Stai guardando</small><b id="specName"></b><div class="bar hp spec"><i class="fill" id="specFill"></i><span id="specHp"></span></div></div>
+<div id="restMsg" hidden><b>Ti riposi…</b><span>Vita e abilità al massimo · partita salvata</span></div>
+<div id="mpWait" hidden><b>Aspetti i compagni…</b><span>Salite insieme al piano successivo</span></div>
+<div id="installGate" hidden>
+  <div class="ig-box">
+    <img class="ig-ico" src="icon-192.png" alt="">
+    <h2>The Tower</h2>
+    <p class="ig-lead">Per giocare al meglio, installa The Tower sulla schermata Home: si apre a schermo intero, come un'app vera.</p>
+    <button class="big" id="instBtn" hidden>Installa l'app</button>
+    <ol class="ig-steps" id="igSteps"></ol>
+    <p class="ig-note" id="igNote"></p>
+  </div>
+</div>
+<section class="screen" id="forge" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">Fabbro</div>
+    <h2>Smonta e migliora</h2>
+    <p class="lead">Frammenti: <b id="fgFrag" class="fg-n">0</b></p>
+    <div class="fg-wrap"><div id="fgList" class="fg-list"></div><div id="fgDetail" class="fg-detail"></div></div>
+    <div id="fgBulk" class="fg-bulk"></div>
+    <div class="row"><button class="ghost" id="fgClose">Chiudi</button></div>
+  </div>
+</section>
+<section class="screen" id="board" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">Bacheca</div>
+    <div class="tabs" role="tablist"><button class="tab" data-tab="tro" role="tab">Trofei e skin</button><button class="tab" data-tab="best" role="tab">Bestiario</button><button class="tab" data-tab="lb" role="tab">Classifica</button></div>
+    <div id="bdBody" class="bd-body"></div>
+    <div class="row"><button class="ghost" id="bdClose">Chiudi</button></div>
+  </div>
+</section>
+
+<div id="reviveBar" hidden><span id="reviveName"></span><div class="rv-track"><i id="reviveFill"></i></div></div>
+<section class="screen" id="friends" hidden>
+  <div class="panel wide">
+    <div class="eyebrow">Amici</div>
+    <p class="note" id="frMe"></p>
+    <div class="tabs" role="tablist"><button class="tab" data-ft="amici" role="tab">I tuoi amici</button><button class="tab" data-ft="cerca" role="tab">Cerca giocatori</button><button class="tab" data-ft="gruppo" role="tab">Gruppo (co-op)</button></div>
+    <div id="frBody" class="bd-body"></div>
+    <div class="row"><button class="ghost" id="frClose">Chiudi</button></div>
+  </div>
+</section>
+<div id="nameGate" hidden>
+  <div class="ig-box">
+    <img class="ig-ico" src="icon-192.png" alt="">
+    <h2 id="ngTitle">Come ti chiami?</h2>
+    <p class="ig-lead">Il tuo nome compare in classifica, agli amici e nelle partite online. Ogni giocatore ha un nome diverso.</p>
+    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false">
+    <p class="note" id="ngMsg" aria-live="polite"></p>
+    <button class="ghost" id="ngSug" hidden></button>
+    <div class="row"><button class="big" id="ngOk">Conferma</button><button class="ghost" id="ngCancel" hidden>Annulla</button></div>
+    <button class="mini" id="ngLogin">Hai già un account? Accedi</button>
+  </div>
+</div>
+<div id="inviteBox" hidden><b id="invText"></b><div class="row"><button class="big" id="invYes">Entra</button><button class="ghost" id="invNo">No, grazie</button></div></div>
+<div id="pvpCount" hidden>3</div>
+<div id="account" hidden>
+  <div class="ig-box">
+    <h2>Account</h2>
+    <p class="ig-lead">Con un account ritrovi progressi, armadio, trofei e nome su tutti i tuoi dispositivi.</p>
+    <div id="acForm">
+      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false">
+      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password">
+      <div class="row"><button class="big" id="acLog">Accedi</button><button class="ghost" id="acReg">Crea account</button></div>
+    </div>
+    <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p><button class="ghost" id="acOut">Esci dall'account</button></div>
+    <div id="acChoice" hidden><p class="ig-lead">Su questo dispositivo ci sono già dei progressi. Quali vuoi tenere?</p>
+      <div class="row"><button class="big" id="acUseCloud">Quelli dell'account</button><button class="ghost" id="acUseLocal">Quelli di questo dispositivo</button></div></div>
+    <p class="note" id="acMsg" aria-live="polite"></p>
+    <button class="ghost" id="acClose">Chiudi</button>
+  </div>
+</div>
+<div id="updBar" hidden></div>
+<section class="screen" id="shop" hidden>
+  <div class="sh-frame">
+    <header class="sh-top">
+      <img id="shPortrait" alt="" hidden>
+      <div class="sh-title"><div class="eyebrow">Bottega del mercante</div><h2>Negozio</h2><p id="shQuote"></p></div>
+      <div class="sh-purse"><i class="cn" aria-hidden="true"></i><span id="shCoins">0</span></div>
+    </header>
+    <div class="tabs sh-tabs" role="tablist"><button class="tab" data-st="casse" role="tab">Casse</button><button class="tab" data-st="skin" role="tab">Skin</button><button class="tab" data-st="ogg" role="tab">Oggetti</button></div>
+    <div id="shBody" class="sh-body"></div>
+    <div class="row"><button class="ghost" id="shClose">Chiudi</button></div>
+  </div>
+  <div id="shView" hidden>
+    <div class="sv-box">
+      <div class="sv-stage"><canvas id="svCan" width="112" height="140"></canvas><div class="sv-rot"><button data-rot="-1" aria-label="Gira a sinistra">◀</button><span>Trascina per girare</span><button data-rot="1" aria-label="Gira a destra">▶</button></div></div>
+      <div class="sv-side"><small id="svHero"></small><h3 id="svName"></h3><p id="svDesc"></p><div id="svAct"></div><p id="svNote"></p><button class="ghost" id="svClose">Indietro</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="screen" id="merchBox" hidden>
+  <div class="sh-frame mbx-frame">
+    <header class="sh-top mbx-top"><img id="mbPortrait" class="sh-port" alt="" hidden><div class="sh-title"><div class="eyebrow">Mercante errante</div><h2>Tre affari, uno solo</h2><p class="mb-q">«Scegli bene, viandante: ne prendi uno e sparisco.»</p></div><div class="mbx-have" id="mbHave"></div></header>
+    <div class="mbx-opts" id="mbOpts"></div>
+    <div class="row"><button class="ghost" id="mbNo">Lascia stare</button></div>
+  </div>
+</section>
+
+<section class="screen" id="askBox" hidden>
+  <div class="sh-frame mb-frame ask-frame">
+    <div class="ask-ic"><i id="askIc"></i></div>
+    <div class="eyebrow" id="askEy"></div><h2 id="askT"></h2><p class="mb-q" id="askD"></p><p class="ask-tm" id="askTm" hidden></p>
+    <div class="mb-opts ask-opts"><button class="sh-buy" id="askYes"></button></div>
+    <div class="row"><button class="ghost" id="askNo"></button></div>
+  </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.149.0/build/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+/*@CODICE@*/
+})();
+</script>
+
+</body></html>
