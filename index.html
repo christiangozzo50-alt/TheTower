@@ -1958,8 +1958,8 @@ function resetStats(){const c=G.cls;Object.assign(S,classStats(c,prog(c.id)),{dm
 const nxLv=id=>(G.lv[id]||0)+1;
 // ogni potenziamento ha un tetto: solo Forza, Cuore di ferro e Pozione si possono prendere sempre (servono a reggere i piani alti)
 const UPG=[
-  {id:'dmg',  name:"Forza",            icon:'fist',  max:99, desc:()=>"+15% danno con qualsiasi arma", apply(){S.dmgMul+=0.15}},
-  {id:'hp',   name:"Cuore di ferro",   icon:'heart', max:99, desc:()=>"+30 vita massima e ne recuperi 30", apply(){S.maxHp+=30;P.hp=Math.min(S.maxHp,P.hp+30)}},
+  {id:'dmg',  name:"Forza",            icon:'fist',  max:5,  desc:()=>"+15% danno con qualsiasi arma", apply(){S.dmgMul+=0.15}},
+  {id:'hp',   name:"Cuore di ferro",   icon:'heart', max:5,  desc:()=>"+30 vita massima e ne recuperi 30", apply(){S.maxHp+=30;P.hp=Math.min(S.maxHp,P.hp+30)}},
   {id:'spd',  name:"Polso rapido",     icon:'bolt',  max:3,  desc:()=>"Attacchi il 15% più veloce", apply(){S.atkSpd*=1.15}},
   {id:'stam', name:"Fiato lungo",      icon:'wind',  max:3,  desc:()=>"+25 stamina massima e recupero più rapido del 20%", apply(){S.stamMax+=25;S.stamRegen*=1.2;P.stam=Math.min(S.stamMax,P.stam+25)}},
   {id:'move', name:"Passo leggero",    icon:'boot',  max:2,  desc:()=>"+12% velocità di movimento", apply(){S.speed*=1.12}},
@@ -6535,6 +6535,7 @@ function cardHTML(o,i){
 }
 function pickCard(i){
   const o=offered[i];if(!o||G.state!=='upgrade')return;
+  if(o.id!=='heal'&&(G.lv[o.id]||0)>=o.max)return;   // limite raggiunto: non si può prendere ancora
   o.apply();if(o.id!=='heal')G.lv[o.id]=(G.lv[o.id]||0)+1;sfx('pick');
   $('upgrade').hidden=true;G.state='play';P.invul=Math.max(P.invul,0.8);if(isTouch)$('touch').hidden=false;showMeds(true);canvas.focus();
   burst(P.x,P.y+1.2,0xb48cff,22,5,3,0.3);
@@ -8173,7 +8174,7 @@ function resumeRun(sv){
   const i=CLASSES.findIndex(c=>c.id===sv.cls);if(i>=0&&G.cls.id!==sv.cls)setClass(i);
   RESUMING=true;_startRun();RESUMING=false;
   for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;G.weapon=sv.weapon||G.weapon;resetStats();
-  G.lv=sv.lv||{};for(const u of UPG){if(u.id==='heal')continue;const n=G.lv[u.id]||0;for(let k=0;k<n;k++)u.apply();}
+  G.lv=sv.lv||{};for(const u of UPG){if(u.id==='heal')continue;const n=Math.min(u.max,G.lv[u.id]||0);G.lv[u.id]=n;for(let k=0;k<n;k++)u.apply();}
   attachWeapon();refreshGearVisual();
   Object.assign(G,{kills:sv.kills||0,runTime:sv.runTime||0,runXp:sv.runXp||0,upKills:sv.upKills||0,upNeed:sv.upNeed||14});
   P.hp=S.maxHp;P.stam=S.stamMax;setupAbilUi();startFloor(sv.f);
@@ -10077,7 +10078,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794660905';
+const BUILD_ID='1794661204';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
