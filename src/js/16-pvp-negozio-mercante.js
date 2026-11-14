@@ -438,9 +438,12 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{o
 
 /* ---------- mercante errante: scegli come pagare ---------- */
 // tre offerte decise una volta sola per mercante: arma, armatura e un potenziamento subito
-function merchOffers(){const f=G.floor,base=40+2*f,rk=[1,1,1.2,1.6,2.2],r1=Math.min(4,rollRarity(f,0)+1),r2=Math.min(4,rollRarity(f,0)+1);
-  return [{kind:'w',o:makeWeapon(G.cls.weapon,r1,f),pct:0.3,gem:Math.round(base*rk[r1])},{kind:'g',o:makeGear(pick(Object.keys(GEAR)),r2,f),pct:0.25,gem:Math.round(base*0.85*rk[r2])},{kind:'u',pct:0.2,gem:Math.round(base*0.6)}];}
-const merchHp=of=>Math.max(1,Math.round(P.hp*of.pct));
+// prezzi del mercante errante: in linea con le casse del seminterrato (Epica dalla cassa = 2400 rubini), un po' più bassi perché li trovi in scalata.
+// Pagando con la vita si dà una parte della vita MASSIMA che cresce con la rarità (prima era il 30% della vita attuale: a vita bassa costava quasi niente)
+const MERCH_GEM=[120,260,600,1500,3200],MERCH_HP=[0.12,0.18,0.26,0.38,0.5];
+function merchOffers(){const f=G.floor,fm=1+f/100,r1=Math.min(4,rollRarity(f,0)+1),r2=Math.min(4,rollRarity(f,0)+1);
+  return [{kind:'w',o:makeWeapon(G.cls.weapon,r1,f),pct:MERCH_HP[r1],gem:Math.round(MERCH_GEM[r1]*fm)},{kind:'g',o:makeGear(pick(Object.keys(GEAR)),r2,f),pct:MERCH_HP[r2]*0.9,gem:Math.round(MERCH_GEM[r2]*0.85*fm)},{kind:'u',pct:0.2,gem:Math.round((150+5*f))}];}
+const merchHp=of=>Math.max(1,Math.round(S.maxHp*of.pct));
 const MB_SLOT={elmo:'Elmo',guanti:'Guanti',corazza:'Corazza'};
 function merchCard(of,i){const hc=merchHp(of),pay=`<div class="mbx-pay"><button class="sh-buy mb-hp" data-i="${i}" data-pay="hp" ${P.hp-hc<1?'disabled':''} aria-label="Paga ${hc} vita"><i class="hp-i" aria-hidden="true"></i><span>${hc}</span></button><button class="sh-buy" data-i="${i}" data-pay="gem" ${COINS.n<of.gem?'disabled':''} aria-label="Paga ${of.gem} rubini"><i class="cn" aria-hidden="true"></i><span>${fmtC(of.gem)}</span></button></div>`;
   if(of.kind==='u')return `<article class="mbx-card" style="--rc:#b48cff;--rcg:rgba(180,140,255,.3)"><div class="mbx-pic">${svg('star')}</div><b>Patto del mercante</b><small>Potenziamento</small><p>Scegli subito un potenziamento fra 3</p>${pay}</article>`;
