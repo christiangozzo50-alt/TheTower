@@ -2,7 +2,7 @@
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794692957';
+const BUILD_ID='1794693410';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -22,7 +22,7 @@ async function token(){if(!logged())return null;if(AUTH.idToken&&Date.now()<AUTH
 // quello che facevi sul PC (e poteva anche sovrascriverlo). Ora ogni dispositivo controlla il cloud all'avvio, quando torni
 // nell'app e quando torni al seminterrato: se un altro dispositivo ha salvato qualcosa di più recente lo scarica.
 // Le impostazioni del dispositivo (comandi, tasti, grafica, volume) restano di ciascun dispositivo.
-const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-bak','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v']);
+const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-bak','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v','torre-tribpend']);
 const SY=Object.assign({dev:'',t:0,h:'',lt:0},store.get('sync',{}));if(!SY.dev)SY.dev=Math.random().toString(36).slice(2,10);
 const SYNC={ready:false,busy:false,ask:false,last:0};
 const syncPersist=()=>{try{localStorage.setItem('torre-sync',JSON.stringify(SY));}catch(e){}};syncPersist();

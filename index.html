@@ -9016,7 +9016,7 @@ async function sendFriendReq(k,n){try{await fbPut(`invites/${encodeURIComponent(
 let invShown={};
 setInterval(async()=>{if(!fbOn()||!store.get('nameok',false)||!$('inviteBox').hidden)return;const me=nameKey(MP.name());
   try{const d=await fbGet('invites/'+encodeURIComponent(me));if(!d)return;
-    for(const [from,v] of Object.entries(d)){const kind=from.endsWith('__f')?'f':from.endsWith('__a')?'a':'g',who=kind==='g'?from:from.slice(0,-3),del=()=>fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
+    for(const [from,v] of Object.entries(d)){if(from.endsWith('__r'))continue;const kind=from.endsWith('__f')?'f':from.endsWith('__a')?'a':'g',who=kind==='g'?from:from.slice(0,-3),del=()=>fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
       if(!v||Date.now()-v.t>(kind==='g'?120000:7*864e5)){del();continue;}
       if(kind==='a'){del();if(!FRIENDS.some(f=>f.k===who)){FRIENDS.push({k:who,n:v.n});saveFriends();}FRPEND=FRPEND.filter(f=>f.k!==who);saveFrPend();toast('Nuovo amico!',`${v.n} ha accettato la tua richiesta`);sfx('lvl');if(G.state==='friends')renderFriends();continue;}
       if(kind==='f'&&FRIENDS.some(f=>f.k===who)){del();fbPut(`invites/${encodeURIComponent(who)}/${encodeURIComponent(me+'__a')}`,{n:MP.name(),t:Date.now()}).catch(()=>{});continue;}
@@ -9113,6 +9113,26 @@ const COINS=Object.assign({n:0},store.get('coins',{}));const saveCoins=()=>store
 const fmtC=n=>n.toLocaleString('it-IT');
 function addCoins(n,x,y){n=Math.round(n);if(n<=0)return;COINS.n+=n;saveCoins();if(x!=null){popNum(x,y,'+'+n+' ◆','gem');burst(x,y-0.6,0xff2a4a,10,4,2);}coinHud();}
 function coinHud(){for(const el of document.querySelectorAll('.coin-chip b'))el.textContent=fmtC(COINS.n);}
+/* ---------- TRIBUTO: i rubini spesi dagli altri giocatori (shop e mercante errante) vanno a «zero» ----------
+   Chi compra lascia una busta nella casella di zero (invites/zero/<nome>_<ora>__r): niente regole Firebase nuove.
+   Se in quel momento non c'è connessione, i rubini restano in attesa su questo dispositivo e partono appena si può.
+   Il gioco di zero, ogni 15 secondi, apre le buste, le cancella e solo dopo aggiunge i rubini (così non li conta due volte). */
+const TRIB_TO='zero';
+const isTribTo=()=>nameKey(MP.name())===TRIB_TO&&store.get('nameok',false);
+let TRIB=+store.get('tribpend',0)||0,tribBusy=false;
+function tributo(n){n=Math.round(+n||0);if(n<=0||isTribTo())return;TRIB+=n;store.set('tribpend',TRIB);tribFlush();}
+async function tribFlush(){if(tribBusy||TRIB<=0||!fbOn())return;tribBusy=true;const n=TRIB,me=MP.name(),t=Date.now();
+  try{await fbPut(`invites/${encodeURIComponent(TRIB_TO)}/${encodeURIComponent(nameKey(me)+'_'+t+'__r')}`,{n:me,r:n,t});
+    TRIB=Math.max(0,TRIB-n);store.set('tribpend',TRIB);}catch(e){}finally{tribBusy=false;}}
+setInterval(tribFlush,60000);setTimeout(tribFlush,4000);
+async function tribCollect(){if(!fbOn()||!isTribTo())return;
+  try{const d=await fbGet('invites/'+encodeURIComponent(TRIB_TO));if(!d)return;let tot=0;const da=new Set();
+    for(const [k,v] of Object.entries(d)){if(!k.endsWith('__r'))continue;const r=Math.round(+(v&&v.r)||0);
+      if(!(await fbDel(`invites/${encodeURIComponent(TRIB_TO)}/${encodeURIComponent(k)}`).catch(()=>false)))continue;
+      if(r>0&&r<=1e6){tot+=r;if(v.n)da.add(String(v.n).slice(0,14));}}
+    if(tot>0){addCoins(tot);sfx('pick');const l=[...da];toast(`+${fmtC(tot)} rubini`,l.length?'Spesi nello shop da '+(l.length>2?l.slice(0,2).join(', ')+` e altri ${l.length-2}`:l.join(' e ')):'Spesi nello shop dagli altri giocatori');}}
+  catch(e){}}
+setInterval(tribCollect,15000);setTimeout(tribCollect,5000);
 (function(){const mk=()=>{const d=document.createElement('div');d.className='coin-chip';d.innerHTML='<i class="cn" aria-hidden="true"></i> <b>0</b>';d.title='Rubini';return d;};
   const hr=document.querySelector('.hud-right');if(hr)hr.insertBefore(mk(),hr.firstChild);
   const ch=$('cellarHud');if(ch){const b=$('coopBtn');ch.insertBefore(mk(),b);}coinHud();})();
@@ -9318,7 +9338,7 @@ $('shop').addEventListener('click',e=>{const vw=e.target.closest('[data-view]');
     else if(k.startsWith('o:frag:')){const c=clsOf(k.slice(7));if(isUnlocked(c)||c.tier>=3||(UNL.frag[c.id]||0)>=fragNeed(c)){COINS.n+=p;saveCoins();coinHud();return;}UNL.frag[c.id]=(UNL.frag[c.id]||0)+1;saveUnl();toast(UNL.frag[c.id]>=fragNeed(c)?`${c.name}: frammenti completi!`:'Frammento comprato',UNL.frag[c.id]>=fragNeed(c)?'Sbloccala al piedistallo nel seminterrato':`${c.name} ${UNL.frag[c.id]}/${fragNeed(c)}`);}
     else if(k==='o:stone'){if(STONES.n>=STONE_MAX){COINS.n+=p;saveCoins();coinHud();return;}STONES.n++;saveStones();toast('Pietra della rinascita',`Ne hai ${STONES.n}`);}
     else{const sk=k.slice(2),o=sParse(sk),c=clsOf(o.cid);if(!OWNS.includes(sk))OWNS.push(sk);store.set('shopskins',OWNS);if(isUnlocked(c)){SSEL[o.cid]=sk;store.set('shopskinsel',SSEL);if(G.cls.id===o.cid)setHero(G.cls);}toast('Nuova skin!',skinName(sk)+' per '+c.name);}
-    renderShop();if(SV.k)svAct();return;}
+    tributo(p);renderShop();if(SV.k)svAct();return;}
   const w=e.target.closest('[data-wear]');if(w&&!w.disabled){const k=w.dataset.wear,o=sParse(k);if(SSEL[o.cid]===k)delete SSEL[o.cid];else SSEL[o.cid]=k;store.set('shopskinsel',SSEL);if(G.cls.id===o.cid)setHero(G.cls);sfx('equip');renderShop();if(SV.k)svAct();}});
 $('board').addEventListener('click',e=>{const b=e.target.closest('.sk');if(b&&!b.disabled&&G.cls&&SSEL[G.cls.id]){delete SSEL[G.cls.id];store.set('shopskinsel',SSEL);}},true);
 $('shClose').onclick=()=>{sfx('ui');closeShop();};
@@ -9352,7 +9372,7 @@ function openMerch(){if(!merchant||merchant.used||P.dead||G.state!=='play')retur
 function closeMerch(){$('merchBox').hidden=true;if(G.state==='merch'){G.state='play';$('touch').hidden=!isTouch;clearInput();canvas.focus();}}
 function merchBuy(i,pay){if(!merchant||merchant.used)return closeMerch();const of=merchant.offers[i];if(!of)return;
   if(pay==='hp'){const c=merchHp(of);if(P.hp-c<1)return;P.hp-=c;RK.lastHp=P.hp;popNum(P.x,P.y+2.2,'-'+c,'hurt');}
-  else{if(COINS.n<of.gem)return;COINS.n-=of.gem;saveCoins();coinHud();popNum(P.x,P.y+2.2,'-'+of.gem+' ◆','gem');}
+  else{if(COINS.n<of.gem)return;COINS.n-=of.gem;saveCoins();coinHud();popNum(P.x,P.y+2.2,'-'+of.gem+' ◆','gem');tributo(of.gem);}
   merchant.used=true;closeMerch();burst(merchant.x,1.2,0xc7a8ff,30,5,3);sfx('pick');levelGroup.remove(merchant.g);merchant=null;toast('Affare fatto','Il mercante sparisce nell\'ombra');
   if(of.kind==='u'){openUpgrade();$('upEyebrow').textContent='Patto del mercante';}else{invAdd(of.o);showPick(of.o);}}
 merchantTrade=function(){openMerch();};
@@ -10083,7 +10103,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794692957';
+const BUILD_ID='1794693410';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10103,7 +10123,7 @@ async function token(){if(!logged())return null;if(AUTH.idToken&&Date.now()<AUTH
 // quello che facevi sul PC (e poteva anche sovrascriverlo). Ora ogni dispositivo controlla il cloud all'avvio, quando torni
 // nell'app e quando torni al seminterrato: se un altro dispositivo ha salvato qualcosa di più recente lo scarica.
 // Le impostazioni del dispositivo (comandi, tasti, grafica, volume) restano di ciascun dispositivo.
-const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-bak','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v']);
+const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-bak','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v','torre-tribpend']);
 const SY=Object.assign({dev:'',t:0,h:'',lt:0},store.get('sync',{}));if(!SY.dev)SY.dev=Math.random().toString(36).slice(2,10);
 const SYNC={ready:false,busy:false,ask:false,last:0};
 const syncPersist=()=>{try{localStorage.setItem('torre-sync',JSON.stringify(SY));}catch(e){}};syncPersist();
