@@ -41,10 +41,11 @@ function updCamera(dt){
     dPos.set(cx,cy,dist);dLook.set(cx,cy-look,0);
     if(G.camFocus&&G.camFocus.t>0&&G.state==='play'){G.camFocus.t-=dt;dPos.set(G.camFocus.x+1.2,2.7,dist*0.4);dLook.set(G.camFocus.x,1.3,-0.6);}
     if(G.killcam){const k=G.killcam,z=k.xray?0.32:0.55;dPos.set(lerp(cx,k.x,k.xray?0.95:0.7),k.y+(k.xray?0.5:0.9),dist*z);dLook.set(lerp(cx,k.x,k.xray?1:0.85),k.y,0);}
+    else if(G.finT>0&&G.finCam&&tower&&G.state==='play'){const k=G.finCam,z=k.boss?0.5:0.6;dPos.set(lerp(cx,k.x,0.75),k.y+1.1,dist*z);dLook.set(lerp(cx,k.x,0.85),k.y,0);}   // ultimo colpo al rallentatore
     else if(P.dead&&tower&&G.state==='play'){dPos.set(lerp(cx,P.x,0.8),P.y+1.8,dist*0.6);dLook.set(lerp(cx,P.x,0.9),P.y+1,0);}
   }
   if(G.snapCam){camPos.copy(dPos);camLook.copy(dLook);G.snapCam=false;}
-  else{const k=damp(dt,(G.camFocus&&G.camFocus.t>0)?3.5:G.killcam||(P.dead&&G.state==='play')?7:G.state==='select'||G.state==='wardrobe'?3.5:G.state==='climb'?2.6:G.state==='bossintro'?2.4:5);camPos.lerp(dPos,k);camLook.lerp(dLook,k);}
+  else{const k=damp(dt,(G.camFocus&&G.camFocus.t>0)?3.5:G.killcam||(P.dead&&G.state==='play')?7:G.finT>0?5.5:G.state==='select'||G.state==='wardrobe'?3.5:G.state==='climb'?2.6:G.state==='bossintro'?2.4:5);camPos.lerp(dPos,k);camLook.lerp(dLook,k);}
   camShake.v=Math.max(0,camShake.v-dt*1.6);const s=(reduced||!SETTINGS.shake)?0:camShake.v*camShake.v*0.9;
   G.camPunch=Math.max(0,G.camPunch-dt*2);const pz=G.camPunch*G.camPunch*6;
   camera.position.set(camPos.x+rand(-s,s),camPos.y+rand(-s,s),camPos.z-pz);camera.lookAt(camLook);
@@ -178,8 +179,8 @@ function frame(now){
   chestArrowTick();schatTick();WFX.t.value=(now*0.001)%628.3185;WFX.b.value=lerp(WFX.b.value,P.atk?1:0,0.2);WFX.px.value=renderer.domElement.height/(2*Math.tan(camera.fov*Math.PI/360));
   let rdt=Math.min(0.033,(now-last)/1000);last=now;{const L_=window.__LAB;if(L_&&L_.on){rdt=L_.step?1/60:L_.pause?0:rdt*L_.ts;L_.step=false;}}PAD.rep-=rdt;try{pollPad();}catch(e){}PAD.latch={};xrayTick(rdt);if(G.deathSlow>0)G.deathSlow-=rdt;
   G.killcamCd=(G.killcamCd||0)-rdt;if(G.killcam){G.killcam.t-=rdt;if(G.killcam.t<=0||G.state!=='play')finishKillcam();}
-  if(G.abilSlow>0)G.abilSlow-=rdt;
-  const dt=G.killcam?rdt*0.18:G.deathSlow>0?rdt*0.3:G.abilSlow>0?rdt*0.35:rdt;G.time+=dt;
+  if(G.abilSlow>0)G.abilSlow-=rdt;if(G.finT>0){G.finT-=rdt;if(G.state!=='play')G.finT=0;}
+  const dt=G.killcam?rdt*0.18:G.finT>0?rdt*0.22:G.deathSlow>0?rdt*0.3:G.abilSlow>0?rdt*0.35:rdt;G.time+=dt;
   if(G.state==='play'||G.state==='cellar'){if(G.hitstop>0)G.hitstop-=dt;else update(dt);}
   else if(G.state==='climb'){updClimb(dt);updOrbs(dt);}
   else if(G.state==='enter')updEnter(dt);

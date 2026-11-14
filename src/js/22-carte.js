@@ -31,8 +31,8 @@ hitEnemy=function(e,base,dir,o){o=o||{};
     base=Math.max(base,e.hp+10);o=Object.assign({},o,{unblockable:true});popNum(e.x,e.y+e.h+0.7,'Esecuzione!','crit');fxSlash(e.x,e.y+e.h*0.55,0,0xff4d6d,1.3,0,0.6,0.3);}
   const r=_hitCard(e,base,dir,o);
   const lc=lvC('catena');
-  if(lc&&o.melee&&!o.card){G.chainN=(G.chainN||0)+1;if(G.chainN>=(lc>1?4:5)){G.chainN=0;let from=e;const list=foesNear(e.x,e.y+e.h/2,8,e).sort((a,b)=>Math.abs(a.x-e.x)-Math.abs(b.x-e.x)).slice(0,lc>1?5:3);
-      sfx('zap');for(const t of list){lightning(from.x,from.y+from.h/2,t.x,t.y+t.h/2);cardHit(t,0.6,t.x>=from.x?1:-1,{kb:2,stun:0.25});burst(t.x,t.y+t.h/2,0xfff27a,8,4,1,0.2);from=t;}}}
+  if(lc&&o.melee&&!o.card){G.chainN=(G.chainN||0)+1;const evT=lvC('evo_tuono');if(G.chainN>=(evT?3:lc>1?4:5)){G.chainN=0;let from=e;const list=foesNear(e.x,e.y+e.h/2,evT?10:8,e).sort((a,b)=>Math.abs(a.x-e.x)-Math.abs(b.x-e.x)).slice(0,evT?7:lc>1?5:3);
+      sfx('zap');for(const t of list){lightning(from.x,from.y+from.h/2,t.x,t.y+t.h/2);cardHit(t,0.6,t.x>=from.x?1:-1,{kb:2,stun:0.25,chain:true});burst(t.x,t.y+t.h/2,0xfff27a,8,4,1,0.2);from=t;}}}
   return r;};
 
 /* ---------- Gelo critico: chiamato dai colpi critici ---------- */
@@ -83,8 +83,8 @@ function cardTick(dt){if(!cardOn()||G.state!=='play'){return;}
     const tx=P.x-P.face*0.9,ty=P.y+2.3+Math.sin(G.time*3)*0.18,k=Math.min(1,dt*6);PET.x+=(tx-PET.x)*k;PET.y+=(ty-PET.y)*k;PET.g.position.set(PET.x,PET.y,0.5);
     PET.g.userData.halo.scale.setScalar(1+Math.sin(G.time*8)*0.12);for(const s of [-1,1])PET.g.userData['w'+s].rotation.z=s*Math.sin(G.time*18)*0.6;
     PET.cd-=dt;if(PET.cd<=0){const t=foes().filter(e=>Math.abs(e.x-PET.x)<12).sort((a,b)=>Math.abs(a.x-PET.x)-Math.abs(b.x-PET.x))[0];
-      if(t){PET.cd=lf>1?0.9:1.4;const ax=t.x-PET.x,ay=(t.y+t.h/2)-PET.y,l=Math.hypot(ax,ay)||1;
-        pProj({x:PET.x,y:PET.y,vx:ax/l*15,vy:ay/l*15,kind:'bolt',col:0x9ef0ff,sz:0.5,dmg:weaponDamage()*(lf>1?0.5:0.35),homing:8,life:1.6,kb:2});burst(PET.x,PET.y,0x9ef0ff,5,2,0,0);}
+      if(t){const eg=lvC('evo_gelo');PET.cd=eg?0.6:lf>1?0.9:1.4;const ax=t.x-PET.x,ay=(t.y+t.h/2)-PET.y,l=Math.hypot(ax,ay)||1;
+        pProj({x:PET.x,y:PET.y,vx:ax/l*15,vy:ay/l*15,kind:'bolt',col:eg?0xbfeaff:0x9ef0ff,sz:eg?0.65:0.5,dmg:weaponDamage()*(lf>1?0.5:0.35),homing:8,life:1.6,kb:2,effect:eg?'gelo':G.weapon.effect,pierce:!!eg});burst(PET.x,PET.y,0x9ef0ff,5,2,0,0);}
       else PET.cd=0.3;}}
   else if(PET.g)PET.g.visible=false;}
 const _ufCard=updFloor;updFloor=function(dt){_ufCard(dt);try{cardTick(dt);}catch(err){console.warn('carte',err);}};
