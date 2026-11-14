@@ -245,4 +245,5 @@ const newsBox=document.createElement('div');newsBox.id='newsBox';newsBox.hidden=
 </ul><button class="big" id="newsOk">Andiamo!</button></div>`;document.body.appendChild(newsBox);
 $('newsOk').onclick=()=>{sfx('ui');newsBox.hidden=true;store.set('news-v',NEWS_V);canvas.focus();};
 setInterval(()=>{if(!newsBox.hidden||store.get('news-v','')===NEWS_V)return;
-  if(G.scene==='cellar'&&G.state==='cellar'&&!G.ctut&&G.fade<0.05){if(!store.get('tut-done',false)){store.set('news-v',NEWS_V);return;}newsBox.hidden=false;setTimeout(()=>$('newsOk').focus(),50);}},700);
+  if(document.querySelector('#account:not([hidden]),#nameGate:not([hidden]),#installGate:not([hidden]),.screen:not([hidden])')||/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;
+  if(G.scene==='cellar'&&G.state==='cellar'&&!G.ctut&&G.fade<0.05){if(!store.get('tut-done',false)){store.set('news-v',NEWS_V);return;}newsBox.hidden=false;if(PAD.on||!isTouch)setTimeout(()=>$('newsOk').focus(),50);}},700);

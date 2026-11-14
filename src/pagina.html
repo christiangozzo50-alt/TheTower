@@ -306,7 +306,7 @@
     <img class="ig-ico" src="icon-192.png" alt="">
     <h2 id="ngTitle">Come ti chiami?</h2>
     <p class="ig-lead">Il tuo nome compare in classifica, agli amici e nelle partite online. Ogni giocatore ha un nome diverso.</p>
-    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false">
+    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="done">
     <p class="note" id="ngMsg" aria-live="polite"></p>
     <button class="ghost" id="ngSug" hidden></button>
     <div class="row"><button class="big" id="ngOk">Conferma</button><button class="ghost" id="ngCancel" hidden>Annulla</button></div>
@@ -320,8 +320,8 @@
     <h2>Account</h2>
     <p class="ig-lead">Con un account ritrovi progressi, armadio, trofei e nome su tutti i tuoi dispositivi.</p>
     <div id="acForm">
-      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false">
-      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password">
+      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="next">
+      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password" autocapitalize="off" autocorrect="off" enterkeyhint="done">
       <div class="row"><button class="big" id="acLog">Accedi</button><button class="ghost" id="acReg">Crea account</button></div>
     </div>
     <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p><button class="ghost" id="acOut">Esci dall'account</button></div>

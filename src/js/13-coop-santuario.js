@@ -486,7 +486,7 @@ buildSafeRoom=function(){_buildSafeRoom();try{buildRestBed();}catch(e){console.w
   for(const id of ['touch','abilBar','game','joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3','bUse']){const el=$(id);if(el)el.addEventListener('touchstart',e=>{if(e.cancelable)e.preventDefault();},{passive:false});}
   let lastT=0;
   document.addEventListener('touchend',e=>{const now=Date.now(),t=e.target;
-    if(now-lastT<350&&!(t&&t.closest&&t.closest('input,textarea,select')))e.preventDefault();lastT=now;},{passive:false});
+    if(now-lastT<350&&t&&t.closest&&t.closest('#game,#touch,#abilBar')&&!t.closest('input,textarea,select,button'))e.preventDefault();lastT=now;},{passive:false});
   // se lo schermo è rimasto ingrandito, lo riporta subito alla misura normale
   const unzoom=()=>{if(!vp||!window.visualViewport||visualViewport.scale<=1.01)return;vp.setAttribute('content',base+',minimum-scale=1');setTimeout(()=>vp.setAttribute('content',base),80);};
   if(window.visualViewport)visualViewport.addEventListener('resize',unzoom);setInterval(unzoom,800);

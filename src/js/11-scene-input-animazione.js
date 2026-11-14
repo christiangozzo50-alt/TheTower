@@ -513,6 +513,7 @@ function press(a,down){
   else if(a==='use'){if(down)input.usePressed=true;}
 }
 addEventListener('keydown',e=>{
+  if(isTextEl(e.target))return;   // si sta scrivendo in un campo: i tasti non vanno al gioco
   if(!opDone){e.preventDefault();if(!e.repeat){if(opReady&&(e.code==='Enter'||e.code==='Space'||actionFor(e.code)))opPlay();else opSkip();}return;}
   if(G.capture){e.preventDefault();finishCapture(e.code);return;}
   audioInit();

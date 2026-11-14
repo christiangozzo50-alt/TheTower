@@ -399,7 +399,7 @@ const _ciT=clearInput;clearInput=function(){_ciT();if(joyId!==null){joyId=null;$
 const TCTL=['joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3'],TFWD=new Map();
 function tFwd(el,e,type){const ev=new PointerEvent(type,{pointerId:e.pointerId,pointerType:'touch',isPrimary:e.isPrimary,clientX:e.clientX,clientY:e.clientY,bubbles:true,cancelable:true,button:0,buttons:type==='pointerdown'||type==='pointermove'?1:0});ev.__fwd=true;el.dispatchEvent(ev);}
 addEventListener('pointerdown',e=>{
-  if(e.pointerType!=='touch'||e.__fwd||G.tedit||!isTouch||!(G.state==='play'||G.state==='cellar')||$('touch').hidden)return;
+  if(e.pointerType!=='touch'||e.__fwd||G.tedit||!isTouch||!(G.state==='play'||G.state==='cellar')||$('touch').hidden||document.querySelector('#account:not([hidden]),#nameGate:not([hidden]),#newsBox:not([hidden])'))return;
   const t=e.target;if(t&&t.closest&&t.closest('#joy,.tbtn,#abilBar,#bUse,button,a,input,select,textarea,.screen,[data-ed]'))return;
   let best=null,bd=1e9;for(const id of TCTL){const el=$(id);if(!el)continue;const r=el.getBoundingClientRect();if(!r.width||!r.height)continue;
     const d=Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))-r.width/2,lim=id==='joy'?80:34;if(d<lim&&d<bd){bd=d;best=el;}}

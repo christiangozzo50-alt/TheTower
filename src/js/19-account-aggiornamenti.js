@@ -2,7 +2,7 @@
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794683831';
+const BUILD_ID='1794691713';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -61,7 +61,8 @@ async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,ms
 $('acReg').onclick=acRegister;$('acLog').onclick=acLogin;
 $('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
 $('acClose').onclick=closeAccount;
-for(const id of ['acUser','acPass'])$(id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')acLogin();});
+$('acUser').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').focus();}});
+$('acPass').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').blur();}});
 $('ngLogin').onclick=()=>openAccount();
 // nella sezione Amici: stato dell'account
 const _rfA=renderFriends;

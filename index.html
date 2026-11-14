@@ -1186,7 +1186,7 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
     <img class="ig-ico" src="icon-192.png" alt="">
     <h2 id="ngTitle">Come ti chiami?</h2>
     <p class="ig-lead">Il tuo nome compare in classifica, agli amici e nelle partite online. Ogni giocatore ha un nome diverso.</p>
-    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false">
+    <input id="ngIn" maxlength="14" placeholder="Il tuo nome" autocomplete="off" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="done">
     <p class="note" id="ngMsg" aria-live="polite"></p>
     <button class="ghost" id="ngSug" hidden></button>
     <div class="row"><button class="big" id="ngOk">Conferma</button><button class="ghost" id="ngCancel" hidden>Annulla</button></div>
@@ -1200,8 +1200,8 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
     <h2>Account</h2>
     <p class="ig-lead">Con un account ritrovi progressi, armadio, trofei e nome su tutti i tuoi dispositivi.</p>
     <div id="acForm">
-      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false">
-      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password">
+      <input id="acUser" maxlength="14" placeholder="Nome utente" autocomplete="username" spellcheck="false" autocapitalize="off" autocorrect="off" enterkeyhint="next">
+      <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password" autocapitalize="off" autocorrect="off" enterkeyhint="done">
       <div class="row"><button class="big" id="acLog">Accedi</button><button class="ghost" id="acReg">Crea account</button></div>
     </div>
     <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p><button class="ghost" id="acOut">Esci dall'account</button></div>
@@ -7060,6 +7060,7 @@ function press(a,down){
   else if(a==='use'){if(down)input.usePressed=true;}
 }
 addEventListener('keydown',e=>{
+  if(isTextEl(e.target))return;   // si sta scrivendo in un campo: i tasti non vanno al gioco
   if(!opDone){e.preventDefault();if(!e.repeat){if(opReady&&(e.code==='Enter'||e.code==='Space'||actionFor(e.code)))opPlay();else opSkip();}return;}
   if(G.capture){e.preventDefault();finishCapture(e.code);return;}
   audioInit();
@@ -8140,7 +8141,7 @@ buildSafeRoom=function(){_buildSafeRoom();try{buildRestBed();}catch(e){console.w
   for(const id of ['touch','abilBar','game','joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3','bUse']){const el=$(id);if(el)el.addEventListener('touchstart',e=>{if(e.cancelable)e.preventDefault();},{passive:false});}
   let lastT=0;
   document.addEventListener('touchend',e=>{const now=Date.now(),t=e.target;
-    if(now-lastT<350&&!(t&&t.closest&&t.closest('input,textarea,select')))e.preventDefault();lastT=now;},{passive:false});
+    if(now-lastT<350&&t&&t.closest&&t.closest('#game,#touch,#abilBar')&&!t.closest('input,textarea,select,button'))e.preventDefault();lastT=now;},{passive:false});
   // se lo schermo è rimasto ingrandito, lo riporta subito alla misura normale
   const unzoom=()=>{if(!vp||!window.visualViewport||visualViewport.scale<=1.01)return;vp.setAttribute('content',base+',minimum-scale=1');setTimeout(()=>vp.setAttribute('content',base),80);};
   if(window.visualViewport)visualViewport.addEventListener('resize',unzoom);setInterval(unzoom,800);
@@ -9810,7 +9811,7 @@ const _ciT=clearInput;clearInput=function(){_ciT();if(joyId!==null){joyId=null;$
 const TCTL=['joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3'],TFWD=new Map();
 function tFwd(el,e,type){const ev=new PointerEvent(type,{pointerId:e.pointerId,pointerType:'touch',isPrimary:e.isPrimary,clientX:e.clientX,clientY:e.clientY,bubbles:true,cancelable:true,button:0,buttons:type==='pointerdown'||type==='pointermove'?1:0});ev.__fwd=true;el.dispatchEvent(ev);}
 addEventListener('pointerdown',e=>{
-  if(e.pointerType!=='touch'||e.__fwd||G.tedit||!isTouch||!(G.state==='play'||G.state==='cellar')||$('touch').hidden)return;
+  if(e.pointerType!=='touch'||e.__fwd||G.tedit||!isTouch||!(G.state==='play'||G.state==='cellar')||$('touch').hidden||document.querySelector('#account:not([hidden]),#nameGate:not([hidden]),#newsBox:not([hidden])'))return;
   const t=e.target;if(t&&t.closest&&t.closest('#joy,.tbtn,#abilBar,#bUse,button,a,input,select,textarea,.screen,[data-ed]'))return;
   let best=null,bd=1e9;for(const id of TCTL){const el=$(id);if(!el)continue;const r=el.getBoundingClientRect();if(!r.width||!r.height)continue;
     const d=Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))-r.width/2,lim=id==='joy'?80:34;if(d<lim&&d<bd){bd=d;best=el;}}
@@ -10082,7 +10083,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794683831';
+const BUILD_ID='1794691713';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10141,7 +10142,8 @@ async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,ms
 $('acReg').onclick=acRegister;$('acLog').onclick=acLogin;
 $('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
 $('acClose').onclick=closeAccount;
-for(const id of ['acUser','acPass'])$(id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')acLogin();});
+$('acUser').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').focus();}});
+$('acPass').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').blur();}});
 $('ngLogin').onclick=()=>openAccount();
 // nella sezione Amici: stato dell'account
 const _rfA=renderFriends;
@@ -10962,7 +10964,31 @@ const newsBox=document.createElement('div');newsBox.id='newsBox';newsBox.hidden=
 </ul><button class="big" id="newsOk">Andiamo!</button></div>`;document.body.appendChild(newsBox);
 $('newsOk').onclick=()=>{sfx('ui');newsBox.hidden=true;store.set('news-v',NEWS_V);canvas.focus();};
 setInterval(()=>{if(!newsBox.hidden||store.get('news-v','')===NEWS_V)return;
-  if(G.scene==='cellar'&&G.state==='cellar'&&!G.ctut&&G.fade<0.05){if(!store.get('tut-done',false)){store.set('news-v',NEWS_V);return;}newsBox.hidden=false;setTimeout(()=>$('newsOk').focus(),50);}},700);
+  if(document.querySelector('#account:not([hidden]),#nameGate:not([hidden]),#installGate:not([hidden]),.screen:not([hidden])')||/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||''))return;
+  if(G.scene==='cellar'&&G.state==='cellar'&&!G.ctut&&G.fade<0.05){if(!store.get('tut-done',false)){store.set('news-v',NEWS_V);return;}newsBox.hidden=false;if(PAD.on||!isTouch)setTimeout(()=>$('newsOk').focus(),50);}},700);
+
+/* =========================================================
+   TASTIERA DEL TELEFONO nei moduli (nome, account, amici, chat)
+   - toccando un campo la tastiera si apre sempre (focus dentro il tocco, come vuole iPhone)
+   - mentre scrivi i tasti non arrivano al gioco
+   - con la tastiera aperta il modulo si stringe nella parte visibile dello schermo, così vedi cosa scrivi
+   ========================================================= */
+const isTextEl=el=>!!el&&(el.tagName==='TEXTAREA'||(el.tagName==='INPUT'&&!/^(range|checkbox|radio|button|submit)$/.test(el.type)));
+addEventListener('touchend',e=>{const t=e.target;if(isTextEl(t)&&document.activeElement!==t){try{t.focus({preventScroll:true});}catch(_){t.focus();}}},{passive:true,capture:true});
+const KB={on:false};
+function kbFit(){const vv=window.visualViewport,f=document.activeElement,on=isTextEl(f)&&!!vv&&vv.height<innerHeight-80;
+  const ov=[...document.querySelectorAll('#account,#nameGate,#friends,#coop')].filter(o=>!o.hidden);
+  document.body.classList.toggle('kb-open',on);
+  for(const o of ov){if(on){o.style.top=vv.offsetTop+'px';o.style.height=vv.height+'px';o.style.bottom='auto';}else{o.style.top='';o.style.height='';o.style.bottom='';}}
+  if(on&&!KB.on)setTimeout(()=>{try{f.scrollIntoView({block:'center'});}catch(_){}} ,60);
+  KB.on=on;}
+if(window.visualViewport){visualViewport.addEventListener('resize',kbFit);visualViewport.addEventListener('scroll',kbFit);}
+addEventListener('focusin',()=>setTimeout(kbFit,350));addEventListener('focusout',()=>setTimeout(kbFit,120));
+{const st=document.createElement('style');st.textContent=`
+body.kb-open #account .ig-lead,body.kb-open #nameGate .ig-lead,body.kb-open #nameGate .ig-ico{display:none}
+body.kb-open #account,body.kb-open #nameGate{padding:8px 16px;align-items:start}
+body.kb-open #account .ig-box,body.kb-open #nameGate .ig-box{gap:6px}
+#ngIn,#acUser,#acPass,#frQ,#coopName,#coopCode,#scIn{-webkit-user-select:text!important;user-select:text!important;touch-action:manipulation}`;document.head.appendChild(st);}
 requestAnimationFrame(frame);
 })();
 </script>
