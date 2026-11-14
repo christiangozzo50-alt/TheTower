@@ -10082,7 +10082,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794683663';
+const BUILD_ID='1794683831';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10868,7 +10868,7 @@ startFloor=function(f){G.haz=[];G.finT=0;G.finCam=null;G.stDone=false;G.stT0=nul
     const plan=MP.live()?withSeed(MP.seed*577+f*1543,()=>planHazards(f)):planHazards(f);
     plan.forEach(([k,x,rw],i)=>{const h=k==='barile'?buildBarrelHz(x):k==='lampadario'?buildChandHz(x):k==='spuntoni'?buildSpikeHz(x):buildWallHz(x,rw);h.i=i;G.haz.push(h);});
     const has=k=>G.haz.some(h=>h.k===k);
-    if(has('barile'))ntip('barile','Barili esplosivi','I barili rossi esplodono se li colpisci: attira i nemici vicino e falli saltare in aria. Stai lontano anche tu!');
+    if(has('barile'))ntip('barile','Barili esplosivi','Colpisci un barile rosso e hai un secondo per allontanarti prima che esploda: attira i nemici vicino e falli saltare in aria!');
     if(has('lampadario'))ntip('lampadario','Lampadari','Salta e colpisci il lampadario: cade e schiaccia i nemici che ci sono sotto.');
     if(has('spuntoni'))ntip('spuntoni','Spuntoni','Ogni tanto gli spuntoni escono dal pavimento: feriscono i nemici sopra, ma anche te. Scaraventaci sopra i nemici!');
     if(has('muro'))ntip('segreto','Muro crepato','Vedi un muro crepato sullo sfondo? Colpiscilo più volte (un colpo forte lo rompe prima): dietro c\'è una stanza segreta con un premio.');
@@ -10888,7 +10888,7 @@ function hzDamage(x,y,r,fn,by){if(MP.live()&&!MP.host)return;const hf=MP.hitFrom
   try{for(const e of foes())if(Math.abs(e.x-x)<r+e.w/2&&Math.abs((e.y+e.h/2)-y)<r+e.h/2)fn(e);}finally{MP.hitFrom=hf;}}
 const hzHit=(e,d,dir,o)=>hitEnemy(e,d,dir,Object.assign({env:true,card:true,noCombo:true,unblockable:true},o||{}));
 function hzTrigger(h,a,by,remote){if(h.state>=2&&h.k!=='muro')return;
-  if(h.k==='barile'&&h.state===0){h.state=1;h.t=0.7;h.by=by;sfx('hit');}
+  if(h.k==='barile'&&h.state===0){h.state=1;h.t=1.0;h.by=by;sfx('hit');popNum(h.x,1.9,'Scappa!','crit');}   // un secondo per allontanarsi
   else if(h.k==='lampadario'&&h.state===0){h.state=1;h.vy=0;h.by=by;sfx('slam');burst(h.x,CEIL-0.5,0x8a8279,10,3,1,0.2);}
   else if(h.k==='muro'&&h.state===0){if(a==='rompi')wallBreak(h,by);else{h.hp--;h.slab.position.x=rand(-0.06,0.06);burst(h.x,1.4,0x8a8279,10,4,1,0.3,-2.8);sfx('hit');if(h.hp<=0)wallBreak(h,by);}}
   if(!remote)hzSend(h.i,a);}
@@ -10931,7 +10931,7 @@ function hzHitCheck(){const A=P.atk;const act=A&&!A.noHit&&A.t>=A.wind&&A.t<=A.w
 function hzTick(dt){if(!G.haz||!G.haz.length||G.scene!=='tower')return;if(G.state==='play'&&!P.dead)hzHitCheck();
   const now=Date.now()/1000;
   for(const h of G.haz){
-    if(h.k==='barile'&&h.state===1){h.t-=dt;h.g.scale.setScalar(1+Math.sin(G.time*40)*0.05);if(Math.random()<0.5)burst(h.x,1.15,0xffd27a,1,2,1,0,-0.7);if(h.t<=0)barrelBoom(h);}
+    if(h.k==='barile'&&h.state===1){h.t-=dt;h.g.scale.setScalar(1+Math.sin(G.time*(h.t<0.4?70:30))*(h.t<0.4?0.08:0.04));if(Math.random()<0.5)burst(h.x,1.15,0xffd27a,1,2,1,0,-0.7);if(h.t<=0)barrelBoom(h);}
     else if(h.k==='lampadario'){if(h.state===0){h.g.rotation.z=Math.sin(G.time*1.3+h.x)*0.04;for(const c of h.g.children)if(c.userData.fl)c.scale.y=1+Math.sin(G.time*14+c.position.x*9)*0.15;}
       else if(h.state===1){h.vy+=GRAV*dt;h.g.position.y+=h.vy*dt;h.g.rotation.z+=dt*0.6;if(h.g.position.y<=0.2)chandCrash(h);}
       else if(h.state===2&&h.t>0){h.t-=dt;if(h.t<=0)levelGroup.remove(h.g);}}
