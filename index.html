@@ -1616,7 +1616,8 @@ const DSC=(GATE_X+HALF)/31,MX=x=>-HALF+(x+18)*DSC;   // allarga gli arredi pensa
 const CH=13,CELLAR_CEIL=6.4,PED_X=2.2,PED_Z=-1.2;
 const TOP_FLOOR=100;
 const hpMul=f=>1+0.22*(f-1)+0.012*(f-1)*(f-1), dmgMul=f=>1+0.11*(f-1)+0.0018*(f-1)*(f-1), spdMul=f=>Math.min(1.6,1+0.008*(f-1));
-const isBossFloor=f=>f%5===0,isSafeFloor=f=>f===13||(f>1&&f%25===1);
+// santuari ogni 13 piani (13, 26, 39, 52, 66, 78, 91): se il multiplo di 13 è un piano del guardiano (65) il santuario è subito dopo
+const isBossFloor=f=>f%5===0,isSafeFloor=f=>f>=13&&((f%13===0&&f%5!==0)||((f-1)%13===0&&(f-1)%5===0));
 
 // La torre cambia aspetto ogni 10 piani
 const ZONES=[
@@ -2027,6 +2028,12 @@ function rbox(w,h,d,r,k){
   }
   pos.needsUpdate=nor.needsUpdate=true;g.computeBoundingSphere();return g;
 }
+// pietra squadrata e scheggiata: rbox con vertici smossi in modo stabile (taper restringe la cima)
+function rockG(w,h,d,o){o=o||{};const g=rbox(w,h,d,o.r==null?Math.min(w,h,d)*0.22:o.r),p=g.attributes.position,sd=o.seed||0,am=o.amp==null?0.05:o.amp,tp=o.taper||1;
+  const hs=(x,y,z)=>{const v=Math.sin(x*127.1+y*311.7+z*74.7+sd*19.3)*43758.5453;return v-Math.floor(v)-0.5;};
+  for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i),z=p.getZ(i),kx=Math.round(x*40)/40,ky=Math.round(y*40)/40,kz=Math.round(z*40)/40,t=lerp(1,tp,(y/h)+0.5);
+    p.setXYZ(i,x*t+hs(kx,ky,kz)*am*w,y+hs(kz,kx,ky)*am*h*0.8,z*t+hs(ky,kz,kx)*am*d);}
+  g.computeVertexNormals();g.computeBoundingSphere();return g;}
 function disposeObj(o){o.traverse(c=>{if(c.userData.keep)return;if(c.geometry&&!c.geometry.userData.keep)c.geometry.dispose();if(c.material)(Array.isArray(c.material)?c.material:[c.material]).forEach(m=>{if(!m.userData.keep)m.dispose();});});}
 function bladeGeo(len,wid,tip){const s=new THREE.Shape();s.moveTo(-wid/2,0);s.lineTo(-wid/2,-len+tip);s.quadraticCurveTo(-wid*0.3,-len+tip*0.3,0,-len);s.quadraticCurveTo(wid*0.3,-len+tip*0.3,wid/2,-len+tip);s.lineTo(wid/2,0);s.lineTo(-wid/2,0);
   const g=new THREE.ExtrudeGeometry(s,{depth:0.03,bevelEnabled:true,bevelThickness:0.014,bevelSize:0.016,bevelSegments:3,curveSegments:10});g.translate(0,0,-0.015);g.rotateY(Math.PI/2);return g;}
@@ -4295,14 +4302,46 @@ golem:[
   for(const [a,b,c] of [[-0.5,1.8,0.1],[0.45,2.5,-0.2],[0.2,1.6,0.3]])M(s.torso,G3.tube([[a,b,0.68],[a+0.15,b+0.2,0.66],[a+0.05,b+0.4,0.64]],0.03,0.02,10,6),s.core,null,{ol:0});
   s.head=new THREE.Group();s.head.position.y=3.32;s.torso.add(s.head);M(s.head,G3.ell(0.48,0.4,0.45),stone,[0,0,0]);M(s.head,G3.ell(0.5,0.12,0.2),dark,[0,0.12,0.32]);for(const x of [-0.2,0.2])M(s.head,G3.ell(0.09,0.06,0.04),s.core,[x,0.0,0.42],{ol:0});
   s.arms=[];for(const sd of [-1,1]){const pv=new THREE.Group();pv.position.set(sd*1.3,2.8,0);s.torso.add(pv);M(pv,G3.ell(0.45,0.4,0.45),stone,[0,0,0]);M(pv,G3.ell(0.36,0.55,0.36),stone,[0,-0.75,0]);M(pv,G3.ell(0.5,0.4,0.5),dark,[0,-1.65,0]);s.arms.push(pv);}return s;}},
-{name:'Golem runico',desc:'Pietra levigata incisa di rune che brillano, menhir sulle spalle e catene ai polsi.',
- make(d){const s=enemyShell(4),K=kitFor(s),stone=K.m(d.color),dark=K.m(shadeC(d.color,0.6)),iron=K.m(0x5a5a62);s.core=coreM(d);s.legs=[];s.noBar=true;s.torso=new THREE.Group();s.body.add(s.torso);
-  for(const x of [-0.55,0.55]){const pv=new THREE.Group();pv.position.set(x,1.15,0);s.body.add(pv);M(pv,G3.rb(0.72,1.1,0.8,0.3),dark,[0,-0.55,0]);s.legs.push(pv);}
-  M(s.torso,G3.rb(1.9,1.7,1.25,0.55),stone,[0,2.1,0]);M(s.torso,G3.ell(0.28,0.28,0.1),s.core,[0,2.2,0.62],{ol:0});
-  for(let i=0;i<3;i++)M(s.torso,G3.rb(1.3-i*0.3,0.06,0.04,0.02),s.core,[0,1.6+i*0.55,0.64],{ol:0});for(const x of [-1,1])M(s.torso,G3.rb(0.06,1.2,0.04,0.02),s.core,[x*0.75,2.1,0.6],{ol:0});
-  s.head=new THREE.Group();s.head.position.y=3.32;s.torso.add(s.head);M(s.head,G3.rb(0.92,0.76,0.88,0.32),stone,[0,0,0]);M(s.head,G3.rb(0.7,0.06,0.04,0.02),s.core,[0,0.02,0.45],{ol:0});
-  s.arms=[];for(const sd of [-1,1]){const pv=new THREE.Group();pv.position.set(sd*1.3,2.8,0);s.torso.add(pv);M(pv,G3.rb(0.66,1.6,0.66,0.28),stone,[0,-0.8,0]);M(pv,G3.rb(0.86,0.6,0.86,0.28),dark,[0,-1.75,0]);
-    for(let i=0;i<3;i++)M(pv,G3.hring(0.42,0.05,1),iron,[0,-1.35-i*0.08,0]);M(pv,G3.rb(0.3,0.9,0.3,0.12),dark,[sd*0.1,0.55,0],{r:[0,0,-sd*0.15]});s.arms.push(pv);}return s;}},
+{name:'Golem runico',desc:'Colosso di pietra squadrata e scheggiata, curvo come un gorilla: rune che ardono su petto, braccia e menhir piantati nella schiena, ceppi e catene ai polsi.',
+ make(d){const s=enemyShell(4),K=kitFor(s),stone=K.m(d.color),dark=K.m(shadeC(d.color,0.58)),pale=K.m(shadeC(d.color,1.08)),iron=K.m(0x4a4a52);s.core=coreM(d);s.legs=[];s.noBar=true;
+  const C=s.core,R=(w,h,dd,o)=>rockG(w,h,dd,o),rune=(par,pts,th)=>{for(let i=0;i<pts.length-1;i++){const [x1,y1,z1]=pts[i],[x2,y2,z2]=pts[i+1],L=Math.hypot(x2-x1,y2-y1);M(par,G3.rb(th||0.06,L+(th||0.06),0.04,0.02),C,[(x1+x2)/2,(y1+y2)/2,(z1+z2)/2],{r:[0,0,Math.atan2(x1-x2,y2-y1)],ol:0});}};
+  // gambe corte e tozze: coscia, colonna, piede a lastra
+  for(const x of [-0.6,0.6]){const pv=new THREE.Group();pv.position.set(x,1.25,0);s.body.add(pv);
+    M(pv,R(0.7,0.62,0.78,{seed:x*3+1}),dark,[0,-0.22,0]);M(pv,R(0.78,0.72,0.82,{taper:1.12,seed:x*5+2}),stone,[0,-0.78,0.02]);
+    M(pv,R(0.95,0.3,1.15,{seed:x*7+3,r:0.1}),dark,[0,-1.1,0.14]);for(const t of [-0.28,0,0.28])M(pv,R(0.22,0.18,0.2,{seed:t*9+x}),stone,[t,-1.08,0.7]);
+    rune(pv,[[-0.12,-0.6,0.42],[0,-0.82,0.43],[0.12,-0.6,0.42]]);s.legs.push(pv);}
+  M(s.body,R(1.55,0.55,1.0,{seed:4}),dark,[0,1.38,-0.02]);
+  // busto curvo: pancia, petto enorme, gobba con i menhir
+  s.torso=new THREE.Group();s.torso.position.y=1.5;s.body.add(s.torso);const T=new THREE.Group();T.position.y=-1.5;s.torso.add(T);
+  M(T,R(1.4,0.8,1.05,{seed:5,taper:1.15}),stone,[0,1.85,0.02]);
+  const ch=new THREE.Group();ch.position.set(0,2.72,0.08);ch.rotation.x=0.16;T.add(ch);
+  M(ch,R(2.45,1.35,1.45,{seed:6,taper:0.92,amp:0.07}),stone,[0,0,0]);M(ch,R(1.5,0.95,0.3,{seed:7,r:0.12}),pale,[0,-0.05,0.68]);
+  for(const sd of [-1,1])M(ch,R(0.75,0.6,0.25,{seed:8+sd}),pale,[sd*0.85,0.25,0.6],{r:[0,sd*0.35,sd*0.1]});
+  M(ch,R(1.9,0.7,0.9,{seed:9}),dark,[0,0.5,-0.55]);
+  // nucleo runico: anello e quattro raggi
+  M(ch,G3.tor(0.3,0.045,TAU,40,8),C,[0,-0.02,0.86],{ol:0});M(ch,G3.ell(0.19,0.19,0.08),C,[0,-0.02,0.84],{ol:0});
+  for(let i=0;i<4;i++){const a=i/4*TAU+Math.PI/4;M(ch,G3.rb(0.05,0.22,0.04,0.02),C,[Math.sin(a)*0.45,-0.02+Math.cos(a)*0.45,0.85],{r:[0,0,-a],ol:0});}
+  rune(ch,[[-0.95,0.42,0.74],[-0.7,0.15,0.74],[-0.95,-0.12,0.74]]);rune(ch,[[0.95,0.42,0.74],[0.7,0.15,0.74],[0.95,-0.12,0.74]]);
+  // menhir nella schiena, con rune
+  for(const sd of [-1,1]){const mh=new THREE.Group();mh.position.set(sd*0.55,0.75,-0.55);mh.rotation.set(-0.35,0,-sd*0.22);ch.add(mh);
+    M(mh,R(0.42,1.25,0.36,{seed:10+sd,taper:0.6,r:0.1}),dark,[0,0.55,0]);M(mh,R(0.6,0.3,0.55,{seed:12+sd}),stone,[0,0,0]);
+    rune(mh,[[0,0.25,0.19],[0,0.75,0.19]],0.05);rune(mh,[[-0.08,0.55,0.19],[0.08,0.68,0.19]],0.045);}
+  M(ch,R(0.5,0.4,0.45,{seed:14}),dark,[0,0.85,-0.75]);
+  // testa piccola e incassata fra le spalle, sporgente in avanti
+  s.head=new THREE.Group();s.head.position.set(0,3.45,0.62);T.add(s.head);
+  M(s.head,R(0.82,0.62,0.74,{seed:15}),stone,[0,0,0]);M(s.head,R(0.95,0.2,0.36,{seed:16,r:0.08}),dark,[0,0.2,0.26]);M(s.head,R(0.7,0.24,0.5,{seed:17}),dark,[0,-0.3,0.12]);
+  M(s.head,G3.rb(0.5,0.07,0.06,0.03),C,[0,0.05,0.38],{ol:0});for(const x of [-0.17,0.17])M(s.head,G3.ell(0.07,0.05,0.04),C,[x,0.05,0.39],{ol:0});
+  rune(s.head,[[0,0.36,0.3],[0,0.24,0.42]],0.045);
+  // braccia lunghe da gorilla: spallaccio, braccio, gomito, avambraccio enorme, pugno con ceppo e catena
+  s.arms=[];for(const sd of [-1,1]){const pv=new THREE.Group();pv.position.set(sd*1.42,3.05,0.05);T.add(pv);
+    M(pv,R(1.05,0.78,1.1,{seed:20+sd,amp:0.06}),stone,[sd*0.08,0.08,0]);M(pv,R(0.7,0.3,0.75,{seed:22+sd}),pale,[sd*0.2,0.45,0]);
+    M(pv,R(0.6,0.95,0.62,{seed:24+sd}),dark,[0,-0.62,0]);M(pv,R(0.55,0.4,0.55,{seed:26+sd}),stone,[0,-1.12,-0.04]);
+    M(pv,R(0.82,1.0,0.82,{seed:28+sd,taper:1.18}),stone,[0,-1.62,0.04]);rune(pv,[[-0.18,-1.35,0.46],[0,-1.55,0.47],[0.18,-1.35,0.46],[0,-1.85,0.47]],0.05);
+    M(pv,R(1.0,0.82,1.02,{seed:30+sd,amp:0.06}),dark,[0,-2.42,0.06]);for(const t of [-0.3,-0.1,0.1,0.3])M(pv,R(0.22,0.24,0.24,{seed:t*7+sd}),stone,[t,-2.35,0.55]);
+    M(pv,G3.hring(0.5,0.07,1),iron,[0,-2.0,0.04]);M(pv,G3.hring(0.5,0.05,1),iron,[0,-2.12,0.04]);
+    let lk=[sd*0.12,-2.1,-0.48];for(let i=0;i<4;i++){M(pv,G3.tor(0.075,0.025,TAU,16,6),iron,[lk[0],lk[1]-i*0.13,lk[2]-i*0.03],{r:[0,i%2?Math.PI/2:0,0],ol:0.01});}
+    s.arms.push(pv);}
+  return s;}},
 {name:'Golem di cristallo',desc:'Roccia scura con grappoli di cristalli che crescono da spalle e schiena e brillano.',
  make(d){const s=enemyShell(4),K=kitFor(s),rock=K.m(shadeC(d.color,0.55)),stone=K.m(d.color);s.core=coreM(d);const cr=toon(0xffffff,{emissive:d.color,emissiveIntensity:0.9});s.mats.push(cr);s.legs=[];s.noBar=true;s.torso=new THREE.Group();s.body.add(s.torso);
   for(const x of [-0.55,0.55]){const pv=new THREE.Group();pv.position.set(x,1.15,0);s.body.add(pv);M(pv,G3.ell(0.4,0.55,0.42),rock,[0,-0.5,0]);s.legs.push(pv);}
@@ -4921,7 +4960,7 @@ function plungeImpact(){
   case 'astromante':hit(2.6,1);for(let i=0;i<4;i++)pProj({x,y:y+1,vx:(i<2?-1:1)*rand(4,8),vy:rand(8,12),kind:'bolt',col,sz:0.8,dmg:weaponDamage()*0.6,homing:7,life:2});break;
   case 'negromante':fxSpikes(x,y,0,0xe6dcc6,10,2,1,0.8);{const n=hit(2.8,1,{effect:'vampiro'});if(n)heal(n*2);}break;
   case 'paladino':fxPillar(x,y,0,col,1.1,7,0.6);hit(3,1.2,{kb:10});heal(Math.round(S.maxHp*0.03));break;
-  case 'arciere':hit(2,0.8);for(let i=0;i<6;i++)later(0.05*i,()=>pProj({x:x+rand(-2.5,2.5),y:CEIL,vx:0,vy:-32,kind:'arrow',w:0.3,h:0.8,dmg:weaponDamage()*0.6,life:0.7}));break;
+  case 'arciere':{hit(2,0.8);const tg=nearest(4,x,6).map(e=>e.x);for(let i=0;i<16;i++)later(0.035*i,()=>pProj({x:(i<tg.length*2?tg[i%tg.length]+rand(-0.5,0.5):x+rand(-3.4,3.4)),y:CEIL+rand(0,1.5),vx:rand(-1,1),vy:-34,kind:'arrow',w:0.3,h:0.8,dmg:weaponDamage()*0.45,life:0.75}));break;}   // pioggia fitta: 16 frecce, le prime puntano i nemici vicini
   case 'samurai':hit(2.4,1.3,{crit:Math.random()<0.6});fxSlash(x,y+0.9,0,col,1.6,0,0.8);fxSlash(x,y+0.9,0,col,1.6,0,-0.8);break;
   case 'monaco':hit(3.4,1.1,{kb:14,ky:6});for(const s of [-1,1])fxRing(x+s*0.8,y+0.9,0,col,1.6,0.4,true);break;
   default:hit(2.4,1);
@@ -5287,6 +5326,12 @@ function dragonImpact(){
 /* =========================================================
    XP DI CLASSE E BENDE
    ========================================================= */
+// in co-op l'esperienza va solo a chi ha dato il colpo finale: l'host la manda al giocatore giusto, gli ospiti la ricevono dall'host
+function xpToKiller(e,x,y,v){
+  if(G.scene==='tower'&&!G.pvp&&MP.live()){
+    if(e.net)return;
+    if(MP.host){const by=e.lastBy!=null?e.lastBy:MP.myPid;if(by!==MP.myPid){if(MP.players.has(by))MP.sendTo(by,{t:'xp',f:G.floor,x:r2(x),y:r2(y),v:Math.round(v*10)/10});return;}}}
+  dropXP(x,y,v);}
 function dropXP(x,y,val){const n=Math.min(6,Math.max(1,Math.ceil(val/3)));
   for(let i=0;i<n;i++){const m=new THREE.Mesh(xpGeo,xpMat);m.add(new THREE.Mesh(xpHaloGeo,xpHalo));m.position.set(x,y,0.4);scene.add(m);
     G.orbs.push({x,y,vx:rand(-4.5,4.5),vy:rand(5,9),t:0,v:val/n,m});}}
@@ -5333,7 +5378,14 @@ function spawnBandage(x,y){const g=new THREE.Group();
 function placeBandage(){
   let x,y;if(G.solids.length&&Math.random()<0.6){const s=pick(G.solids);x=rand(s.x1+0.6,s.x2-0.6);y=s.y2;}else{x=rand(-HALF+6,GATE_X-2);y=0;}
   spawnBandage(x,y);}
-function updPickups(dt){
+// durante i guardiani cadono più bende: al 75%, 50% e 25% di vita del boss e ogni 18 s se a terra non ce n'è nessuna
+function bossBandage(){const B=G.boss,away=B?(P.x<B.x?-1:1):-P.face,x=clamp(P.x+away*rand(1.5,3.5),-HALF+2,GATE_X-2);
+  spawnBandage(x,0);burst(x,0.6,0x7fe08a,16,4,3,0.3);popNum(x,1.8,'Una benda!','info');}
+function bossBandTick(dt){const B=G.boss;if(!B||B.dead||G.scene!=='tower'||G.tutorial||G.pvp||!(B.maxHp>0)){G.bossBandT=0;return;}
+  const fr=B.hp/B.maxHp,th=[0.75,0.5,0.25];B.bandN=B.bandN||0;
+  while(B.bandN<th.length&&fr<th[B.bandN]){B.bandN++;bossBandage();}
+  G.bossBandT=(G.bossBandT||0)+dt;if(G.bossBandT>18){G.bossBandT=0;if(!G.pickups.some(p=>!p.done))bossBandage();}}
+function updPickups(dt){bossBandTick(dt);
   for(const p of G.pickups){p.t+=dt;p.m.position.y=p.y+0.45+Math.sin(p.t*3)*0.12;p.m.rotation.y+=dt*1.6;
     if(!P.dead&&P.hp<S.maxHp&&Math.abs(P.x-p.x)<0.9&&P.y<p.y+1.2&&P.y+P.h>p.y){p.done=true;const h=Math.round(S.maxHp*0.25);heal(h);sfx('bandage');burst(p.x,p.y+0.5,0x7fe08a,14,4,3,0.3);}}
   for(let i=G.pickups.length-1;i>=0;i--)if(G.pickups[i].done){scene.remove(G.pickups[i].m);G.pickups.splice(i,1);}
@@ -5356,6 +5408,7 @@ function spawnEnemy(type,o){
     face:x<P.x?1:-1,state:(!boss&&A.fly)?'hover':'move',t:0,cd:rand(1,2.2),touchCd:0,spawnT:boss?1.3:0.7,kbT:0,flash:0,warn:0,slowT:0,burn:null,flinch:0,landT:0,castT:0,walk:0,stunT:0,immT:0,
     fly:!!A.fly,ghost:boss||!!A.fly||type==='brute'||type==='minotaur',isEnemy:true,onGround:false,hopT:rand(0.4,1),seed:Math.random()*10,dead:false,lastDir:1,
     elite,summon:!!o.summon,sc:elite?1.2:1,color:boss?def.color:A.color,eff:boss?def.eff:null,phase:1,blockN:0,adds:0};
+  if(G.event==='giganti'&&!boss&&G.scene==='tower'){e.sc*=1.4;e.w*=1.25;e.h*=1.3;if(!o.summon){e.hp*=1.9;e.dmg*=1.2;e.speed*=0.85;}}   // piano dei giganti
   e.spawnMax=e.spawnT;e.maxHp=e.hp;
   e.parts=boss?bossParts(def):enemyParts(type);
   if(elite)for(const m of e.parts.mats){m.userData.baseE=ELITE_GOLD;m.userData.baseI=0.25;}
@@ -5391,7 +5444,6 @@ function hitEnemy(e,base,dir,o){
   if(o.melee){G.hitstop=Math.max(G.hitstop,crit?0.07:0.04);sfx(o&&o.melee?((WSND[G.weapon.type]||{}).hit||'hit'):'hit');if(crit)sfx('crit');let ls=S.lifesteal+(P.rageT>0?3:0);if(S.lsUp>0&&G.time>=(P.lsNext||0)){ls+=S.lsUp;P.lsNext=G.time+0.5;}if(ls>0)heal(ls,true);}
   if(crit)shake(0.18);
   if(o.effect)applyEffect(e,o.effect,base,dir,o);
-  if(e.type==='boss'&&!e.dropped&&e.hp<e.maxHp*0.5){e.dropped=true;spawnBandage(clamp(P.x-P.face*2,-HALF+2,GATE_X-2),0);popNum(P.x,P.y+2.6,'Una benda!','info');}
   if(e.hp<=0){e.critKill=crit;killEnemy(e);}
   if(G.echo){G.echo=false;if(!e.dead)hitEnemy(e,base*0.6,dir,{noCombo:true,kb:2});}
   return true;
@@ -5416,8 +5468,9 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   const boss=e.type==='boss',bony=e.type==='guard'||e.type==='archer'||e.arch==='skelKing';
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
-  if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;dropXP(e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1));}
+  if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;xpToKiller(e,e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1)*(boss?1:runXpMul()));}
   if(!boss&&!e.summon&&Math.random()<0.03)spawnBandage(e.x,0);
+  if(e.elite&&!e.summon&&G.scene==='tower'&&!G.pvp&&novice()&&Math.random()<0.4){const f=G.floor,o=Math.random()<0.4?makeWeapon(G.cls.weapon,rollRarity(f,1),f):makeGear(pick(Object.keys(GEAR)),rollRarity(f,1),f);dropItem(o,e.x,e.y+e.h*0.6,0,1);popNum(e.x,e.y+e.h+0.6,'Bottino!','xp');}
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
   e.parts.bar.visible=false;
@@ -6114,14 +6167,14 @@ function updChests(dt){
 }
 function openChest(c){
   if(c.open)return;c.open=true;STATS.chests++;sfx('chest');burst(c.x,c.y+0.8,0xffd27a,24,5,4,0.4);$('prompt').hidden=true;$('bUse').hidden=true;
-  const f=G.floor,r=Math.random(),minR=c.boss?2:0,loot=[];if(Math.random()<(c.boss?0.3:0.06))addFragment(f);
-  if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const n=1+Math.floor(f/50),mR=Math.min(maxRarity(f),1+Math.floor(f/30));
+  const f=G.floor,r=c.bonus?rand(0.56,1):Math.random(),minR=c.boss?2:c.bonus?1:0,loot=[];if(Math.random()<(c.boss?0.3:0.06))addFragment(f);
+  if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const nv=novice(),n=1+Math.floor(f/50)+(nv?1:0),mR=Math.min(lootMaxR(f),1+Math.floor(f/30));
     dropXP(c.x,c.y+1.2,40+f*6);
-    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0));loot.push(Math.random()<0.5?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
+    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0)),wp=nv&&n>1?i===0:Math.random()<0.5;loot.push(wp?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
     burst(c.x,c.y+1,0xffd27a,40,8,6,0.4);shake(0.3);if(f>=TOP_FLOOR)winGame();}
-  else if(r<0.55){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
-  else if(r<0.85)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,minR),f));
-  else loot.push(makeWeapon(G.cls.weapon,rollRarity(f,minR),f));
+  else if(r<(novice()?0.25:0.55)){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
+  else if(r<0.75)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,novice()?1:minR),f));
+  else loot.push(makeWeapon(G.cls.weapon,rollRarity(f,novice()?1:minR),f));
   loot.forEach((o,i)=>dropItem(o,c.x,c.y+0.9,i,loot.length));
 }
 /* ---------- Oggetti a terra: escono dal forziere, cadono e si raccolgono passandoci sopra (finiscono nell'armadio) ---------- */
@@ -6325,7 +6378,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.24)placeBandage();if(Math.random()<0.08)placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.24)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -6454,8 +6507,11 @@ $('winCellar').onclick=()=>{sfx('ui');$('win').hidden=true;G.state='menu';fadeTh
    PREMI: potenziamenti e armi
    ========================================================= */
 // le rarità alte compaiono solo dai piani indicati da maxRarity
-function rollRarity(f,minR){const mx=maxRarity(f);minR=Math.min(minR||0,mx);
-  const w=[55,28+f*0.2,12+f*0.5,4+f*0.35,1+f*0.2,0.7,0.2].map((v,i)=>i<minR||i>mx?0:v);
+// aiuto ai nuovi giocatori: sotto il piano 20 (o con la classe sotto il livello 20) i bottini sono più forti e frequenti
+function novice(){return G.scene==='tower'&&!G.tutorial&&(G.floor<20||(G.cls&&prog(G.cls.id).lv<20));}
+const lootMaxR=f=>novice()&&f<20?Math.max(maxRarity(f),f>=12?3:f>=6?2:1):maxRarity(f);
+function rollRarity(f,minR){const mx=lootMaxR(f),nv=novice();minR=Math.min(minR||0,mx);
+  const w=[nv?30:55,28+f*0.2,(12+f*0.5)*(nv?1.8:1),(4+f*0.35)*(nv?2:1),1+f*0.2,0.7,0.2].map((v,i)=>i<minR||i>mx?0:v);
   let r=Math.random()*w.reduce((a,b)=>a+b,0);for(let i=0;i<w.length;i++){if((r-=w[i])<0)return i;}return mx;}
 function rollUpgrades(n){
   const list=UPG.filter(u=>(G.lv[u.id]||0)<u.max),weight=u=>u.id==='heal'?(P.hp>=S.maxHp*0.95?0.08:P.hp<S.maxHp*0.5?2.2:0.5):1,out=[];   // a vita piena la Pozione non serve: non esce quasi mai
@@ -7032,16 +7088,16 @@ const joy=$('joy');let joyId=null;
 function joySet(e){const r=joy.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2,R=r.width*0.42;
   let dx=e.clientX-cx,dy=e.clientY-cy;const l=Math.hypot(dx,dy);if(l>R){dx*=R/l;dy*=R/l;}
   $('joyKnob').style.transform=`translate(${dx/(r.width/joy.offsetWidth)}px,${dy/(r.width/joy.offsetWidth)}px)`;
-  const nx=dx/R,ny=dy/R,hor=Math.abs(nx)>0.35&&Math.abs(nx)>Math.abs(ny)*0.75;   // in diagonale verso l'alto/basso conta solo la mira
+  const nx=dx/R,ny=dy/R,hor=Math.abs(nx)>0.28&&Math.abs(nx)>Math.abs(ny)*0.5;   // si cammina anche in diagonale; quasi in verticale conta solo la mira
   input.left=hor&&nx<0;input.right=hor&&nx>0;input.up=ny<-0.5;input.down=ny>0.55;}
 function joyOff(){joyId=null;input.left=input.right=input.up=input.down=false;$('joyKnob').style.transform='';joy.classList.remove('on');}
 joy.addEventListener('pointerdown',e=>{if(G.tedit)return;e.preventDefault();audioInit();joyId=e.pointerId;joy.classList.add('on');try{joy.setPointerCapture(e.pointerId);}catch(_){}joySet(e);});
 joy.addEventListener('pointermove',e=>{if(e.pointerId===joyId)joySet(e);});
-['pointerup','pointercancel','lostpointercapture'].forEach(t=>joy.addEventListener(t,e=>{if(e.pointerId===joyId)joyOff();}));
+['pointerup','pointercancel'].forEach(t=>joy.addEventListener(t,e=>{if(e.pointerId===joyId)joyOff();}));   // niente lostpointercapture: su iPhone a volte arriva a dito ancora giù e fermava l'eroe
 function bindBtn(el,a){
   el.addEventListener('pointerdown',e=>{if(G.tedit)return;e.preventDefault();audioInit();try{el.setPointerCapture(e.pointerId);}catch(_){}press(a,true);el.classList.add('on');});
   const off=()=>{press(a,false);el.classList.remove('on');};
-  ['pointerup','pointercancel','lostpointercapture'].forEach(t=>el.addEventListener(t,off));el.addEventListener('contextmenu',e=>e.preventDefault());
+  ['pointerup','pointercancel'].forEach(t=>el.addEventListener(t,off));el.addEventListener('contextmenu',e=>e.preventDefault());
 }
 bindBtn($('bJump'),'jump');(function(){   // mini joystick sul tasto attacco
   const el=$('bAtk'),knob=document.createElement('i');knob.className='atk-knob';el.appendChild(knob);let id=null,sx=0,sy=0,dec=false,tm=0,last='';
@@ -7650,18 +7706,18 @@ function mpHostWire(c){
     MP.conns=MP.conns.filter(x=>x.c.open);MP.conns.push({c,pid});
     const names={0:MP.name()};for(const [k,R] of MP.players)names[k]=R.name;
     c.send({t:'welcome',pid,seed:MP.seed,names,re:back});mpUi();});
-  c.on('data',m=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;try{mpMsg(m,x.pid);}catch(e){console.warn('co-op',e);}});
+  c.on('data',m=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;x.rx=performance.now();if(m&&m.t==='ka')return;try{mpMsg(m,x.pid);}catch(e){console.warn('co-op',e);}});
   c.on('close',()=>{const x=MP.conns.find(x=>x.c===c);if(!x)return;MP.conns=MP.conns.filter(y=>y!==x);const pid=x.pid;
     if(x.bye){mpPlayerGone(pid);MP.bcast({t:'leave',pid});return;}
-    const R=MP.players.get(pid);toast(`${(R&&R.name)||'Un compagno'} ha perso la connessione`,'Gli tengo il posto per un minuto');
-    MP.grace.set(pid,setTimeout(()=>{MP.grace.delete(pid);mpPlayerGone(pid);MP.bcast({t:'leave',pid});},60000));mpUi();});
+    const R=MP.players.get(pid);toast(`${(R&&R.name)||'Un compagno'} ha perso la connessione`,'Gli tengo il posto per due minuti');
+    MP.grace.set(pid,setTimeout(()=>{MP.grace.delete(pid);mpPlayerGone(pid);MP.bcast({t:'leave',pid});},120000));mpUi();});
   c.on('error',()=>{});}
 function mpJoin(tries){tries=tries||0;const code=($('coopCode').value||'').trim().toUpperCase().replace(/[^A-Z0-9]/g,'');$('coopCode').value=code;if(code.length<4){mpStatus('Scrivi il codice che ti ha mandato il tuo amico.');return;}
   mpLeave(true);store.set('mpname',MP.name());mpStatus('Mi collego…');
   mpLib(()=>{MP.host=false;MP.code=code;const p=new Peer();MP.peer=p;
     p.on('open',()=>{const c=p.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});
       c.on('open',()=>{MP.conn=c;MP.on=true;c.send({t:'hi',n:MP.name()});mpUi();});
-      c.on('data',m=>{try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});
+      c.on('data',m=>{MP.rx=performance.now();if(m&&m.t==='ka')return;try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});
       c.on('close',()=>mpLost(c));c.on('error',()=>{});
       setTimeout(()=>{if(!MP.live()&&!MP.reco&&MP.peer===p){if(tries<4){mpStatus(`Riprovo a collegarmi (${tries+2}/5)…`);mpJoin(tries+1);}else mpStatus('Non riesco a collegarmi. Controlla il codice; se è giusto, il tuo amico deve tenere il gioco aperto e in primo piano.');}},8000);});
     p.on('error',e=>{if(MP.peer!==p)return;if(tries<4){mpStatus(`Cerco la stanza, riprovo (${tries+2}/5)…`);setTimeout(()=>{if(MP.peer===p&&!MP.live())mpJoin(tries+1);},3000);return;}mpStatus(e&&e.type==='peer-unavailable'?'Nessuna partita con questo codice. Controlla che sia scritto giusto e chiedi a chi l\'ha creata di tornare nel gioco: la stanza si riapre da sola.':'Errore di rete: '+((e&&e.type)||'sconosciuto'));});});}
@@ -7676,14 +7732,21 @@ function mpDrop(){const wasLive=MP.on;MP.on=false;MP.conn=null;for(const R of MP
   mpUi();}
 function mpLost(c){if(MP.conn!==c)return;MP.conn=null;MP.reco={t0:performance.now(),code:MP.code,pid:MP.myPid};toast('Connessione persa','Provo a rientrare nel gruppo…');mpUi();mpRetry();}
 function mpRetry(){const R=MP.reco;if(!R)return;clearTimeout(MP.recoTm);
-  if(performance.now()-R.t0>90000){MP.reco=null;try{MP.peer&&MP.peer.destroy();}catch(e){}MP.peer=null;mpDrop();return;}
+  if(performance.now()-R.t0>150000){MP.reco=null;try{MP.peer&&MP.peer.destroy();}catch(e){}MP.peer=null;mpDrop();return;}
   try{MP.peer&&MP.peer.destroy();}catch(e){}const p=new Peer();MP.peer=p;
   p.on('open',()=>{if(MP.peer!==p||!MP.reco)return;const c=p.connect(PEER_PREFIX+R.code,{reliable:true,serialization:'json',metadata:{re:R.pid}});
     c.on('open',()=>{if(MP.peer!==p||!MP.reco)return;MP.conn=c;MP.on=true;MP.reco=null;clearTimeout(MP.recoTm);c.send({t:'hi',n:MP.name(),re:1});toast('Di nuovo nel gruppo','Connessione ripresa');sfx('lvl');mpUi();});
-    c.on('data',m=>{try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});c.on('close',()=>mpLost(c));c.on('error',()=>{});});
+    c.on('data',m=>{MP.rx=performance.now();if(m&&m.t==='ka')return;try{mpMsg(m,0);}catch(e){console.warn('co-op',e);}});c.on('close',()=>mpLost(c));c.on('error',()=>{});});
   p.on('error',()=>{});MP.recoTm=setTimeout(mpRetry,6000);}
 function mpBye(){const m={t:'bye'};try{MP.conn&&MP.conn.open&&MP.conn.send(m);}catch(e){}for(const x of MP.conns){try{x.c.open&&x.c.send(m);}catch(e){}}}
-addEventListener('pagehide',mpBye);
+// NIENTE "bye" su pagehide: su iPhone scatta anche solo cambiando app un attimo e scioglieva il gruppo.
+// Se la pagina si chiude davvero la connessione cade da sola e scatta l'attesa per il rientro.
+// Battito: ogni 2 s un messaggio leggero; se da un compagno non arriva nulla per troppo tempo (connessione "zombie" dopo un cambio app)
+// la si chiude e si rientra da soli nel gruppo, tenendo il posto.
+setInterval(()=>{if(document.hidden||!MP.on)return;const now=performance.now();
+  if(MP.host){for(const x of MP.conns){if(!x.c.open)continue;try{x.c.send({t:'ka'});}catch(e){}if(x.rx&&now-x.rx>25000){x.rx=0;try{x.c.close();}catch(e){}}}}
+  else if(MP.conn&&MP.conn.open){try{MP.conn.send({t:'ka'});}catch(e){}if(MP.rx&&now-MP.rx>12000&&now-(MP.visT||0)>4000){const c=MP.conn;MP.rx=0;try{c.close();}catch(e){}mpLost(c);}}},2000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden){MP.visT=performance.now();MP.rx=performance.now();for(const x of MP.conns)x.rx=performance.now();}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&MP.reco)mpRetry();});
 function mpLeave(quiet){mpBye();MP.reco=null;clearTimeout(MP.recoTm);for(const t of MP.grace.values())clearTimeout(t);MP.grace.clear();const c=MP.conn,p=MP.peer,cs=MP.conns;MP.on=false;MP.conn=null;MP.conns=[];MP.peer=null;MP.code='';
   try{c&&c.close();}catch(e){}for(const x of cs){try{x.c.close();}catch(e){}}try{p&&p.destroy();}catch(e){}
@@ -7709,6 +7772,7 @@ function mpMsg(m,from){
   case 'e':if(!MP.host)mpApplySnap(m);break;
   case 'hit':if(MP.host){MP.hitFrom=from;try{mpRemoteHit(m);}finally{MP.hitFrom=null;}}break;
   case 'hurt':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)hurtPlayer(m.d,m.fx,m.eff);break;
+  case 'xp':if(!MP.host&&G.scene==='tower'&&m.f===G.floor&&!P.dead)dropXP(m.x,m.y,m.v);break;
   case 'proj':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_spawnProj(Object.assign({},m.o));break;
   case 'warn':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_addWarn(m.x,m.w,m.d,()=>{});break;
   case 'pil':if(!MP.host&&G.scene==='tower'&&m.f===G.floor){const x=m.x;lightning(x,CEIL,x,0);burst(x,0.3,m.c,16,5,4,0.4);sfx('zap');shake(0.2);
@@ -8486,12 +8550,16 @@ const _hpF=_hurtPlayer;
 setInterval(()=>{if(G.boss&&(!bossFight||bossFight.e!==G.boss))bossFight={e:G.boss,hit:false,hp:P.hp};if(bossFight&&P.hp<bossFight.hp)bossFight.hit=true;if(bossFight)bossFight.hp=P.hp;},100);
 
 /* ---------- eventi casuali nei piani ---------- */
-const EVENTS={buio:{n:'Piano buio',d:'Vedi solo intorno a te'},maledetto:{n:'Piano maledetto',d:'Nemici più forti, esperienza doppia'},mercante:{n:'Mercante errante',d:'Sconfiggi i nemici: ti aspetta oltre il cancello'}};
+const EVENTS={buio:{n:'Piano buio',d:'Vedi solo intorno a te'},maledetto:{n:'Piano maledetto',d:'Nemici più forti, esperienza doppia'},mercante:{n:'Mercante errante',d:'Sconfiggi i nemici: ti aspetta oltre il cancello'},
+  tempo:{n:'Corsa contro il tempo',d:'Ripulisci il piano prima che scada il tempo: forziere in premio'},ladro:{n:'Ladro di tesori',d:'Un folletto carico d\'oro scappa: prendilo prima che fugga'},
+  meteore:{n:'Pioggia di meteore',d:'Massi infuocati dal soffitto: colpiscono anche i nemici'},giganti:{n:'Piano dei giganti',d:'Meno nemici ma enormi: esperienza doppia'},
+  furia:{n:'Furia',d:'Colpisci più forte, ma arrivano più nemici'},campione:{n:'Campione del piano',d:'Un élite con nome custodisce un tesoro'}};
 let merchant=null;
 const _sfF=startFloor;
 startFloor=function(f){
   G.event=null;if(merchant){if(merchant.g.parent)merchant.g.parent.remove(merchant.g);merchant=null;}
-  const roll=()=>{const r=Math.random();return r<0.05?'buio':r<0.10?'maledetto':r<0.15?'mercante':null;};
+  // circa un piano su due ha un evento, così le scalate non sono tutte uguali
+  const roll=()=>{const r=Math.random();return r<0.05?'buio':r<0.10?'maledetto':r<0.15?'mercante':r<0.23?'tempo':r<0.30?'ladro':r<0.36?(f>=4?'meteore':'tempo'):r<0.41?(f>=5?'giganti':'ladro'):r<0.47?'furia':r<0.53?(f>=6?'campione':'furia'):null;};
   if(!G.tutorial&&!G.pvp&&!G.horde&&f>=3&&!isBossFloor(f)&&!isSafeFloor(f))G.event=MP.live()?withSeed(MP.seed*7+f*13,roll):roll();
   _sfF(f);
   $('darkFx').hidden=G.event!=='buio';$('curseFx').hidden=G.event!=='maledetto';
@@ -9732,10 +9800,23 @@ addEventListener('touchend',touchEnd,{passive:true,capture:true});addEventListen
 addEventListener('pagehide',releaseTouchControls);addEventListener('blur',releaseTouchControls);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)releaseTouchControls();});
 const _ciT=clearInput;clearInput=function(){_ciT();if(joyId!==null){joyId=null;$('joyKnob').style.transform='';joy.classList.remove('on');}joyTid=null;};
+// TOCCHI "QUASI" GIUSTI: un dito che cade poco fuori da un tasto (o vicino al joystick) vale come se l'avesse preso.
+// Il tocco viene girato al controllo più vicino; anche movimenti e rilascio di quel dito gli vengono passati.
+const TCTL=['joy','bAtk','bJump','bDash','bAbil','bAbil2','bAbil3'],TFWD=new Map();
+function tFwd(el,e,type){const ev=new PointerEvent(type,{pointerId:e.pointerId,pointerType:'touch',isPrimary:e.isPrimary,clientX:e.clientX,clientY:e.clientY,bubbles:true,cancelable:true,button:0,buttons:type==='pointerdown'||type==='pointermove'?1:0});ev.__fwd=true;el.dispatchEvent(ev);}
+addEventListener('pointerdown',e=>{
+  if(e.pointerType!=='touch'||e.__fwd||G.tedit||!isTouch||!(G.state==='play'||G.state==='cellar')||$('touch').hidden)return;
+  const t=e.target;if(t&&t.closest&&t.closest('#joy,.tbtn,#abilBar,#bUse,button,a,input,select,textarea,.screen,[data-ed]'))return;
+  let best=null,bd=1e9;for(const id of TCTL){const el=$(id);if(!el)continue;const r=el.getBoundingClientRect();if(!r.width||!r.height)continue;
+    const d=Math.hypot(e.clientX-(r.left+r.width/2),e.clientY-(r.top+r.height/2))-r.width/2,lim=id==='joy'?80:34;if(d<lim&&d<bd){bd=d;best=el;}}
+  if(!best)return;e.preventDefault();e.stopPropagation();TFWD.set(e.pointerId,best);if(best===joy)joyTid=null;tFwd(best,e,'pointerdown');},{capture:true});
+for(const ty of ['pointermove','pointerup','pointercancel'])addEventListener(ty,e=>{if(e.__fwd)return;const el=TFWD.get(e.pointerId);if(!el)return;
+  if(ty!=='pointermove')TFWD.delete(e.pointerId);if(e.target===el||(e.target&&el.contains&&el.contains(e.target)))return;tFwd(el,e,ty);},{capture:true});
 // controllo di sicurezza: joystick "premuto" ma nessun dito sullo schermo da un attimo → rilascio
 let lastTouchAt=0,touchesNow=0;
 for(const ev of ['touchstart','touchmove','touchend','touchcancel'])addEventListener(ev,e=>{touchesNow=e.touches.length;lastTouchAt=performance.now();},{passive:true,capture:true});
-setInterval(()=>{if(!isTouch)return;if(touchesNow===0&&performance.now()-lastTouchAt>150&&(joyId!==null||input.left||input.right||input.atkHeld)){joyOff();input.atkHeld=false;input.atkHold=null;
+setInterval(()=>{if(!isTouch)return;if(touchesNow===0&&performance.now()-lastTouchAt>150&&(joyId!==null||input.left||input.right||input.atkHeld||input.jumpHeld||document.querySelector('#touch .tbtn.on'))){joyOff();input.atkHeld=false;input.atkHold=null;input.jumpHeld=false;TFWD.clear();
+  for(const b of document.querySelectorAll('#touch .tbtn.on'))b.classList.remove('on');
   for(const k of document.querySelectorAll('.atk-knob'))k.style.transform='';const b=$('bAtk');if(b)b.classList.remove('on');}},120);
 
 /* =========================================================
@@ -9996,7 +10077,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794175128';
+const BUILD_ID='1794660905';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10469,6 +10550,75 @@ if(STATS.best)$('opRecord').textContent='Record: piano '+STATS.best;
 if(document.fonts&&document.fonts.load)document.fonts.load('170px Bungee').then(()=>{drawFloorNumber(G.floor);ctrLast=null;}).catch(()=>{});
 G.fade=1;G.fadeTarget=0;
 if(/debug/.test(location.search+location.hash))window.__T={startBossIntro,finishBossIntro,showTip,gameOver,collectAllItems,dropItem,towerMood,MUS,INV,openWardrobe,applyLoadout,input,MOVES,scene,wallMat,G,P,S,spawnEnemy,startFloor,openChest,prog,useAbility2,spendPoint,STATS,closeLoot,startRun,killEnemy,placeChest,setClass,hitEnemy,pause,resume,CLASSES,cineChoose,ctut:()=>G.ctut&&G.ctut.step,tut:()=>G.tut&&G.tut.step,openWardrobe2:()=>openWardrobe(),useSlot,startAttack,LV_ABIL3,FXL,closeWardrobe,hurtPlayer,UNL,openSelect,renderSelect,addFragment,cage:()=>G.cage&&[G.cage.hits,G.cage.broken,G.cage.c.id],openSafePed,closeSafePed,isSafeFloor,xrayStart,XR,hero,bedInfo:()=>[!!bedWpn,bedWpn&&bedWpn.visible,bedPicked,hero.wpnF&&hero.wpnF.visible]};
+
+/* =========================================================
+   EVENTI NEI PIANI v2: corsa contro il tempo, ladro di tesori, pioggia di meteore,
+   piano dei giganti, furia, campione del piano (in co-op li gestisce chi ha creato la partita)
+   ========================================================= */
+function runXpMul(){return G.event==='giganti'&&G.scene==='tower'?2:1;}
+const evHud=document.createElement('div');evHud.id='evHud';evHud.hidden=true;document.body.appendChild(evHud);
+{const st=document.createElement('style');st.textContent='#evHud{position:fixed;top:calc(58px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:40;pointer-events:none;font-family:var(--f-display,inherit);font-size:15px;letter-spacing:.04em;color:#ffd27a;background:rgba(12,10,18,.72);border:2px solid rgba(255,210,122,.45);padding:4px 14px;border-radius:10px;white-space:nowrap}#evHud.warn{color:#ff6a5a;border-color:rgba(255,106,90,.6);animation:evPulse .5s ease-in-out infinite alternate}@keyframes evPulse{to{transform:translateX(-50%) scale(1.08)}}';document.head.appendChild(st);}
+const evSolo=()=>MP.host||!MP.live();
+function evHudSet(t,warn){if(evHud.textContent!==t)evHud.textContent=t;if(evHud.hidden)evHud.hidden=false;evHud.classList.toggle('warn',!!warn);}
+setInterval(()=>{if((G.scene!=='tower'||!G.event||G.state==='over')&&!evHud.hidden)evHud.hidden=true;},400);
+const _sfEv=startFloor;
+startFloor=function(f){G.evT=null;G.evDone=false;G.evSpawned=false;G.evStart=G.time;G.evMt=2.5;G.evThief=null;evHud.hidden=true;
+  _sfEv(f);if(G.event==='tempo')G.evT=Math.round(20+2.6*Math.max(4,G.queue.length));};
+const _bqEv=buildQueue;
+buildQueue=function(f){const q=_bqEv(f);if(!q.length||q[0]==='boss')return q;
+  if(G.event==='giganti')return q.slice(0,Math.max(3,Math.ceil(q.length*0.55)));
+  if(G.event==='furia'){const n=Math.round(q.length*0.6);for(let i=0;i<n;i++)q.push(q[Math.floor(Math.random()*q.length)]);}
+  return q;};
+const _hitEv=hitEnemy;
+hitEnemy=function(e,base,dir,o){if(G.event==='furia'&&G.scene==='tower'&&e&&e.pvp==null&&base>0&&!(o&&o.env))base*=1.5;return _hitEv(e,base,dir,o);};
+// ladro e campione si riconoscono anche dagli ospiti grazie al nome che arriva con i nemici
+const isThief=e=>e.thief||e.ename==='Ladro di tesori',isChamp=e=>e.champ||/ il Campione$/.test(e.ename||'');
+function goldTint(e,k){for(const m of e.parts.mats){m.userData.baseE=ELITE_GOLD;m.userData.baseI=k;}}
+function spawnThief(){let x=P.x<0?GATE_X-4:-HALF+4;const e=spawnEnemy('imp',{x});if(!e)return;
+  e.thief=true;e.ename='Ladro di tesori';e.hp*=3;e.maxHp=e.hp;e.speed=7.2;e.escT=17;e.sc=1.15;goldTint(e,0.55);G.evThief=e;sfx('legend');popNum(x,2.6,'Prendilo!','xp');}
+function spawnChamp(){const f=G.floor,pool=Object.keys(TYPES).filter(k=>TYPES[k].from<=f&&!TYPES[k].fly&&k!=='imp'&&k!=='fungus');const t=pick(pool.length?pool:['guard']);
+  const e=spawnEnemy(t,{x:P.x<0?GATE_X-5:-HALF+5});if(!e)return;
+  e.elite=true;e.champ=true;e.ename=pick(EL_NAMES)+' il Campione';e.emod=null;e.hp*=3.4;e.maxHp=e.hp;e.dmg*=1.3;e.sc=1.4;e.w*=1.15;e.h*=1.15;goldTint(e,0.35);sfx('roar');}
+function meteorDrop(){const pl=[];if(!P.dead)pl.push(P.x);for(const R of MP.players.values())if(R.sc==='tower'&&R.fl===G.floor&&!R.dead)pl.push(R.x);
+  const x=clamp(pl.length&&Math.random()<0.45?pick(pl)+rand(-1.2,1.2):rand(-HALF+2,GATE_X-2),-HALF+1.5,GATE_X-1.5),dmg=8+G.floor*0.9;
+  addWarn(x,2.4,1.1,()=>{spawnProj({owner:'e',x,y:CEIL,vx:0,vy:-30,w:1.2,h:1.2,dmg,life:2,kind:'meteor'});
+    setTimeout(()=>{if(G.scene!=='tower')return;const hf=MP.hitFrom;if(MP.live())MP.hitFrom=-1;   // i massi non danno esperienza a nessuno
+      try{for(const e of foes())if(Math.abs(e.x-x)<1.7+e.w/2&&e.y<2.6)hitEnemy(e,dmg*2.4,e.x<x?-1:1,{kb:8,ky:7,noCombo:true,env:true});}finally{MP.hitFrom=hf;}},430);});}
+function evTick(dt){const ev=G.event;if(!ev||G.scene!=='tower'||G.state!=='play'||G.tutorial)return;
+  if(ev==='tempo'&&G.evT!=null){
+    if(!G.evDone){if(G.cleared){G.evDone=true;if(G.evT>0){toast('In tempo!','Forziere bonus');sfx('legend');const n=G.chests.length,x=clamp(P.x+(P.x<GATE_X-6?2.5:-2.5),-HALF+2,GATE_X-2);spawnChest(x,0,false);
+          if(G.chests.length>n){const c=G.chests[G.chests.length-1];c.bonus=true;c.dy=9;c.dvy=0;}}}
+      else{G.evT-=dt;if(G.evT<=0){G.evT=0;G.evDone=true;toast('Tempo scaduto','Niente forziere questa volta');sfx('tired');}}}
+    if(G.evDone&&G.evT<=0){evHud.hidden=true;}else evHudSet(G.evDone?'✓ Forziere bonus':'⏱ '+Math.ceil(G.evT)+' s',!G.evDone&&G.evT<10);}
+  if(ev==='meteore'&&!G.cleared&&evSolo()){G.evMt-=dt;if(G.evMt<=0){G.evMt=rand(1.6,2.6);meteorDrop();}}
+  if(ev==='ladro'){if(!G.evSpawned&&evSolo()&&G.time-G.evStart>2.5){G.evSpawned=true;spawnThief();}
+    const th=G.enemies.find(e=>!e.dead&&isThief(e));if(th&&th.escT!=null)evHudSet('Ladro: '+Math.ceil(Math.max(0,th.escT))+' s',th.escT<5);else if(th)evHudSet('Prendi il ladro!');else evHud.hidden=true;}
+  if(ev==='campione'&&!G.evSpawned&&evSolo()&&G.time-G.evStart>1.5){G.evSpawned=true;spawnChamp();}}
+const _ufEv=updFloor;updFloor=function(dt){_ufEv(dt);try{evTick(dt);}catch(err){console.warn('evento',err);}};
+// il ladro scappa: corre via da chi lo insegue, salta oltre se è messo all'angolo, dopo un po' sparisce
+function thiefAI(e,dt){e.t+=dt;e.flash-=dt;e.flinch-=dt;e.escT-=dt;e.cd-=dt;
+  let tx=P.dead?null:P.x,bd=P.dead?1e9:Math.abs(P.x-e.x);for(const R of MP.players.values())if(R.sc==='tower'&&R.fl===G.floor&&!R.dead&&Math.abs(R.x-e.x)<bd){bd=Math.abs(R.x-e.x);tx=R.x;}
+  let dir=tx==null?(e.face||1):(e.x>=tx?1:-1);const L=-HALF+1.6,Rr=GATE_X-1.6;
+  if((e.x<L+1&&dir<0)||(e.x>Rr-1&&dir>0)){if(e.onGround&&bd<4){e.vy=13;dir=-dir;e.vx=dir*e.speed*1.2;}else if(bd>=4)dir=0;}
+  if(dir)e.face=dir;if(e.kbT>0){e.kbT-=dt;e.vx*=0.88;}else e.vx=approach(e.vx,dir*e.speed,28*dt);
+  if(e.onGround&&e.cd<=0&&bd<6&&Math.random()<0.02){e.vy=9;e.cd=1;}
+  e.vy+=GRAV*dt;moveBody(e,dt);if(Math.random()<0.25)burst(e.x,e.y+0.5,0xffd27a,1,1.5,1,0.3);
+  if(e.escT<=0){e.dead=true;e.escaped=true;burst(e.x,e.y+0.6,0xffd27a,30,6,3,0.3);sfx('gate');popNum(e.x,e.y+2,'È scappato!','info');
+    if(e.parts){e.parts.bar.visible=false;scene.remove(e.parts.root);}if(MP.host&&MP.live())MP.bcast({t:'evesc',f:G.floor,id:e.id});}}
+const _ueEv=updEnemy;
+updEnemy=function(e,dt){if(e.thief&&!e.net&&!e.dead&&!(e.spawnT>0)&&!(e.stunT>0)&&!(e.hitstun>0)){thiefAI(e,dt);return;}return _ueEv(e,dt);};
+const _mmEv=mpMsg;
+mpMsg=function(m,from){if(m&&m.t==='evesc'){if(!MP.host&&G.scene==='tower'&&m.f===G.floor){const e=G.enemies.find(x=>x.id===m.id&&!x.dead);if(e){e.escaped=true;e.dead=true;burst(e.x,e.y+0.6,0xffd27a,30,6,3,0.3);popNum(e.x,e.y+2,'È scappato!','info');if(e.parts){scene.remove(e.parts.root);}}}return;}return _mmEv(m,from);};
+// premi: ogni giocatore riceve il suo bottino
+const _keEv=killEnemy;
+killEnemy=function(e){const was=e.dead,th=!was&&!e.escaped&&G.scene==='tower'&&isThief(e),ch=!was&&G.scene==='tower'&&isChamp(e);const r=_keEv(e);
+  try{const f=G.floor;
+    if(th){const n=2+(Math.random()<0.4?1:0);for(let i=0;i<n;i++){const o=Math.random()<0.4?makeWeapon(G.cls.weapon,rollRarity(f,1),f):makeGear(pick(Object.keys(GEAR)),rollRarity(f,1),f);dropItem(o,e.x,e.y+1,i,n);}
+      addCoins(30+f*2,e.x,e.y+e.h+1.4);popNum(e.x,e.y+e.h+0.8,'Tesoro!','xp');sfx('legend');}
+    if(ch){const o=Math.random()<0.5?makeWeapon(G.cls.weapon,rollRarity(f,2),f):makeGear(pick(Object.keys(GEAR)),rollRarity(f,2),f);dropItem(o,e.x,e.y+1,0,1);addCoins(15+f,e.x,e.y+e.h+1.4);popNum(e.x,e.y+e.h+0.8,'Campione sconfitto!','xp');}
+  }catch(err){console.warn('premio evento',err);}
+  return r;};
+const _syEv=syncEnemy;syncEnemy=function(e,dt){if(!e._evT&&e.ename==='Ladro di tesori'&&e.parts){e._evT=1;goldTint(e,0.55);}return _syEv(e,dt);};
 requestAnimationFrame(frame);
 })();
 </script>
