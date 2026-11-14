@@ -2,7 +2,7 @@
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794691713';
+const BUILD_ID='1794692384';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -17,18 +17,55 @@ function setAuth(d,user){Object.assign(AUTH,{uid:d.localId||d.user_id||AUTH.uid,
 async function token(){if(!logged())return null;if(AUTH.idToken&&Date.now()<AUTH.exp-60000)return AUTH.idToken;
   const r=await fetch(`https://securetoken.googleapis.com/v1/token?key=${FB_KEY}`,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(AUTH.refreshToken)});
   const d=await r.json();if(!r.ok)throw new Error('sessione scaduta');setAuth(d);return AUTH.idToken;}
-const SYNC_SKIP=new Set(['torre-auth']);
-function collectSave(){const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('torre-')&&!SYNC_SKIP.has(k))o[k]=localStorage.getItem(k);}return o;}
+// ---------- SINCRONIZZAZIONE TRA DISPOSITIVI ----------
+// Prima i progressi venivano solo CARICATI nel cloud e scaricati una volta sola all'accesso: il telefono non vedeva mai
+// quello che facevi sul PC (e poteva anche sovrascriverlo). Ora ogni dispositivo controlla il cloud all'avvio, quando torni
+// nell'app e quando torni al seminterrato: se un altro dispositivo ha salvato qualcosa di più recente lo scarica.
+// Le impostazioni del dispositivo (comandi, tasti, grafica, volume) restano di ciascun dispositivo.
+const SYNC_SKIP=new Set(['torre-auth','torre-sync','torre-settings','torre-keys','torre-padkeys','torre-nt-seen','torre-news-v']);
+const SY=Object.assign({dev:'',t:0,h:'',lt:0},store.get('sync',{}));if(!SY.dev)SY.dev=Math.random().toString(36).slice(2,10);
+const SYNC={ready:false,busy:false,ask:false,last:0};
+const syncPersist=()=>{try{localStorage.setItem('torre-sync',JSON.stringify(SY));}catch(e){}};syncPersist();
+const hashS=s=>{let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)+'.'+s.length;};
+function collectSave(){const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('torre-')&&!SYNC_SKIP.has(k))ks.push(k);}
+  ks.sort();const o={};for(const k of ks)o[k]=localStorage.getItem(k);return o;}
+const cloudContent=sv=>{let o={};try{o=JSON.parse(sv.d||'{}');}catch(e){}const r={};for(const k of Object.keys(o).sort())if(!SYNC_SKIP.has(k))r[k]=o[k];return r;};
+// le modifiche fatte su questo dispositivo dopo il primo controllo della sessione contano come "più recenti"
+{const _set=store.set;store.set=function(k,v){_set.call(store,k,v);if(SYNC.ready&&!SYNC_SKIP.has('torre-'+k)){SY.lt=Date.now();SYNC.ltDirty=true;}};}
+setInterval(()=>{if(SYNC.ltDirty){SYNC.ltDirty=false;syncPersist();}},3000);
 let lastSync='';
-async function cloudSave(force){if(!authOn()||!logged())return;try{const o=collectSave(),s=JSON.stringify(o);if(!force&&s===lastSync)return;
-  const t=await token();const r=await fetch(`${FB_URL.replace(/\/$/,'')}/saves/${AUTH.uid}.json?auth=${t}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t:Date.now(),d:s,u:AUTH.user||MP.name()})});
-  if(r.ok)lastSync=s;}catch(e){}}
-async function cloudLoad(){const t=await token();const r=await fetch(`${FB_URL.replace(/\/$/,'')}/saves/${AUTH.uid}.json?auth=${t}`);if(!r.ok)throw new Error('lettura non riuscita');return r.json();}
-function applySave(sv){const o=JSON.parse(sv.d||'{}');const keep=localStorage.getItem('torre-auth');
-  for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)localStorage.setItem(k,o[k]);if(keep)localStorage.setItem('torre-auth',keep);
-  location.reload();}
-setInterval(()=>cloudSave(false),60000);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)cloudSave(false);});
+const savesUrl=()=>`${FB_URL.replace(/\/$/,'')}/saves/${AUTH.uid}`;
+async function cloudPush(){const s=JSON.stringify(collectSave()),h=hashS(s),t=Date.now(),tk=await token();
+  const r=await fetch(`${savesUrl()}.json?auth=${tk}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({t,d:s,u:AUTH.user||MP.name(),dev:SY.dev})});
+  if(r.ok){SY.t=t;SY.h=h;lastSync=s;syncPersist();}return r.ok;}
+async function cloudLoad(){const t=await token();const r=await fetch(`${savesUrl()}.json?auth=${t}`);if(!r.ok)throw new Error('lettura non riuscita');return r.json();}
+const syncSafe=()=>(G.scene==='cellar'||['intro','waking','cine'].includes(G.state))&&!inGroup()&&$('account').hidden&&$('nameGate').hidden&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||'');
+function applySaveSynced(sv,msg){const o=cloudContent(sv);for(const k of Object.keys(collectSave()))localStorage.removeItem(k);for(const k in o)localStorage.setItem(k,o[k]);
+  SY.t=sv.t||Date.now();SY.h=hashS(JSON.stringify(collectSave()));SY.lt=0;syncPersist();
+  showUpd(msg||'Progressi aggiornati dall\'altro dispositivo…');setTimeout(()=>location.reload(),900);}
+// mode: 'overwrite' = carica i progressi di questo dispositivo senza controllare (scelta esplicita del giocatore)
+async function cloudSave(mode){if(!authOn()||!logged())return;
+  if(mode==='overwrite'){try{await cloudPush();}catch(e){}return;}
+  if(SYNC.busy)return;SYNC.busy=true;
+  try{const tk=await token();const r=await fetch(`${savesUrl()}/t.json?auth=${tk}`);const ct=r.ok?await r.json():null;
+    const s=JSON.stringify(collectSave()),h=hashS(s),dirty=h!==SY.h,localNew=dirty&&SY.lt>SY.t;
+    if(ct&&ct>SY.t){   // nel cloud c'è qualcosa di più recente di quello che questo dispositivo conosce
+      const sv=await cloudLoad();if(!sv||!sv.d){SY.t=ct;syncPersist();return;}
+      if(hashS(JSON.stringify(cloudContent(sv)))===h){SY.t=sv.t;SY.h=h;syncPersist();return;}   // stessi dati: niente da fare
+      if(sv.dev===SY.dev&&!localNew){SY.t=sv.t;syncPersist();return;}
+      if(!syncSafe())return;   // ci riprova al seminterrato
+      if(localNew){syncAsk(sv);return;}   // modifiche sia qui sia altrove: decide il giocatore
+      applySaveSynced(sv);return;}
+    if(dirty&&(SY.lt>SY.t||!ct))await cloudPush();}   // solo modifiche vere fatte qui (non le scritture dell'avvio)
+  catch(e){}finally{SYNC.busy=false;SYNC.last=Date.now();SYNC.ready=true;}}
+function syncAsk(sv){if(SYNC.ask)return;SYNC.ask=true;const a=$('account');a.hidden=false;$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='';
+  const c=$('acChoice');c.hidden=false;const p=c.querySelector('.ig-lead'),old=p.textContent;p.textContent='Hai giocato sia qui sia su un altro dispositivo. Quali progressi vuoi tenere?';
+  const done=()=>{c.hidden=true;p.textContent=old;SYNC.ask=false;renderAccount();};
+  $('acUseCloud').onclick=()=>{done();a.hidden=true;applySaveSynced(sv,'Carico i progressi dell\'altro dispositivo…');};
+  $('acUseLocal').onclick=async()=>{await cloudSave('overwrite');done();a.hidden=true;toast('Fatto','Ora l\'account ha i progressi di questo dispositivo');};}
+setInterval(()=>cloudSave(),60000);setTimeout(()=>{SYNC.ready=false;cloudSave().finally(()=>{SYNC.ready=true;});},1500);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(logged()&&hashS(JSON.stringify(collectSave()))!==SY.h&&SY.lt>SY.t)cloudPush().catch(()=>{});}else if(Date.now()-SYNC.last>5000)cloudSave();});
+function applySave(sv){applySaveSynced(sv,'Carico i tuoi progressi…');}
 
 /* ---------- schermata account ---------- */
 function openAccount(){const a=$('account');a.hidden=false;$('acMsg').textContent='';renderAccount();}
@@ -44,7 +81,7 @@ async function acRegister(){const u=$('acUser').value.trim(),p=$('acPass').value
   try{if(!(await nameFree(u))){msg.textContent=`«${u}» è già usato da un altro giocatore.`;return;}
     const d=await authCall('signUp',{email:emailOf(u),password:p,returnSecureToken:true});setAuth(d,u);
     await fbPut('names/'+encodeURIComponent(nameKey(u)),PID);store.set('mpname',u);store.set('nameok',true);
-    await cloudSave(true);$('acPass').value='';msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();heartbeat();
+    await cloudSave('overwrite');$('acPass').value='';msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();heartbeat();
     toast('Account creato','Accedi con '+u+' sugli altri dispositivi');}
   catch(e){msg.textContent=e.message;}}
 async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,msg=$('acMsg');if(!u||!p){msg.textContent='Scrivi nome e password.';return;}
@@ -54,12 +91,12 @@ async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,ms
       toast('Accesso fatto','Non riesco a leggere i progressi online: per ora resti con quelli di questo dispositivo');return;}
     if(sv&&sv.d){const hasLocal=(STATS.runs||0)>0&&store.get('mpname','')!==u;
       if(hasLocal){$('acMsg').textContent='';$('acChoice').hidden=false;$('acForm').hidden=true;
-        $('acUseCloud').onclick=()=>applySave(sv);$('acUseLocal').onclick=async()=>{store.set('mpname',u);store.set('nameok',true);await cloudSave(true);$('acChoice').hidden=true;renderAccount();toast('Fatto','I progressi di questo dispositivo sono nel tuo account');};return;}
+        $('acUseCloud').onclick=()=>applySave(sv);$('acUseLocal').onclick=async()=>{store.set('mpname',u);store.set('nameok',true);await cloudSave('overwrite');$('acChoice').hidden=true;renderAccount();toast('Fatto','I progressi di questo dispositivo sono nel tuo account');};return;}
       msg.textContent='Carico i tuoi progressi…';applySave(sv);}
-    else{store.set('mpname',u);store.set('nameok',true);await cloudSave(true);msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();toast('Accesso fatto','Bentornato, '+u);}}
+    else{store.set('mpname',u);store.set('nameok',true);await cloudSave('overwrite');msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();toast('Accesso fatto','Bentornato, '+u);}}
   catch(e){msg.textContent=e.message;}}
 $('acReg').onclick=acRegister;$('acLog').onclick=acLogin;
-$('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
+$('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});SY.t=0;SY.h='';SY.lt=0;syncPersist();renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
 $('acClose').onclick=closeAccount;
 $('acUser').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').focus();}});
 $('acPass').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();$('acPass').blur();}});
@@ -68,7 +105,7 @@ $('ngLogin').onclick=()=>openAccount();
 const _rfA=renderFriends;
 renderFriends=async function(){await _rfA();const me=$('frMe');if(me&&!me.querySelector('#frAcc')){me.insertAdjacentHTML('beforeend',` · <button class="mini" id="frAcc">${logged()?'Account: '+esc(AUTH.user||''):'Accedi / crea account'}</button>`);$('frAcc').onclick=openAccount;}};
 // salvataggi nel cloud nei momenti giusti
-const _ecA=enterCellar;enterCellar=function(){const r=_ecA();setTimeout(()=>cloudSave(false),500);if(updReady)setTimeout(doReload,600);return r;};
+const _ecA=enterCellar;enterCellar=function(){const r=_ecA();setTimeout(()=>cloudSave(),700);if(updReady)setTimeout(doReload,600);return r;};
 
 /* ---------- aggiornamenti: nuova versione pubblicata ---------- */
 let updReady=null;
@@ -85,7 +122,7 @@ function onUpdate(){if(inGroup()){toast('Nuova versione disponibile','Si aggiorn
 let reloading=false;
 function doReload(){if(reloading||inGroup())return;reloading=true;showUpd('Aggiorno alla nuova versione…');
   Promise.race([cloudSave(true),new Promise(r=>setTimeout(r,2500))]).finally(()=>{const u=new URL(location.href);u.searchParams.set('v',updReady||Date.now());u.hash='';location.replace(u.toString());});}
-const _goU=gameOver;gameOver=function(){_goU();cloudSave(true);if(updReady){showUpd('Nuova versione pronta: aggiorno tra un attimo…');setTimeout(doReload,3500);}};
+const _goU=gameOver;gameOver=function(){_goU();cloudSave();if(updReady){showUpd('Nuova versione pronta: aggiorno tra un attimo…');setTimeout(doReload,3500);}};
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{enterCellar:()=>enterCellar(),openAccount,onUpdate,setUpd:v=>{updReady=v;onUpdate();}});
 
 /* =========================================================
