@@ -44,13 +44,17 @@ updCellar=function(dt){_updCellar(dt);
 /* ---------- porta online in fondo al seminterrato ---------- */
 const ONLINE_X=12.45;
 (function(){const C=cellarG,g=new THREE.Group();g.position.set(13.05,0,-0.4);g.rotation.y=-Math.PI/2;C.add(g);
-  const stn=toon(0x4a4652),wd=toon(0x3a2a20),glow=new THREE.MeshBasicMaterial({color:0x7ff0e4,transparent:true,opacity:0.85});
-  mesh(rbox(1.9,0.3,0.4,0.06),stn,0,3.05,0,g);for(const s of [-1,1])mesh(rbox(0.3,3.1,0.4,0.06),stn,s*0.95,1.55,0,g);
-  mesh(rbox(1.6,2.9,0.12,0.04),wd,0,1.45,0.05,g);
-  for(const y of [0.7,2.2])mesh(rbox(1.5,0.08,0.05,0.02),toon(0x6a6470),0,y,0.13,g);
-  const ring=mesh(new THREE.TorusGeometry(0.32,0.05,8,32),glow,0,1.75,0.16,g,true);G.props.push({o:ring,spin:1.2});
-  const [cv2,cx]=cv(256,64);cx.fillStyle='#0a0810';cx.fillRect(0,0,256,64);cx.font='bold 34px monospace';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#7ff0e4';cx.fillText('ONLINE',128,34);
-  const tex=new THREE.CanvasTexture(cv2);tex.magFilter=THREE.NearestFilter;mesh(new THREE.PlaneGeometry(1.4,0.35),new THREE.MeshBasicMaterial({map:tex}),0,3.45,0.05,g,true);
+  // portellone rotondo di ottone della fucina, con la ruota della valvola che gira
+  const ironD=toon(0x2a2a32),brass=toon(0xc8963a),glow=new THREE.MeshBasicMaterial({color:0x7ff0e4});
+  mesh(rbox(2.0,3.2,0.3,0.04),ironD,0,1.6,0,g);mesh(new THREE.CylinderGeometry(0.95,0.95,0.2,32),brass,0,1.6,0.1,g).rotation.x=Math.PI/2;
+  mesh(new THREE.CylinderGeometry(0.8,0.8,0.24,32),toon(0x6a5a3a),0,1.6,0.12,g).rotation.x=Math.PI/2;
+  for(let i=0;i<12;i++){const a=i/12*TAU;mesh(sph(0.05,6,4),toon(0x5a4020),Math.cos(a)*0.88,1.6+Math.sin(a)*0.88,0.22,g,true);}
+  const wh=new THREE.Group();wh.position.set(0,1.6,0.3);g.add(wh);mesh(new THREE.TorusGeometry(0.4,0.05,8,28),glow,0,0,0,wh,true);
+  for(let i=0;i<4;i++)mesh(rbox(0.8,0.06,0.06,0.02),glow,0,0,0,wh,true).rotation.z=i*Math.PI/4;
+  cellarAnims.push(dt=>{wh.rotation.z+=dt*0.9;});
+  const [cv2,cx]=cv(256,64);cx.fillStyle='#2a2010';cx.fillRect(0,0,256,64);cx.font='bold 34px monospace';cx.textAlign='center';cx.textBaseline='middle';cx.fillStyle='#7ff0e4';cx.fillText('ONLINE',128,34);
+  const tex=new THREE.CanvasTexture(cv2);tex.magFilter=THREE.NearestFilter;mesh(new THREE.PlaneGeometry(1.4,0.35),new THREE.MeshBasicMaterial({map:tex}),0,3.45,0.16,g,true);
+  const ol=new THREE.PointLight(0x7ff0e4,0.6,4,1.6);ol.position.set(12.4,1.8,-0.4);C.add(ol);cellarLights.push({light:ol,base:0.6,seed:2,steady:true});
   const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0x7ff0e4,transparent:true,opacity:0,depthWrite:false}),ONLINE_X,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);
   INTER.push({id:'online',x:ONLINE_X,y:3.6,name:'Porta online',sub:()=>'Co-op, 1 contro 1, 2 contro 2',ring:r,act:openOnline});})();
 function openOnline(){if(G.state!=='cellar')return;G.state='online';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);$('online').hidden=false;onUi();}

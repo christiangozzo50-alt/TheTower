@@ -159,7 +159,7 @@ function applyZone(i){const z=ZONES[i],t=zoneTex(i);wallMat.map=t.brick;wallMat.
   for(const m of winMats){m.map=t.sky;m.needsUpdate=true;}
   for(const tr of towerTorches){if(tr.light)tr.light.color.setHex(z.light);tr.flame.material.color.setHex(z.light);}G.zoneBuilt=i;
   const bg=new THREE.Color(z.wall).multiplyScalar(0.16);scene.background.copy(bg);scene.fog.color.copy(bg);hemi.color.set(0xa8b2d0).lerp(new THREE.Color(z.light),0.25);}
-function cellarAmbience(){scene.background.setHex(0x0c0e13);scene.fog.color.setHex(0x0c0e13);hemi.color.setHex(0xa8b2d0);G.zoneBuilt=-1;}
+function cellarAmbience(){scene.background.setHex(0x100806);scene.fog.color.setHex(0x100806);hemi.color.setHex(0xffb070);G.zoneBuilt=-1;}   // luce calda della fucina
 // stanza del guardiano: buio, nebbia stretta e fuochi del suo colore. Gli altri piani tornano alla luce della zona
 function towerMood(f){const boss=isBossFloor(f)&&!G.tutorial,z=ZONES[zoneIndex(f)];
   if(boss){const c=new THREE.Color(bossFor(f).color),bg=c.clone().multiplyScalar(0.05);scene.background.copy(bg);scene.fog.color.copy(bg);scene.fog.near=20;scene.fog.far=50;
@@ -363,76 +363,116 @@ function updProps(dt){
 const cellarG=new THREE.Group();scene.add(cellarG);
 const cellarLights=[],INTER=[],wdDoors=[];let cellarWD=null,safeG=null;const WD_X=5.5;
 let dust=null,pedRunes=null,pedBeam=null,cellarBlanket=null;
+// arredo del seminterrato "Fucina nanica": ferro, ingranaggi, tubi di rame e un canale di lava davanti
+const cellarAnims=[];   // piccole animazioni del seminterrato (ingranaggi, mantice, lava, braci, vapore)
+const CFX={};
+CFX.brick=()=>{const [c,g]=cv(256,256);g.fillStyle='#140a08';g.fillRect(0,0,256,256);let y=0;
+  while(y<256){const h=rand(18,22);let x=-rand(0,30);while(x<256){const w=rand(40,48);g.fillStyle=shade('#5a3328',rand(0.75,1.15));rrect(g,x+3,y+3,w-6,h-6,2);
+    g.fillStyle='rgba(255,255,255,0.04)';g.fillRect(x+8,y+5,w-16,3);x+=w;}y+=h;}
+  grime(g,256,256,900,0.18);return tex(c,9,4);};
+CFX.plate=()=>{const [c,g]=cv(256,256);g.fillStyle='#14121a';g.fillRect(0,0,256,256);
+  for(let y=0;y<256;y+=64)for(let x=(y/64)%2?-64:0;x<256;x+=128){g.fillStyle=shade('#4a4450',rand(0.85,1.1));g.fillRect(x+2,y+2,124,60);
+    g.fillStyle='rgba(255,255,255,0.06)';g.fillRect(x+4,y+4,120,2);g.fillStyle='rgba(0,0,0,0.5)';
+    for(const [rx,ry] of [[8,8],[117,8],[8,53],[117,53]]){g.beginPath();g.arc(x+rx+1.5,y+ry+1.5,2.5,0,TAU);g.fill();}}
+  grime(g,256,256,1400,0.25);return tex(c,8,2);};
+CFX.lava=()=>{const [c,g]=cv(256,64);g.fillStyle='#8a1a04';g.fillRect(0,0,256,64);
+  for(let i=0;i<90;i++){const r=rand(4,14);const rg=g.createRadialGradient(0,0,0,0,0,r);rg.addColorStop(0,'rgba(255,230,120,0.95)');rg.addColorStop(1,'rgba(255,120,20,0)');g.save();g.translate(Math.random()*256,Math.random()*64);g.fillStyle=rg;g.beginPath();g.arc(0,0,r,0,TAU);g.fill();g.restore();}
+  for(let i=0;i<40;i++){g.fillStyle='rgba(40,8,4,0.6)';g.beginPath();g.ellipse(Math.random()*256,Math.random()*64,rand(6,18),rand(3,7),0,0,TAU);g.fill();}
+  return tex(c,8,1);};
+CFX.gear=(P,x,y,z,r,m,n)=>{const g=new THREE.Group();g.position.set(x,y,z);P.add(g);
+  mesh(new THREE.CylinderGeometry(r*0.82,r*0.82,0.14,32),m,0,0,0,g).rotation.x=Math.PI/2;mesh(new THREE.CylinderGeometry(r*0.25,r*0.25,0.2,16),toon(0x2a2a30),0,0,0.02,g).rotation.x=Math.PI/2;
+  n=n||12;for(let i=0;i<n;i++){const a=i/n*TAU,t=mesh(rbox(r*0.22,r*0.26,0.12,0.02),m,Math.cos(a)*r*0.92,Math.sin(a)*r*0.92,0,g);t.rotation.z=a+Math.PI/2;}
+  for(let i=0;i<5;i++){const a=i/5*TAU;mesh(new THREE.CylinderGeometry(r*0.12,r*0.12,0.16,10),toon(0x1a1a20),Math.cos(a)*r*0.52,Math.sin(a)*r*0.52,0.01,g,true).rotation.x=Math.PI/2;}
+  return g;};
+CFX.spin=(o,v,ax)=>{cellarAnims.push(dt=>{o.rotation[ax||'z']+=v*dt;});return o;};
+CFX.tube=(P,pts,r,m,seg)=>mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p=>new THREE.Vector3(p[0],p[1],p[2]))),seg||40,r,10,false),m,0,0,0,P);
+CFX.crate=(P,x,y,z,s,wood,dark)=>{mesh(rbox(s,s,s,0.05),wood,x,y+s/2,z,P);for(const d of [-1,1])mesh(rbox(s*1.02,0.08,0.06,0.02),dark,x,y+s/2+d*s*0.38,z+s/2,P);
+  mesh(rbox(s*1.25,0.08,0.06,0.02),dark,x,y+s/2,z+s/2+0.01,P).rotation.z=Math.PI/4;};
+CFX.light=(P,col,i,d,x,y,z,steady)=>{const l=new THREE.PointLight(col,i,d,1.6);l.position.set(x,y,z);P.add(l);cellarLights.push({light:l,base:i,seed:rand(0,9),steady:!!steady});return l;};
+CFX.flame=(P,x,y,z,col,s)=>{const g=new THREE.Group();g.position.set(x,y,z);P.add(g);s=s||1;
+  const o=mesh(sph(0.07*s,10,8),new THREE.MeshBasicMaterial({color:0xfff2c0}),0,0,0,g,true);o.scale.set(1,1.9,1);
+  const h=mesh(sph(0.12*s,10,8),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.55,depthWrite:false,blending:THREE.AdditiveBlending}),0,0.02*s,0,g,true);h.scale.set(1,2,1);
+  const sd=rand(0,9);cellarAnims.push((dt,t)=>{const k=1+Math.sin(t*11+sd)*0.12+Math.sin(t*17+sd)*0.06;g.scale.set(1/k*0.95+0.05,k,1/k*0.95+0.05);});return g;};
+CFX.points=(P,o)=>{const n=o.n,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=o.src?o.src[i%o.src.length]+rand(-0.6,0.6):rand(-CH,CH);pos[i*3+1]=rand(0,CELLAR_CEIL);pos[i*3+2]=rand(o.z0,o.z1);}
+  const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const pts=new THREE.Points(dg,new THREE.PointsMaterial({color:o.col,size:o.size,transparent:true,opacity:o.op,depthWrite:false,blending:o.add?THREE.AdditiveBlending:THREE.NormalBlending}));P.add(pts);
+  cellarAnims.push((dt,t)=>{const a=dg.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*(o.v+(i%5)*0.15),x=a.getX(i)+Math.sin(t*2+i)*dt*0.2;
+    if(y>CELLAR_CEIL){y=0;x=o.src?o.src[i%o.src.length]+rand(-0.6,0.6):rand(-CH,CH);}a.setX(i,x);a.setY(i,y);}a.needsUpdate=true;});return pts;};
+
 (function buildCellar(){
   const C=cellarG;
-  const stone=mat(0xffffff,{roughness:0.95,map:makeRubble()}),dirt=mat(0xffffff,{roughness:1,map:makeDirt()});
-  const wood=mat(0x6a4a2e,{roughness:.8}),woodD=mat(0x4a3220,{roughness:.85}),metal=mat(0x8a8f99,{metalness:.7,roughness:.35});
-  mesh(new THREE.PlaneGeometry(CH*2+6,14),stone,0,4,-3.2,C,true);
-  mesh(new THREE.BoxGeometry(CH*2+6,6,8),dirt,0,-3,0.6,C,true);
-  for(const s of [-1,1])mesh(new THREE.BoxGeometry(2,14,8),mat(0x24211e,{roughness:1}),s*(CH+1),4,0.2,C,true);
-  mesh(new THREE.BoxGeometry(CH*2+6,1,7),mat(0x1e1a16,{roughness:1}),0,CELLAR_CEIL+0.7,-0.2,C,true);
-  for(let x=-CH+1;x<=CH;x+=4)mesh(rbox(0.5,0.5,7,0.1),woodD,x,CELLAR_CEIL,-0.2,C,true);
-  mesh(rbox(CH*2+2,0.4,0.4,0.08),woodD,0,CELLAR_CEIL-0.2,-2.6,C,true);
-  for(const x of [-6.8,0.0,4.05])mesh(rbox(0.9,CELLAR_CEIL,0.8,0.18),stone,x,CELLAR_CEIL/2,-2.75,C);
-  // giaciglio
-  const straw=mat(0xc9a54a,{roughness:1});
-  
-  
-  
-  mesh(rbox(0.8,0.8,0.8,0.06),wood,-8.2,0.4,-1.9,C);
-  mesh(new THREE.CylinderGeometry(0.07,0.07,0.32,16),mat(0xf2ead8),-8.2,0.96,-1.9,C);
-  const candle=mesh(sph(0.07,12,10),new THREE.MeshBasicMaterial({color:0xffc56b}),-8.2,1.18,-1.9,C,true);candle.scale.set(1,1.8,1);
-  const cl=new THREE.PointLight(0xffb060,1.3,10,1.6);cl.position.set(-8.2,1.7,-0.8);C.add(cl);cellarLights.push({light:cl,flame:candle,base:1.3,seed:1});
-  // banco da lavoro = impostazioni
+  const iron=toon(0x4a4a54),ironD=toon(0x2a2a32),brass=toon(0xc8963a),copper=toon(0xb06a3a),brick=toon(0x6a3a2a),orange=0xff7a2e,teal=0x3fcfc0;
+  const wood=toon(0x7a5434),woodD=toon(0x4a3220);
+  // stanza: mattoni scuri, pavimento di lastre rivettate, travi di ferro
+  mesh(new THREE.PlaneGeometry(CH*2+6,14),mat(0xffffff,{roughness:0.95,map:CFX.brick()}),0,4,-3.2,C,true);
+  mesh(new THREE.BoxGeometry(CH*2+6,6,8),mat(0xffffff,{roughness:0.7,metalness:0.3,map:CFX.plate()}),0,-3,0.6,C,true);
+  for(const s of [-1,1])mesh(new THREE.BoxGeometry(2,14,8),mat(0x1e1414,{roughness:1}),s*(CH+1),4,0.2,C,true);
+  mesh(new THREE.BoxGeometry(CH*2+6,1,7),mat(0x140c0a,{roughness:1}),0,CELLAR_CEIL+0.7,-0.2,C,true);
+  for(let x=-CH+0.5;x<=CH;x+=3.5)mesh(rbox(0.4,0.5,7,0.04),ironD,x,CELLAR_CEIL-0.05,-0.2,C,true);
+  mesh(rbox(CH*2+2,0.5,0.3,0.04),ironD,0,CELLAR_CEIL-0.4,-2.9,C,true);
+  // tubi di rame con flange e valvole rosse
+  for(const [y,z,r] of [[4.9,-2.95,0.13],[5.3,-2.8,0.09]]){mesh(new THREE.CylinderGeometry(r,r,CH*2+2,12),copper,0,y,z,C).rotation.z=Math.PI/2;
+    for(let x=-12;x<=12;x+=3)mesh(new THREE.CylinderGeometry(r*1.4,r*1.4,0.08,12),brass,x,y,z,C).rotation.z=Math.PI/2;}
+  for(const x of [-9.85,-5.6,0.45,7.45]){mesh(rbox(0.45,CELLAR_CEIL,0.45,0.04),ironD,x,CELLAR_CEIL/2,-2.85,C);for(let y=0.6;y<CELLAR_CEIL;y+=1.2)for(const s of [-1,1])mesh(sph(0.04,6,4),brass,x+s*0.15,y,-2.6,C,true);}
+  for(const x of [-9.85,0.45])CFX.spin(CFX.gear(C,x,4.9,-2.6,0.22,toon(0xc03a2a),6),2);
+  // ingranaggi grandi a muro
+  CFX.spin(CFX.gear(C,-3.0,4.4,-3.05,0.95,brass,16),0.35);CFX.spin(CFX.gear(C,-1.55,3.85,-3.08,0.55,copper,10),-0.6);CFX.spin(CFX.gear(C,8.4,4.6,-3.05,0.8,brass,14),-0.4);
+  // canale di lava davanti, con bordi di ferro
+  const lt=CFX.lava();mesh(new THREE.PlaneGeometry(CH*2+4,0.8),new THREE.MeshBasicMaterial({map:lt}),0,0.02,3.7,C,true).rotation.x=-Math.PI/2;
+  cellarAnims.push(dt=>{lt.offset.x+=dt*0.03;});
+  for(const z of [3.25,4.15])mesh(rbox(CH*2+4,0.16,0.12,0.03),ironD,0,0.08,z,C);
+  mesh(new THREE.PlaneGeometry(CH*2+4,0.9),new THREE.MeshBasicMaterial({color:0xff6a1a,transparent:true,opacity:0.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),0,0.3,3.7,C,true);
+  for(const x of [-6,6])CFX.light(C,0xff6a1a,1.0,8,x,0.6,3.7,true);
+  // scaffali e casse della bottega (il mercante è in 16-pvp-negozio-mercante.js)
+  for(const y of [2.0,2.8])mesh(rbox(2.2,0.08,0.4,0.02),ironD,-12.0,y,-2.95,C);
+  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.scale.setScalar(0.55);w.position.set(-12.0-0.75+i*0.5,2.75,-2.85);w.rotation.y=Math.PI/2;C.add(w);});
+  CFX.crate(C,-10.7,0,-2.4,0.8,wood,ironD);CFX.crate(C,-10.55,0.8,-2.45,0.5,wood,ironD);
+  // banco da lavoro = impostazioni: ferro, morsa, progetti, attrezzi appesi
   const bx=-4.0;
-  mesh(rbox(3.0,0.2,1.3,0.06),wood,bx,1.0,-1.6,C);
-  for(const [dx,dz] of [[-1.35,-0.5],[1.35,-0.5],[-1.35,0.5],[1.35,0.5]])mesh(rbox(0.16,1.0,0.16,0.04),woodD,bx+dx,0.5,-1.6+dz,C);
-  mesh(rbox(2.8,0.1,1.1,0.03),woodD,bx,0.35,-1.6,C);
-  const hh=mesh(cap3(0.04,0.5,10),wood,bx-0.8,1.16,-1.3,C);hh.rotation.z=Math.PI/2;
-  mesh(rbox(0.14,0.22,0.14,0.04),metal,bx-0.45,1.16,-1.3,C);
-  mesh(rbox(0.7,0.22,0.02,0.01),metal,bx+0.2,1.13,-1.4,C).rotation.x=-Math.PI/2;
-  mesh(new THREE.CylinderGeometry(0.16,0.2,0.1,20),metal,bx+1.0,1.15,-1.7,C);
-  const glass=mesh(new THREE.CylinderGeometry(0.13,0.13,0.3,20),mat(0xffd9a0,{emissive:0xffb347,emissiveIntensity:1.2,transparent:true,opacity:.85}),bx+1.0,1.35,-1.7,C,true);
-  mesh(new THREE.ConeGeometry(0.17,0.14,20),metal,bx+1.0,1.57,-1.7,C);
-  const ll=new THREE.PointLight(0xffc56b,1.1,9,1.6);ll.position.set(bx+1.0,2.0,-0.6);C.add(ll);cellarLights.push({light:ll,base:1.1,seed:3});
-  mesh(rbox(2.6,1.4,0.08,0.03),woodD,bx,2.9,-3.1,C);
-  for(let i=0;i<5;i++)mesh(rbox(0.08,rand(0.4,0.8),0.05,0.02),metal,bx-1+i*0.5,2.9,-3.03,C);
-  // piedistallo delle classi, con la rastrelliera delle armi alle spalle
-  const pedPts=[[0,0],[1.0,0],[1.0,0.1],[0.9,0.16],[0.76,0.2],[0.76,0.42],[0.92,0.46],[0.92,0.52],[0,0.52]].map(p=>new THREE.Vector2(p[0],p[1]));
-  mesh(new THREE.LatheGeometry(pedPts,40),mat(0x6b6560,{roughness:.85}),PED_X,0,PED_Z,C);
-  pedRunes=mesh(new THREE.TorusGeometry(0.84,0.03,8,64),new THREE.MeshBasicMaterial({color:0x3fcfc0,transparent:true,opacity:.5}),PED_X,0.53,PED_Z,C,true);pedRunes.rotation.x=Math.PI/2;
-  pedBeam=mesh(new THREE.CylinderGeometry(0.85,1.0,CELLAR_CEIL,32,1,true),new THREE.MeshBasicMaterial({color:0x3fcfc0,transparent:true,opacity:0.04,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),PED_X,CELLAR_CEIL/2+0.5,PED_Z,C,true);
-  const pl=new THREE.PointLight(0x7ff0e4,0.7,6,1.8);pl.position.set(PED_X,3.4,PED_Z+0.8);C.add(pl);cellarLights.push({light:pl,base:0.7,seed:7,steady:true});
-  const rx=PED_X;for(const s of [-1.3,1.3])mesh(rbox(0.16,2.6,0.16,0.05),woodD,rx+s,1.3,-2.75,C);
-  for(const y of [0.5,2.45])mesh(rbox(2.8,0.12,0.18,0.05),woodD,rx,y,-2.75,C);
-  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.position.set(rx-0.9+i*0.6,2.4,-2.6);w.rotation.y=Math.PI/2;C.add(w);});
-  // botti e casse sullo sfondo, fuori dal passaggio
-  const barrelPts=[];for(let i=0;i<=10;i++){const t=i/10;barrelPts.push(new THREE.Vector2(0.36+Math.sin(t*Math.PI)*0.08,t*1.05));}
-  for(const [x,z] of []){mesh(new THREE.LatheGeometry(barrelPts,28),wood,x,0,z,C);for(const y of [0.18,0.87]){const b=mesh(new THREE.TorusGeometry(0.42,0.025,8,32),metal,x,y,z,C);b.rotation.x=Math.PI/2;}}
-  mesh(rbox(1.0,1.0,1.0,0.06),wood,7.9,0.5,-2.45,C);
-  // armadio dell'equipaggiamento
+  mesh(rbox(2.6,0.12,1.0,0.03),iron,bx,1.0,-1.7,C);for(const dx of [-1.15,1.15])mesh(rbox(0.12,1.0,0.9,0.02),ironD,bx+dx,0.5,-1.7,C);mesh(rbox(2.3,0.06,0.8,0.02),ironD,bx,0.3,-1.7,C);
+  mesh(rbox(0.36,0.2,0.2,0.03),toon(0x5a6a8a),bx-0.85,1.16,-1.45,C);mesh(new THREE.CylinderGeometry(0.02,0.02,0.4,6),brass,bx-0.85,1.2,-1.3,C).rotation.z=Math.PI/2;
+  const [cB,gB]=cv(64,48);gB.fillStyle='#2a4a8a';gB.fillRect(0,0,64,48);gB.strokeStyle='#cfe0ff';gB.lineWidth=1;gB.strokeRect(6,6,52,36);gB.beginPath();gB.arc(32,24,12,0,TAU);gB.stroke();gB.beginPath();gB.moveTo(6,24);gB.lineTo(58,24);gB.stroke();
+  const bp=mesh(new THREE.PlaneGeometry(0.8,0.55),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(cB)}),bx+0.1,1.07,-1.7,C,true);bp.rotation.x=-Math.PI/2;bp.rotation.z=0.15;
+  CFX.gear(C,bx+0.85,1.12,-1.75,0.16,brass,8).rotation.x=-Math.PI/2;
+  mesh(rbox(2.4,1.2,0.06,0.02),ironD,bx,2.8,-3.08,C);for(let i=0;i<7;i++)mesh(rbox(0.05,rand(0.4,0.8),0.04,0.01),toon(0xb8c0cc),bx-1.05+i*0.35,2.85,-3.02,C);
+  mesh(new THREE.CylinderGeometry(0.12,0.12,0.2,12),mat(0xffd27a,{emissive:0xffa030,emissiveIntensity:1.4}),bx+0.9,2.2,-2.6,C,true);
+  CFX.light(C,0xffb050,0.8,7,bx+0.6,2.0,-1.0);
+  // piedistallo delle classi: piattaforma meccanica con ingranaggio che gira, rastrelliera alle spalle
+  mesh(new THREE.CylinderGeometry(1.05,1.1,0.2,24),ironD,PED_X,0.1,PED_Z,C);mesh(new THREE.CylinderGeometry(0.9,0.95,0.32,24),iron,PED_X,0.36,PED_Z,C);
+  CFX.spin(CFX.gear(C,PED_X,0.54,PED_Z,0.95,brass,20),0.4).rotation.x=-Math.PI/2;
+  pedRunes=mesh(new THREE.TorusGeometry(0.5,0.05,8,40),new THREE.MeshBasicMaterial({color:teal,transparent:true,opacity:.5}),PED_X,0.62,PED_Z,C,true);pedRunes.rotation.x=Math.PI/2;
+  for(const a of [0.7,2.4,3.9,5.5])mesh(new THREE.CylinderGeometry(0.07,0.07,0.6,8),toon(0xb8c0cc),PED_X+Math.cos(a)*1.0,0.3,PED_Z+Math.sin(a)*1.0,C);
+  pedBeam=mesh(new THREE.CylinderGeometry(0.85,1.0,CELLAR_CEIL,32,1,true),new THREE.MeshBasicMaterial({color:teal,transparent:true,opacity:0.04,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),PED_X,CELLAR_CEIL/2+0.5,PED_Z,C,true);
+  CFX.light(C,0x7ff0e4,0.7,6,PED_X,3.4,PED_Z+0.8,true);
+  const rx=PED_X;for(const s of [-1.3,1.3])mesh(rbox(0.16,2.6,0.16,0.05),ironD,rx+s,1.5,-2.85,C);
+  for(const y of [0.7,2.65])mesh(rbox(2.8,0.12,0.18,0.05),ironD,rx,y,-2.85,C);
+  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.position.set(rx-0.9+i*0.6,2.6,-2.7);w.rotation.y=Math.PI/2;C.add(w);});
+  // armadio dell'equipaggiamento: armadietto di ferro con le ante che si aprono
   const WX=5.5,wd=new THREE.Group();cellarWD=wd;wd.position.set(WX,0,-2.3);C.add(wd);
-  mesh(rbox(1.7,2.9,0.8,0.08),woodD,0,1.45,0,wd);mesh(rbox(1.9,0.2,0.95,0.06),wood,0,2.98,0,wd);mesh(rbox(1.8,0.16,0.9,0.05),wood,0,0.08,0,wd);
-  for(const s of [-1,1]){const pv=new THREE.Group();pv.position.set(s*0.81,0,0.42);wd.add(pv);wdDoors.push({g:pv,s});
-    mesh(rbox(0.8,2.5,0.06,0.04),wood,-s*0.4,1.5,0,pv);mesh(sph(0.05,10,8),mat(0xd9b45a,{metalness:.6,roughness:.3}),-s*0.71,1.5,0.05,pv);}
-  // interno: vestiti appesi e un bagliore caldo
-  mesh(rbox(1.5,0.04,0.04,0.02),mat(0xd9b45a,{metalness:.6,roughness:.3}),0,2.45,0.1,wd);
+  const lk=toon(0x4a5a6a),lkD=toon(0x5a6a7a);
+  mesh(rbox(1.8,3.0,0.8,0.04),lk,0,1.5,0,wd);mesh(rbox(1.9,0.14,0.9,0.03),ironD,0,3.05,0,wd);mesh(rbox(1.85,0.12,0.88,0.03),ironD,0,0.06,0,wd);
+  for(const s of [-1,1]){const pv=new THREE.Group();pv.position.set(s*0.86,0,0.42);wd.add(pv);wdDoors.push({g:pv,s});
+    mesh(rbox(0.84,2.7,0.05,0.02),lkD,-s*0.43,1.5,0,pv);for(let i=0;i<5;i++)mesh(rbox(0.5,0.04,0.02,0.01),ironD,-s*0.43,2.6-i*0.1,0.03,pv,true);
+    mesh(rbox(0.06,0.4,0.06,0.02),brass,-s*0.74,1.5,0.05,pv);for(const y of [0.25,2.75])for(const dx of [-0.35,0.35])mesh(sph(0.03,6,4),brass,-s*0.43+dx,y,0.04,pv,true);}
+  mesh(rbox(1.5,0.04,0.04,0.02),brass,0,2.45,0.1,wd);
   for(const [x,c] of [[-0.45,0x6a2a2a],[-0.12,0x2a3a5a],[0.2,0x3a4a2a],[0.5,0x5a4a6a]])mesh(rbox(0.26,0.9,0.12,0.04),mat(c),x,1.95,0.15,wd);
   mesh(rbox(1.5,2.4,0.04,0.02),mat(0x2a1a10,{emissive:0xffa64a,emissiveIntensity:0.12}),0,1.5,-0.3,wd,true);
-  mesh(rbox(1.2,0.3,0.06,0.03),mat(0x8a3a2a),0,2.75,0.44,wd);
-  const wl=new THREE.PointLight(0xffc56b,0.4,5,1.8);wl.position.set(WX,2.4,-0.8);C.add(wl);cellarLights.push({light:wl,base:0.4,seed:9});
-  // scala verso la torre
-  const sX0=8.9,sN=7,sW=0.52,sH=0.48;
-  for(let i=0;i<sN;i++){const h=(i+1)*sH;mesh(rbox(sW+0.03,h,1.6,0.05),stone,sX0+sW*(i+0.5),h/2,-2.2,C);}
+  // tubo che sbuffa vapore, cassa vicino alla scala
+  CFX.tube(C,[[6.9,0,-2.7],[6.9,2.5,-2.7],[7.1,3.4,-2.75],[7.45,3.9,-2.8]],0.1,copper);
+  CFX.crate(C,7.85,0,-2.5,0.8,wood,ironD);
+  // scala di grata con ringhiera verso la porta di ferro
+  const sX0=8.9,sN=7,sW=0.52,sH=0.48,grate=toon(0x5a5a64);
+  for(let i=0;i<sN;i++){const h=(i+1)*sH;mesh(rbox(sW+0.03,0.1,1.5,0.02),grate,sX0+sW*(i+0.5),h-0.05,-2.2,C);}
+  for(const z of [-1.46,-2.94]){const sl=mesh(rbox(5.0,0.22,0.08,0.02),ironD,10.65,1.55,z,C);sl.rotation.z=Math.atan2(sN*sH,sN*sW);}
+  mesh(rbox(4.9,0.06,0.06,0.02),brass,10.7,2.75,-1.42,C).rotation.z=Math.atan2(sN*sH,sN*sW);
+  for(let i=0;i<5;i++){const x=9.2+i*0.75;mesh(new THREE.CylinderGeometry(0.025,0.025,1.0,6),ironD,x,(x-sX0)*0.923+0.5,-1.42,C);}
   const top=new THREE.Group();top.position.set(12.2,sN*sH,-2.9);C.add(top);
-  const ds=new THREE.Shape();ds.moveTo(-0.7,0);ds.lineTo(-0.7,2);ds.absarc(0,2,0.7,Math.PI,0,true);ds.lineTo(0.7,0);ds.lineTo(-0.7,0);
-  mesh(new THREE.ShapeGeometry(ds,16),mat(0x0a0a0d,{emissive:0xffa64a,emissiveIntensity:0.55}),0,0,0,top,true);
-  const sl=new THREE.PointLight(0xffb060,0.9,9,1.6);sl.position.set(11.5,4.6,-1.2);C.add(sl);cellarLights.push({light:sl,base:0.9,seed:5});
-  mesh(new THREE.PlaneGeometry(1.0,1.5),new THREE.MeshBasicMaterial({map:makeSky(ZONES[4]),transparent:true}),-1.4,4.9,-3.15,C,true);
-  const beam=mesh(new THREE.ConeGeometry(1.5,5.4,28,1,true),new THREE.MeshBasicMaterial({color:0xaac4ff,transparent:true,opacity:0.05,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),-0.7,2.4,-1.9,C,true);beam.rotation.z=0.32;
-  const n=140,pos=new Float32Array(n*3);for(let i=0;i<n;i++){pos[i*3]=rand(-CH,CH);pos[i*3+1]=rand(0,CELLAR_CEIL);pos[i*3+2]=rand(-2.5,1.5);}
-  const dg=new THREE.BufferGeometry();dg.setAttribute('position',new THREE.BufferAttribute(pos,3));
-  dust=new THREE.Points(dg,new THREE.PointsMaterial({color:0xffe2b0,size:0.05,transparent:true,opacity:0.55,depthWrite:false}));C.add(dust);
+  mesh(rbox(1.5,2.4,0.15,0.04),toon(0x3a3a44),0,1.2,0,top);mesh(new THREE.CylinderGeometry(0.3,0.3,0.06,20),mat(0x1a0a04,{emissive:0xffa040,emissiveIntensity:1.0}),0,1.6,0.1,top,true).rotation.x=Math.PI/2;
+  mesh(new THREE.TorusGeometry(0.3,0.05,8,20),brass,0,1.6,0.12,top);
+  CFX.light(C,0xffa040,0.8,8,11.8,4.8,-1.6);
+  // braci che salgono dal forno e dalla lava, vapore dal tubo
+  CFX.points(C,{n:50,col:0xffa040,size:0.06,op:0.9,v:0.5,add:true,src:[-7.7,-7.9,-7.5,-3,3],z0:-2.2,z1:3.8});
+  CFX.points(C,{n:24,col:0xdedede,size:0.16,op:0.18,v:0.5,src:[6.9],z0:-2.7,z1:-1.8});
   const mkRing=x=>{const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),x,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);return r;};
   INTER.push({id:'bench',x:bx,y:2.4,name:'Banco da lavoro',sub:()=>'Volume, comandi e statistiche',ring:mkRing(bx),act:()=>openSettings('cellar')});
   INTER.push({id:'ped',x:PED_X,y:3.0,name:'Piedistallo delle classi',sub:()=>'Scegli con chi salire',ring:mkRing(PED_X),act:openSelect});

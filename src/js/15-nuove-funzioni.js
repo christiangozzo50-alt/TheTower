@@ -313,14 +313,26 @@ enterCellar=function(){G.horde=false;G.event=null;$('darkFx').hidden=true;$('cur
 /* ---------- arredi nuovi del seminterrato: fabbro e bacheca ---------- */
 const FORGE_X=-7.2,BOARD_X=-1.25;
 (function(){const C=cellarG;
-  const g=new THREE.Group();g.position.set(FORGE_X,0,-1.5);C.add(g);const iron=toon(0x3a3a44),coal=new THREE.MeshBasicMaterial({color:0xff7a2e});
-  mesh(new THREE.CylinderGeometry(0.42,0.5,0.7,14),toon(0x6a4a30),0,0.35,0,g);
-  mesh(rbox(0.9,0.22,0.38,0.05),iron,0,0.82,0,g);mesh(rbox(0.5,0.16,0.3,0.04),iron,0,0.64,0,g);const h=mesh(new THREE.ConeGeometry(0.16,0.42,10),iron,0.58,0.83,0,g);h.rotation.z=-Math.PI/2;
-  mesh(rbox(1.0,0.5,0.8,0.08),toon(0x4a4652),1.1,0.25,-0.45,g);const c=mesh(rbox(0.8,0.08,0.6,0.04),coal,1.1,0.52,-0.45,g,true);G.props.push({o:c,tw:3});
-  const b=new THREE.Group();b.position.set(BOARD_X,2.3,-3.0);C.add(b);
-  mesh(rbox(1.6,1.3,0.1,0.03),toon(0x6a4a30),0,0,0,b);mesh(rbox(1.75,0.12,0.14,0.03),toon(0x4a3220),0,0.7,0.02,b);
-  const papers=[[-0.45,0.2,0xe8dcc0],[0.08,0.25,0xd8cca8],[0.5,0.1,0xffd27a],[-0.25,-0.3,0xd8cca8],[0.35,-0.35,0xe8dcc0]];
-  for(const [x,y,col] of papers){const p=mesh(new THREE.PlaneGeometry(0.42,0.5),new THREE.MeshBasicMaterial({color:col}),x,y,0.06,b,true);p.rotation.z=rand(-0.15,0.15);}
+  // fabbro della fucina: forno grande di mattoni con camino e mantice, incudine davanti
+  const iron=toon(0x4a4a54),ironD=toon(0x2a2a32),brick=toon(0x6a3a2a),orange=0xff7a2e;
+  const fur=new THREE.Group();fur.position.set(FORGE_X-0.5,0,-2.45);C.add(fur);
+  mesh(rbox(2.1,2.3,1.1,0.06),brick,0,1.15,0,fur);mesh(rbox(2.3,0.2,1.25,0.04),ironD,0,2.35,0,fur);
+  const mo=new THREE.Shape();mo.moveTo(-0.5,0);mo.lineTo(-0.5,0.45);mo.absarc(0,0.45,0.5,Math.PI,0,true);mo.lineTo(0.5,0);mo.lineTo(-0.5,0);
+  mesh(new THREE.ShapeGeometry(mo,12),new THREE.MeshBasicMaterial({color:0x2a0a02}),0,0.45,0.56,fur,true);
+  mesh(new THREE.ShapeGeometry(mo,12),new THREE.MeshBasicMaterial({color:orange,transparent:true,opacity:0.85}),0,0.45,0.565,fur,true).scale.set(0.8,0.7,1);
+  for(const dx of [-0.25,0,0.25])CFX.flame(fur,dx,0.7,0.5,0xff5a10,1.6);
+  mesh(new THREE.CylinderGeometry(0.35,0.45,3.6,10),brick,0,4.1,-0.2,fur);mesh(new THREE.CylinderGeometry(0.42,0.42,0.2,10),ironD,0,2.6,-0.2,fur);
+  const bel=new THREE.Group();bel.position.set(1.25,0.7,0.1);fur.add(bel);mesh(rbox(0.6,0.12,0.4,0.03),toon(0x6a4a2e),0,0,0,bel);
+  const bt=mesh(rbox(0.6,0.12,0.4,0.03),toon(0x6a4a2e),0,0.26,0,bel);mesh(new THREE.CylinderGeometry(0.2,0.2,0.4,10,1,true),toon(0x5a3020,{side:THREE.DoubleSide}),0,0.13,0,bel).rotation.z=Math.PI/2;
+  cellarAnims.push((dt,t)=>{bt.position.y=0.18+Math.sin(t*1.6)*0.08;bt.rotation.z=Math.sin(t*1.6)*0.1;});
+  mesh(new THREE.CylinderGeometry(0.3,0.42,0.4,10),ironD,FORGE_X+0.9,0.2,-1.3,C);mesh(rbox(0.9,0.22,0.36,0.04),iron,FORGE_X+0.9,0.55,-1.3,C);mesh(rbox(0.46,0.16,0.26,0.03),iron,FORGE_X+0.9,0.36,-1.3,C);
+  mesh(new THREE.ConeGeometry(0.15,0.4,10),iron,FORGE_X+1.45,0.56,-1.3,C).rotation.z=-Math.PI/2;
+  mesh(rbox(0.36,0.06,0.12,0.02),new THREE.MeshBasicMaterial({color:0xffb040}),FORGE_X+0.85,0.69,-1.3,C,true);
+  const fl=new THREE.PointLight(orange,2.0,8,1.6);fl.position.set(FORGE_X-0.4,1.2,-1.3);C.add(fl);cellarLights.push({light:fl,base:2.0,seed:4});
+  // bacheca: lastra di ferro rivettata con i fogli appesi
+  const b=new THREE.Group();b.position.set(BOARD_X,2.4,-3.0);C.add(b);
+  mesh(rbox(1.8,1.35,0.1,0.03),iron,0,0,0,b);for(const [x,y] of [[-0.82,0.6],[0.82,0.6],[-0.82,-0.6],[0.82,-0.6]])mesh(sph(0.04,6,4),toon(0xc8963a),x,y,0.06,b,true);
+  for(const [x,y,col] of [[-0.45,0.2,0x2a4a8a],[0.1,0.25,0xd8cca8],[0.55,0.05,0x2a4a8a],[-0.25,-0.3,0xd8cca8],[0.35,-0.35,0xe8dcc0]]){const p=mesh(new THREE.PlaneGeometry(0.42,0.5),new THREE.MeshBasicMaterial({color:col}),x,y,0.07,b,true);p.rotation.z=rand(-0.15,0.15);}
   const mk=x=>{const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),x,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);return r;};
   INTER.push({id:'forge',x:FORGE_X,y:2.2,name:'Fabbro',sub:()=>`${FRAG.n} frammenti · smonta e migliora gli oggetti`,ring:mk(FORGE_X),act:openForge});
   INTER.push({id:'board',x:BOARD_X,y:3.3,name:'Bacheca',sub:()=>'Trofei, bestiario e classifica',ring:mk(BOARD_X),act:()=>openBoard('tro')});})();

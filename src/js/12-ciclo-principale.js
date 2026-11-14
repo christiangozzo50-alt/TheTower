@@ -197,6 +197,7 @@ function frame(now){
   for(const t of torches){const f=1+Math.sin(G.time*13+t.seed)*0.08+Math.random()*0.06;t.flame.scale.set(1,1.7*f,1);if(t.light)t.light.intensity=t.base*f;}
   for(const c of cellarLights){if(c.steady)continue;const f=1+Math.sin(G.time*11+c.seed)*0.07+Math.random()*0.05;c.light.intensity=c.base*f;if(c.flame)c.flame.scale.y=1.8*f;}
   if(G.scene==='cellar'){
+    for(const f of cellarAnims)f(dt,G.time);
     if(dust){const a=dust.geometry.attributes.position;for(let i=0;i<a.count;i++){let y=a.getY(i)+dt*0.08;if(y>CELLAR_CEIL)y=0;a.setY(i,y);a.setX(i,a.getX(i)+Math.sin(G.time*0.5+i)*dt*0.05);}a.needsUpdate=true;}
     const sel=G.state==='select';pedRunes.material.opacity=lerp(pedRunes.material.opacity,sel?0.95:0.45+Math.sin(G.time*2)*0.1,damp(dt,4));pedRunes.rotation.z+=dt*(sel?1.2:0.3);
     pedBeam.material.opacity=lerp(pedBeam.material.opacity,sel?0.13:0.035,damp(dt,4));
