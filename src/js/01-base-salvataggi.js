@@ -91,7 +91,7 @@ let isTouch=!!(window.matchMedia&&matchMedia('(pointer: coarse)').matches);
 })();
 // trasforma la scena vettoriale in pixel art: livelli fermi pre-rasterizzati, parti animate ridisegnate ogni frame, poi posterizzazione con dithering
 function opPixel(){
-  const svgEl=$('opScene'),cv=$('opCanvas'),cx=cv.getContext('2d'),T0=performance.now();
+  const svgEl=$('opScene'),cv=$('opCanvas'),cx=cv.getContext('2d');let T0=performance.now();
   const defs=svgEl.querySelector('defs').outerHTML,ser=new XMLSerializer();
   const items=[];let cur=[];const flush=()=>{if(cur.length){items.push({k:'layer',parts:[cur.join('')],T:[0,0]});cur=[];}};
   const bb=el=>{try{return el.getBBox();}catch(e){return {x:0,y:0,width:0,height:0};}};
@@ -146,12 +146,12 @@ function opPixel(){
         aff(c[0],it.T,1,0,0,1,lerp(P4[i][0],P4[i+1][0],k),lerp(P4[i][1],P4[i+1][1],k));continue;}}
     if(!bad){try{const d=cx.getImageData(0,0,W,H),a=d.data;for(let y=0,i=0;y<H;y++){const row=(y&3)*4;for(let x=0;x<W;x++,i+=4){const o=(row+(x&3))*256;a[i]=lut[o+a[i]];a[i+1]=lut[o+a[i+1]];a[i+2]=lut[o+a[i+2]];}}cx.putImageData(d,0,0);}catch(e){bad=true;}}}
   opPixel.restart=()=>requestAnimationFrame(frame);
+  opPixel.t0=()=>{T0=performance.now();};
   requestAnimationFrame(frame);
 }
-let opDone=false,opReady=false,opGo=null;
-setTimeout(()=>{opReady=true;},3100);
-function opSkip(){if(opReady)return;opReady=true;$('opener').classList.add('skip');}
-function opPlay(){if(opDone)return;if(!opReady){opSkip();return;}opDone=true;$('opener').classList.add('go');if(opGo)opGo();}
+let opDone=false,opReady=false,opGo=null,opWait=true;   // opWait: la sigla Flames Games è ancora a schermo
+function opSkip(){if(opWait||opReady)return;opReady=true;$('opener').classList.add('skip');}
+function opPlay(){if(opWait||opDone)return;if(!opReady){opSkip();return;}opDone=true;$('opener').classList.add('go');if(opGo)opGo();}
 $('opener').addEventListener('pointerdown',e=>{if(e.target.closest('#opPlay'))return;e.preventDefault();opSkip();});
 $('opPlay').addEventListener('click',()=>{opReady=true;opPlay();});
 
@@ -159,6 +159,9 @@ $('opPlay').addEventListener('click',()=>{opReady=true;opPlay();});
 (function(){try{const V='2026-11-07a',K='torre-resetv';if(localStorage.getItem(K)!==JSON.stringify(V)){const keep=new Set(['torre-auth','torre-pid','torre-mpname','torre-nameok','torre-settings','torre-padkeys','torre-keys']);const del=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('torre-')&&!keep.has(k))del.push(k);}for(const k of del)localStorage.removeItem(k);localStorage.setItem(K,JSON.stringify(V));}}catch(e){}})();
 const store={get(k,d){try{const v=localStorage.getItem('torre-'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},set(k,v){try{localStorage.setItem('torre-'+k,JSON.stringify(v));}catch(e){}}};
 const SETTINGS=Object.assign({master:0.8,music:0.5,sfx:0.8,shake:true,rumble:true,q:'auto',zoom:100,pixel:true,tl:{}},store.get('settings',{}));
+/* Sigla Flames Games (src/js/00-flames-games.js): parte all'apertura; la schermata del titolo comincia solo quando lei svanisce */
+function opBegin(){opWait=false;document.body.classList.remove('fg-wait');if(opPixel.t0)opPixel.t0();setTimeout(()=>{opReady=true;},3100);}
+if(window.FlamesGames&&!/coop-debug/.test(location.hash)){document.body.classList.add('fg-wait');FlamesGames.play({volume:SETTINGS.master*SETTINGS.sfx}).then(opBegin);}else opBegin();
 const DEFAULT_KEYS={left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],jump:['Space','KeyC'],atk:['KeyJ','KeyX'],dash:['KeyK','ShiftLeft'],ability:['KeyL','KeyQ'],ability2:['KeyI','KeyR'],ability3:['KeyO','KeyF'],use:['KeyE','Enter'],pause:['Escape','KeyP']};
 const ACTION_NAMES={left:'Sinistra',right:'Destra',up:'Su (attacchi in alto)',down:'Giù (attacchi in basso)',jump:'Salto',atk:'Attacco',dash:'Scatto',ability:'Abilità',ability2:'Abilità 2',ability3:'Abilità 3',use:'Interagisci',pause:'Pausa'};
 function loadKeys(){const k=store.get('keys',null),o={};for(const a in DEFAULT_KEYS)o[a]=(k&&Array.isArray(k[a])&&k[a].length===2)?k[a].slice():DEFAULT_KEYS[a].slice();

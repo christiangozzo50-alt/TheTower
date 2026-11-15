@@ -9,6 +9,7 @@ Il file che va online è `index.html`, ma **non va modificato a mano**: è gener
 ```
 src/pagina.html          la pagina (HTML)
 src/stile.css            lo stile
+src/js/00-flames-games.js   la sigla "Flames Games" (uguale per tutti i giochi)
 src/js/01-base-salvataggi.js ... 22-carte.js   il codice del gioco, un file per argomento
 src/js/99-avvio.js       fa partire il gioco
 build.py                 unisce tutto in index.html
@@ -30,3 +31,9 @@ Il filmato è in `src/js/26-filmato.js` (stile in fondo a `src/stile.css`). Ha t
 
 - per provarne una: aggiungi `#intro=B` (o `A`, `C`) all'indirizzo;
 - per il menu di anteprima con tutte e tre: aggiungi `#anteprima-intro` all'indirizzo.
+
+## Sigla Flames Games
+
+All'apertura, prima della schermata del titolo, parte la sigla dello studio: `src/js/00-flames-games.js`.
+È un file autonomo (non usa niente del gioco): per un altro gioco basta copiarlo e chiamare
+`FlamesGames.play().then(() => { /* fai partire il gioco */ })`. Si salta con un tocco o un tasto.

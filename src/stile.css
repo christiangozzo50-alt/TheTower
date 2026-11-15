@@ -365,6 +365,7 @@ kbd{font-family:var(--f-body);font-weight:700;font-size:11px;color:var(--ink);ba
 #opener.skip .op-play.op-play{animation:op-in .25s forwards,op-glow 1.8s .3s ease-in-out infinite!important}
 .op-black{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .9s ease}
 #opener.go .op-black{opacity:1}
+body.fg-wait #opener,body.fg-wait #opener *{animation-play-state:paused!important}   /* la schermata del titolo aspetta la sigla Flames Games */
 @media (prefers-reduced-motion:reduce){#opener *{animation-duration:.01s!important;animation-delay:0s!important;animation-iteration-count:1!important}}
 
 /* ---------- Schermate ---------- */
