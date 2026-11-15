@@ -49,21 +49,29 @@ const TYPES={
 const TYPE_NAMES={archer:'Arciere scheletro',knight:'Cavaliere nero',imp:'Folletto esplosivo',wraith:'Spettro',brute:'Bruto',shaman:'Negromante',guard:'Guardia scheletro',mage:'Stregone',bat:'Pipistrello',spider:'Ragno delle cripte',fungus:'Fungo velenoso',gargoyle:'Gargoyle',shade:'Ombra',scorpion:'Scorpione gigante',salamander:'Salamandra',eye:'Occhio del Vuoto',minotaur:'Minotauro'};
 // Guardiani: tutti diversi, uno ogni 5 piani, con la sua stanza a tema
 const ARCH={golem:{hp:300,dmg:18,w:2.2,h:3.7,speed:3.2},slimeKing:{hp:280,dmg:16,w:3.0,h:2.6,speed:3},skelKing:{hp:330,dmg:20,w:1.5,h:3.8,speed:3},
-  bknight:{hp:300,dmg:20,w:1.4,h:3.4,speed:3.4},archmage:{hp:250,dmg:16,w:1.2,h:3.2,speed:2.5,fly:true},batQueen:{hp:230,dmg:15,w:2.4,h:1.8,speed:5,fly:true},dragon:{hp:420,dmg:22,w:4.6,h:3.0,speed:6,fly:true}};
+  bknight:{hp:300,dmg:20,w:1.4,h:3.4,speed:3.4},archmage:{hp:250,dmg:16,w:1.2,h:3.2,speed:2.5,fly:true},batQueen:{hp:230,dmg:15,w:2.4,h:1.8,speed:5,fly:true},dragon:{hp:420,dmg:22,w:4.6,h:3.0,speed:6,fly:true},
+  // guardiani dei nemici sbloccati prima di loro (modelli in 28-guardiani-nuovi.js)
+  fungusKing:{hp:280,dmg:16,w:2.6,h:3.6,speed:2.2},gargoyleLord:{hp:270,dmg:18,w:2.4,h:3.2,speed:5,fly:true},shadeLord:{hp:280,dmg:20,w:1.3,h:3.8,speed:4},
+  ogreKing:{hp:340,dmg:20,w:1.6,h:3.9,speed:2.8},scorpionKing:{hp:330,dmg:19,w:3.4,h:2.4,speed:3.6},salamanderKing:{hp:320,dmg:18,w:3.4,h:2.4,speed:3.2},
+  eyeLord:{hp:300,dmg:17,w:2.6,h:3.0,speed:2.5,fly:true},minoKing:{hp:380,dmg:23,w:1.6,h:4.0,speed:3.4}};
+// i guardiani nuovi si muovono e si animano come il loro nemico (o come un guardiano simile)
+const BOSS_ANIM={fungusKing:'fungus',gargoyleLord:'gargoyle',shadeLord:'bknight',ogreKing:'archmage',scorpionKing:'scorpion',salamanderKing:'salamander',eyeLord:'eye',minoKing:'bknight'};
+const BOSS_LOCO={fungusKing:'golem',gargoyleLord:'batQueen',shadeLord:'bknight',ogreKing:'skelKing',scorpionKing:'golem',salamanderKing:'skelKing',eyeLord:'archmage',minoKing:'bknight'};
 const BOSS_LIST=[
   [5,'slimeKing','Il Re Melma',0x86d46a,{}],
-  [10,'golem','Il Carceriere',0x8a8279,{}],
-  [15,'skelKing','Il Capitano Scheletro',0xc94a3a,{}],
-  [20,'bknight','Il Maestro d\'Armi',0x7a8090,{}],
-  [25,'archmage','L\'Archivista',0x6a8aff,{}],
-  [30,'golem','Il Custode dei Tomi',0x5c7a90,{adds:'mage'}],
-  [35,'batQueen','La Regina dei Pipistrelli',0x8a4ab0,{adds:'bat'}],
-  [40,'slimeKing','Il Re Melma Velenoso',0xa0e040,{eff:'poison',adds:'slime'}],
-  [45,'skelKing','Il Re dei Morti',0x9a7bff,{adds:'archer'}],
+  // ogni guardiano è il re del nemico che si sblocca nei piani prima di lui; il secondo nemico arriva come aiutante
+  [10,'skelKing','Il Capitano Scheletro',0xc94a3a,{adds:'spider'}],
+  [15,'bknight','Il Maestro d\'Armi',0x7a8090,{}],
+  [20,'fungusKing','Il Fungo dell\'Abisso',0x6affd8,{eff:'poison',adds:'imp'}],
+  [25,'gargoyleLord','Il Gargoyle d\'Ossidiana',0xb48cff,{adds:'wraith'}],
+  [30,'shadeLord','Il Mietitore d\'Ombra',0x8a6aff,{}],
+  [35,'ogreKing','Il Capotribù degli Orchi',0x7a9a5a,{}],
+  [40,'scorpionKing','L\'Imperatore Scorpione',0xb8862e,{eff:'poison'}],
+  [45,'salamanderKing','L\'Idra di Fuoco',0xe0602a,{eff:'burn',adds:'shaman'}],
   [50,'archmage','La Negromante',0x6aff9a,{adds:'guard'}],
-  [55,'golem','Il Colosso di Lava',0xff6a2a,{eff:'burn'}],
+  [55,'eyeLord','L\'Occhio Incoronato',0xc23a7a,{}],
   [60,'bknight','Il Cavaliere della Forgia',0xff8a3d,{eff:'burn',adds:'imp'}],
-  [65,'batQueen','La Strige di Ghiaccio',0xaee4ff,{eff:'slow',adds:'wraith'}],
+  [65,'minoKing','Il Re dei Minotauri',0x6a3f2a,{}],
   [70,'golem','Il Gigante di Ghiaccio',0x9ad0ff,{eff:'slow',adds:'wraith'}],
   [75,'archmage','L\'Astronomo',0x9fb6ff,{adds:'wraith'}],
   [80,'slimeKing','La Melma del Vuoto',0x7a5aff,{adds:'imp'}],
@@ -76,18 +84,18 @@ const bossFor=f=>{const b=BOSS_LIST.find(x=>x[0]===f)||BOSS_LIST[1];return {floo
 // presentazione dei guardiani: titolo e frase d'ingresso
 const BOSS_INTRO={
   5:['Sovrano della fogna','Nessuno esce dal mio regno. Ti scioglierò lentamente.'],
-  10:['Signore delle catene','Altre ossa per la mia collezione di catene.'],
-  15:['Terrore della guarnigione','Mettiti in riga, recluta. Fra poco marcerai con i miei morti.'],
-  20:['Lama mai sconfitta','Mille sfidanti. Mille tombe. Tu sarai la mille e una.'],
-  25:['Guardiana dei segreti','Ogni pagina di questa torre è scritta col sangue. Anche la tua.'],
-  30:['Muro di pietra e d\'inchiostro','Silenzio. In questa sala si muore senza fare rumore.'],
-  35:['Madre della notte','Sentite, figli miei? Carne fresca è salita fin quassù.'],
-  40:['Peste strisciante','Il mio veleno ti scorrerà nelle vene come un fiume.'],
-  45:['Imperatore della cripta','Inginocchiati. Tutti i miei sudditi lo hanno fatto.'],
+  10:['Terrore della guarnigione','Le mie frecce e i miei ragni ti aspettavano. Benvenuto nella tela.'],
+  15:['Lama mai sconfitta','Mille sfidanti. Mille tombe. Tu sarai la mille e una.'],
+  20:['Bocca della muffa','Respira pure. Le mie spore cresceranno anche dentro di te.'],
+  25:['Guardiano di pietra nera','Mille anni immobile su questo cornicione. Per te mi muovo.'],
+  30:['Falce del silenzio','Non sentirai i miei passi. Sentirai solo la lama.'],
+  35:['Voce degli antenati','Gli spiriti della tribù hanno sete. Oggi berranno te.'],
+  40:['Sovrano delle sabbie','Il mio veleno è più antico di questa torre.'],
+  45:['Tre bocche, una sola fame','Taglia una testa, se ci riesci. Ne restano altre due.'],
   50:['Regina dei sepolcri','Morirai. E poi ti rialzerai per servirmi.'],
-  55:['Cuore della fornace','Questa forgia brucia da mille anni. Oggi brucerà te.'],
+  55:['Sguardo della corona','Vedo ogni tuo passo prima che tu lo faccia.'],
   60:['Martello della forgia','Ti batterò sull\'incudine finché non resterà niente.'],
-  65:['Ala dell\'inverno','Il gelo arriva in silenzio. Non sentirai nemmeno il morso.'],
+  65:['Signore del labirinto','Nessuno è mai uscito dal mio labirinto. E questa torre è il mio labirinto.'],
   70:['Colosso del ghiaccio eterno','Il tuo ultimo respiro gelerà prima di toccare terra.'],
   75:['Lettore delle stelle','Ho letto il tuo destino nel cielo. Finisce qui.'],
   80:['Fame senza fondo','Io sono il vuoto. E il vuoto ha sempre fame.'],

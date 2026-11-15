@@ -197,7 +197,7 @@ const BOSS_KITS={
   {n:'Frana',p:'chargeWind',w:.6,r:1.1,f(e,d,sp,rg){sfx('roar');const gap=P.x,n=rg?16:13;for(let i=0;i<n;i++){const x=bkX(-HALF+2+i/(n-1)*(GATE_X+HALF-4));if(Math.abs(x-gap)<1.8)continue;bkWarn(x,2,.7+i*.1,()=>bkP(e,'meteor',x,CEIL,0,-30,1,{w:1.2,h:1.2,life:2}));}}},
   {n:'Vento della vetta',p:'volleyWind',w:.5,r:1,f(e,d){sfx('roar');e.pull={t:1.6,f:-10};bkSeq(e,8,.2,()=>{const y=rand(.6,3.6);bkP(e,'sonic',e.x+d*2,y,d*13,0,.5,{w:1,h:1,life:2.4});burst(e.x+d*3,y,0xc9e6ff,4,4,1,0);});}}],
 };
-function bkLoco(e,dt,dir,dist,rage){switch(e.arch){
+function bkLoco(e,dt,dir,dist,rage){switch(BOSS_LOCO[e.arch]||e.arch){
   case 'golem':e.face=dir;e.vx=approach(e.vx,dir*e.speed*0.55,18*dt);break;
   case 'skelKing':e.face=dir;e.vx=approach(e.vx,dist>3?dir*e.speed*0.7:0,18*dt);break;
   case 'bknight':e.face=dir;e.vx=approach(e.vx,dist>2.8?dir*e.speed*0.8:0,18*dt);break;
@@ -205,12 +205,12 @@ function bkLoco(e,dt,dir,dist,rage){switch(e.arch){
   case 'archmage':if(e.homeX==null)e.homeX=e.x;e.vx=approach(e.vx,(e.homeX+Math.sin(G.time*0.6)*3-e.x)*1.5,8*dt);e.vy=(4.5+Math.sin(e.t*1.3)*0.8-e.y)*2;e.face=dir;break;
   case 'batQueen':{const tx=P.x+Math.sin(e.t*0.8+(e.seed||0))*6,ty=P.y+5.5+Math.sin(e.t*2)*0.6;e.vx=approach(e.vx,(tx-e.x)*1.4,12*dt);e.vy=approach(e.vy,(ty-e.y)*1.6,12*dt);e.face=dir;break;}}}
 const _hitVan=hitEnemy;hitEnemy=function(e,b,d,o){if(e&&e.vanish)return false;return _hitVan(e,b,d,o);};
-function bKit(e,dt,dir,dist,rage,sp){const K=BOSS_KITS[e.def.floor],fl=e.arch==='archmage'||e.arch==='batQueen',restS=e.arch==='golem'?'recover':'rest';e.fly=e.fly||fl;
+function bKit(e,dt,dir,dist,rage,sp){const K=BOSS_KITS[e.def.floor],fl=e.arch==='archmage'||e.arch==='batQueen'||(ARCH[e.arch]&&ARCH[e.arch].fly&&e.arch!=='dragon'),restS=e.arch==='golem'?'recover':'rest';e.fly=e.fly||fl;
   if(e.arch==='slimeKing'){e.split=e.split||0;if(e.split<2&&e.hp<e.maxHp*(e.split===0?0.66:0.33)){e.split++;for(const s of [-1,1])spawnEnemy('slime',{x:bkX(e.x+s*2.2),summon:true});burst(e.x,1.5,e.color,24,7,4);sfx('die');popNum(e.x,e.y+e.h+0.5,'Si divide!','info');}}
   if(e.pull){e.pull.t-=dt;if(e.pull.t<=0)e.pull=null;else if(!P.dead){const tx=e.pull.x!=null?e.pull.x:e.x,s=Math.sign(tx-P.x)||1;P.x=clamp(P.x+s*e.pull.f*dt,-HALF+1,GATE_X-0.7);if(Math.random()<0.4)burst(P.x+rand(-.5,.5),P.y+rand(.2,2),e.color,1,1,0.5,0);}}
   if(e.state==='move'){bkLoco(e,dt,dir,dist,rage);if(e.t>(rage?0.7:1.25)){const o=K.filter(m=>m!==e.mv),mv=pick(o);e.mv=mv;e.state=mv.p;e.t=0;e.face=dir;popNum(e.x,e.y+e.h+0.7,mv.n,'info');}}
   else if(e.act){if(e.act(dt,dir)){e.act=null;e.state=restS;e.t=0;e.warn=0;e.rec=((e.mv&&e.mv.r)||0.8)/sp;}}
-  else if(e.state===restS){if(fl){e.vx*=0.93;e.vy=approach(e.vy,((e.arch==='batQueen'?P.y+5:4.8)-e.y)*1.5,14*dt);}else e.vx=approach(e.vx,0,14*dt);if(e.t>e.rec){e.state='move';e.t=0;}}
+  else if(e.state===restS){if(fl){e.vx*=0.93;e.vy=approach(e.vy,(((BOSS_LOCO[e.arch]||e.arch)==='batQueen'?P.y+5:4.8)-e.y)*1.5,14*dt);}else e.vx=approach(e.vx,0,14*dt);if(e.t>e.rec){e.state='move';e.t=0;}}
   else if(e.mv){const w=e.mv.w/sp;if(fl){e.vx*=0.9;e.vy*=0.9;}else e.vx=approach(e.vx,0,30*dt);e.face=dir;e.warn=e.t/w;
     if(e.t>=w){e.warn=0;e.t=0;e.castT=0.3;e.state=restS;e.rec=e.mv.r/sp;e.mv.f(e,dir,sp,rage);}}
   else{e.state='move';e.t=0;}

@@ -623,7 +623,7 @@ function syncEnemy(e,dt){
     else{m.emissive.copy(m.userData.baseE);m.emissiveIntensity=m.userData.baseI;}}
   if(p.ghostMats)for(const m of p.ghostMats)m.opacity=lerp(m.opacity,e.phased?0.12:m.userData.op,damp(dt,10));
   if(!p.noBar){p.bar.visible=e.hp<e.maxHp;const k=Math.max(0,e.hp/e.maxHp);p.fill.scale.x=Math.max(0.001,k);p.fill.position.x=-(1-k)*0.53;}
-  const t=G.time+e.seed,fl=Math.max(0,e.flinch)/0.2,k=e.type==='boss'?e.arch:e.type,w=Math.min(1,e.warn||0),st=e.state||'',wind=st==='wind'||st.endsWith('Wind');
+  const t=G.time+e.seed,fl=Math.max(0,e.flinch)/0.2,k=e.type==='boss'?(BOSS_ANIM[e.arch]||e.arch):e.type,w=Math.min(1,e.warn||0),st=e.state||'',wind=st==='wind'||st.endsWith('Wind');
   if(p.rig){syncRig(e,p,dt,t,fl,k,w,st);return;}
   switch(k){
   case 'slime':case 'slimeKing':{
@@ -663,8 +663,8 @@ function syncEnemy(e,dt){
     p.body.rotation.y+=(e.face*0.7-p.body.rotation.y)*damp(dt,10);p.g.position.y=perch?0:Math.sin(t*3)*0.08;p.body.rotation.x=st==='dive'?0.5:wind?-0.25*w:0;
     const sq=e.landT>0?e.landT/0.25:0;p.g.scale.set(1+sq*0.15,1-sq*0.2,1+sq*0.15);break;}
   case 'eye':{
-    p.body.rotation.y+=(e.face*1.0-p.body.rotation.y)*damp(dt,10);p.g.position.y=0.65+Math.sin(t*2)*0.1;p.g.rotation.x=st==='fire'?-0.12:0;
-    p.iris.scale.setScalar(wind?1+0.45*w:st==='fire'?1.3:1);p.tent.forEach((g,i)=>{g.rotation.z=Math.sin(t*3+i)*0.22;g.rotation.x=Math.cos(t*2.4+i)*0.15;});break;}
+    p.body.rotation.y+=(e.face*1.0-p.body.rotation.y)*damp(dt,10);p.g.position.y=(p.gy==null?0.65:p.gy)+Math.sin(t*2)*0.1;p.g.rotation.x=st==='fire'?-0.12:0;
+    p.iris.scale.setScalar(wind?1+0.45*w:st==='fire'?1.3:1);(p.tent||[]).forEach((g,i)=>{g.rotation.z=Math.sin(t*3+i)*0.22;g.rotation.x=Math.cos(t*2.4+i)*0.15;});break;}
   case 'golem':{
     p.body.rotation.y=e.face*Math.PI/2;
     const mv=Math.abs(e.vx)>0.3&&e.onGround;p.legs[0].rotation.x=mv?Math.sin(t*(st==='charge'?16:6))*0.5:0;p.legs[1].rotation.x=-p.legs[0].rotation.x;
