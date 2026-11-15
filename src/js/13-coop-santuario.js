@@ -292,7 +292,7 @@ startFloor=function(f){
   _startFloor(f);if(G.safe&&!G.tutorial)hubJoin(f);else hubLeave();MP.emap=new Map();MP.ready=false;for(const R of MP.players.values())R.ready=false;mpWait(false);
   if(!MP.live()||G.tutorial)return;
   const ex=withSeed(MP.seed*977+f*31,()=>isBossFloor(f)?rand(-HALF+3,-HALF+11):rand(-HALF+3,GATE_X-9));
-  if(G.entry){G.entry.g.position.x=ex;G.entry.x=ex;}
+  if(G.entry){G.entry.g.position.x=ex;G.entry.x=ex;keepDoorClear();}
   P.x=ex+[-0.6,0.6,-0.2,0.2][MP.myPid%4];P.face=ex<0?1:-1;
   if(!MP.host)G.spawnT=1e9;
 };

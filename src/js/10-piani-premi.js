@@ -283,7 +283,7 @@ function bossLocked(){if(!isBossFloor(G.floor)||G.tutorial)return false;const c=
 function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   G.floor=f;clearActors();buildLevel(f);towerMood(f);
   // entri da una porta nel muro di fondo, in un punto diverso a ogni piano (lontano dal guardiano)
-  const ex=isBossFloor(f)?rand(-HALF+3,-HALF+11):rand(-HALF+3,GATE_X-9);buildEntryDoor(ex);
+  const ex=isBossFloor(f)?rand(-HALF+3,-HALF+11):rand(-HALF+3,GATE_X-9);buildEntryDoor(ex);keepDoorClear();
   Object.assign(P,{x:ex,y:0,z:-3.6,vx:0,vy:0,atk:null,dashT:0,invul:1.6,kbT:0,face:ex<-4?1:(Math.random()<0.5?1:-1),dragon:null,flipT:0,chargeT:0,spinT:0,throwT:0,plunge:false,punchT:0,onGround:true});
   G.gateMsg=false;
   G.queue=buildQueue(f);G.spawnT=0.9;G.cleared=false;G.gateY=0;G.gateOpen=false;G.climbFaded=false;bars.position.y=0;
@@ -320,6 +320,14 @@ function buildEntryDoor(x){
   const fl=new THREE.MeshBasicMaterial({color:0xffb347});
   for(const s of [-1,1]){mesh(new THREE.CylinderGeometry(0.05,0.07,0.5,8),ir,s*1.55,2.2,Z+0.25,g);const f=mesh(sph(0.11,10,8),fl,s*1.55,2.55,Z+0.25,g,true);G.props.push({o:f,flick:1});}
   G.entry={g,hinge,x};}
+// i barili da rompere non devono stare davanti alla porta da cui entri: li sposta di lato (o li toglie se non c'è posto)
+function keepDoorClear(){const E=G.entry;if(!E||!G.barrels)return;const ex=E.x,R=2.05,lo=-HALF+1.2,hi=GATE_X-1.5;
+  const live=()=>G.barrels.filter(b=>!b.dead);
+  for(const b of live()){const bx=b.g.position.x;if(Math.abs(bx-ex)>=R)continue;
+    const side=bx>=ex?1:-1,cands=[2.3,3.2,4.2,5.2].flatMap(d=>[ex+side*d,ex-side*d]);
+    const ok=x=>x>=lo&&x<=hi&&Math.abs(x-ex)>=R&&live().every(o=>o===b||Math.abs(o.g.position.x-x)>0.95);
+    const nx=cands.find(ok);
+    if(nx!=null)b.g.position.x=nx;else{b.dead=true;b.coinDone=true;if(b.g.parent)b.g.parent.remove(b.g);}}}
 function updEnter(dt){G.enterT+=dt;const T=G.enterT,E=G.entry;
   if(E)E.hinge.rotation.y=-1.75*easeOutCubic(clamp(T/0.38,0,1));
   if(T>0.12&&T<0.2&&!G.enterCreak){G.enterCreak=true;sfx('gate');}
