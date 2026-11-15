@@ -1,0 +1,282 @@
+
+/* =========================================================
+   NEGOZIO ARRICCHITO
+   - Cosmetici (scheda nuova): scie dell'arma, effetti quando uccidi, aure, titoli, cornici del nome, compagni
+   - Oggetti per una scalata: Amuleto, Chiave d'oro, Pergamena, Tonico (si preparano e si consumano a inizio scalata)
+   - Offerta della settimana, garanzia sulle casse leggendarie, rinnovo delle skin di oggi, pacchetti
+   ========================================================= */
+
+/* ---------- cosmetici ---------- */
+const COS_CATS=[['trail','Scie dell\'arma','il colore del fendente'],['kill','Effetti uccisione','quando finisci un nemico'],['aura','Aure','intorno al tuo eroe'],
+  ['pet','Compagni','ti seguono ovunque, solo per bellezza'],['title','Titoli','sotto il tuo nome'],['frame','Cornici','intorno al tuo nome']];
+const COS_LIST=[
+  {id:'tr_brace',cat:'trail',n:'Scia di brace',d:'Fendenti color fuoco',p:600,col:0xff7a2e},
+  {id:'tr_gelo',cat:'trail',n:'Scia gelida',d:'Fendenti azzurro ghiaccio',p:600,col:0x8fdcff},
+  {id:'tr_veleno',cat:'trail',n:'Scia velenosa',d:'Fendenti verde acido',p:600,col:0x7fe08a},
+  {id:'tr_ombra',cat:'trail',n:'Scia d\'ombra',d:'Fendenti viola profondo',p:800,col:0xb88cff},
+  {id:'tr_oro',cat:'trail',n:'Scia d\'oro',d:'Fendenti d\'oro puro',p:900,col:0xffd27a},
+  {id:'tr_arc',cat:'trail',n:'Scia arcobaleno',d:'Il colore cambia di continuo',p:1800,rain:true,week:true},
+  {id:'kf_pira',cat:'kill',n:'Pira',d:'Il nemico brucia in una colonna di fuoco',p:800,col:0xff7a2e},
+  {id:'kf_gelo',cat:'kill',n:'Frantumi',d:'Spuntoni di ghiaccio e schegge',p:800,col:0x8fdcff},
+  {id:'kf_cori',cat:'kill',n:'Coriandoli',d:'Festa a ogni nemico sconfitto',p:700,col:0xffd27a},
+  {id:'kf_anime',cat:'kill',n:'Anime',d:'Lo spirito sale verso il soffitto',p:900,col:0xb88cff},
+  {id:'kf_fulmine',cat:'kill',n:'Fulmine del cielo',d:'Un fulmine colpisce il nemico caduto',p:1000,col:0xfff27a},
+  {id:'kf_buco',cat:'kill',n:'Buco nero',d:'Il nemico viene risucchiato in un vortice',p:2400,col:0x7a4aff,week:true},
+  {id:'au_brace',cat:'aura',n:'Aura di brace',d:'Scintille che salgono',p:900,col:0xff7a2e},
+  {id:'au_neve',cat:'aura',n:'Aura di neve',d:'Fiocchi che cadono intorno a te',p:900,col:0xe8f6ff},
+  {id:'au_ombra',cat:'aura',n:'Aura d\'ombra',d:'Fumo viola ai tuoi piedi',p:1100,col:0x7a4aff},
+  {id:'au_lucciole',cat:'aura',n:'Lucciole',d:'Piccole luci che ti girano intorno',p:1000,col:0xd8ff7a},
+  {id:'au_stelle',cat:'aura',n:'Polvere di stelle',d:'Stelle d\'oro e bianche che brillano',p:2200,col:0xffe08a,week:true},
+  {id:'pet_luc',cat:'pet',n:'Lucciola',d:'Una lucina che ti svolazza accanto',p:1200,col:0xd8ff7a},
+  {id:'pet_slime',cat:'pet',n:'Melmina',d:'Una piccola melma amica che saltella',p:1400,col:0x7fe08a},
+  {id:'pet_gufo',cat:'pet',n:'Gufetto',d:'Sbatte le ali e ti tiene d\'occhio',p:1600,col:0xc9a06a},
+  {id:'pet_teschio',cat:'pet',n:'Teschietto',d:'Un teschio con una fiammella viola',p:1800,col:0xb88cff},
+  {id:'pet_drago',cat:'pet',n:'Draghetto',d:'Un drago in miniatura, raro',p:3000,col:0xff4a2e,week:true},
+  {id:'ti_scal',cat:'title',n:'Scalatore',d:'Per chi sale senza fermarsi',p:300},
+  {id:'ti_senza',cat:'title',n:'Senza paura',d:'Nessun guardiano ti spaventa',p:400},
+  {id:'ti_drago',cat:'title',n:'Ammazzadraghi',d:'Per chi ha visto la cima',p:600},
+  {id:'ti_combo',cat:'title',n:'Maestro di combo',d:'Colpi a raffica',p:600},
+  {id:'ti_re',cat:'title',n:'Re della torre',d:'Il titolo più ambito',p:1200},
+  {id:'fr_oro',cat:'frame',n:'Cornice d\'oro',d:'Bordo dorato',p:600,col:'#ffd27a'},
+  {id:'fr_gelo',cat:'frame',n:'Cornice di ghiaccio',d:'Bordo azzurro',p:600,col:'#8fdcff'},
+  {id:'fr_brace',cat:'frame',n:'Cornice di brace',d:'Bordo che arde',p:800,col:'#ff7a2e'},
+  {id:'fr_reale',cat:'frame',n:'Cornice regale',d:'Bordo viola e oro',p:900,col:'#b88cff'},
+  {id:'fr_neon',cat:'frame',n:'Cornice neon',d:'Bordo rosa che pulsa',p:2000,col:'#ff4dd8',week:true}];
+const COS_BY={};for(const c of COS_LIST)COS_BY[c.id]=c;
+const COS=Object.assign({own:[],sel:{}},store.get('cosm',{}));const saveCos=()=>store.set('cosm',COS);
+const cosOwn=id=>COS.own.includes(id),cosOf=cat=>{const id=COS.sel[cat];return id&&cosOwn(id)?COS_BY[id]:null;};
+const hexCss=h=>typeof h==='string'?h:'#'+(h||0).toString(16).padStart(6,'0');
+
+/* ---------- offerta della settimana: un cosmetico raro, si compra solo nella sua settimana ---------- */
+const weekNo=()=>Math.floor((dayNo()+3)/7);   // la settimana cambia il lunedì
+const WEEK_POOL=COS_LIST.filter(c=>c.week);
+const weekItem=()=>WEEK_POOL[weekNo()%WEEK_POOL.length];
+function untilWeek(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const d=(8-(n.getDay()||7))%7;m.setDate(m.getDate()+d);const ms=m-n,dd=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5);return dd?dd+'g '+h+'h':h+'h '+Math.floor(ms%36e5/6e4)+'m';}
+
+/* ---------- oggetti per una scalata ---------- */
+const RUN_ITEMS=[
+  {id:'amu',n:'Amuleto del mercante',d:'+50% rubini raccolti per tutta la scalata',p:220,col:'#ff4d6a'},
+  {id:'key',n:'Chiave d\'oro',d:'Il primo forziere che apri dà sempre un oggetto almeno Epico',p:650,col:'#ffd27a'},
+  {id:'scr',n:'Pergamena del sapere',d:'Appena entri nella torre scegli un potenziamento su tre',p:450,col:'#c7a8ff'},
+  {id:'ton',n:'Tonico del viandante',d:'+25% vita massima finché non batti il primo guardiano',p:180,col:'#7fe08a'}];
+const RI_MAX=5;
+const RI=Object.assign({n:{},prep:{}},store.get('runitems',{}));const saveRI=()=>store.set('runitems',RI);
+const riN=id=>RI.n[id]||0;
+const RUN_PACK_P=Math.round(RUN_ITEMS.reduce((s,o)=>s+o.p,0)*0.75);
+const HERO3_P=Math.round(CRATES.find(c=>c.id==='eroe').p*3*0.8);
+
+/* ---------- garanzia sulle casse leggendarie e rinnovo delle skin ---------- */
+const PITY_N=10;let PITY=store.get('crpity',0);
+const SKRR_P=150,SKRR_MAX=3;let SKRR=store.get('skrr',{d:0,n:0});const skrrN=()=>SKRR.d===dayNo()?SKRR.n:0;
+// stesse skin per tutti finché non le rinnovi tu
+dailySkins=function(){let s=((dayNo()*2654435761)+skrrN()*0x9E3779B1)>>>0;const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
+  const cls=CLASSES.filter(c=>SKINS[c.id]&&SKINS[c.id].length).map(c=>c.id),vs=Object.keys(VARS).filter(v=>v!=='venom'),out=[];
+  while(out.length<3&&cls.length){const cid=cls.splice(Math.floor(rnd()*cls.length),1)[0];const v=vs.splice(Math.floor(rnd()*vs.length),1)[0];
+    out.push(sKey(cid,Math.floor(rnd()*SKINS[cid].length),v));}
+  return out;};
+// le casse: la leggendaria è sicura dopo 9 senza
+function crateRoll(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,rollRarity(f,0));if(cr.leg&&Math.random()<cr.leg)r=4;
+  if(cr.id==='leggenda'){if(PITY>=PITY_N-1)r=4;PITY=r>=4?0:PITY+1;store.set('crpity',PITY);}
+  r=Math.min(4,r);const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();return o;}
+openCrate=function(cr){const o=crateRoll(cr);crateShow(cr,o);return o;};
+
+/* ---------- disegni per le schede del negozio ---------- */
+function cosPic(c){const col=hexCss(c.col||'#ffd27a');
+  if(c.cat==='trail'){const st=c.rain?'url(#rg-'+c.id+')':col;
+    return `<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true">${c.rain?`<defs><linearGradient id="rg-${c.id}" x1="0" x2="1"><stop offset="0" stop-color="#ff4d6a"/><stop offset=".25" stop-color="#ffd27a"/><stop offset=".5" stop-color="#7fe08a"/><stop offset=".75" stop-color="#8fdcff"/><stop offset="1" stop-color="#b88cff"/></linearGradient></defs>`:''}
+      <path d="M14 78 Q30 20 86 22" fill="none" stroke="${st}" stroke-width="13" stroke-linecap="round" opacity=".35"/><path d="M18 74 Q34 26 84 24" fill="none" stroke="${st}" stroke-width="6" stroke-linecap="round"/><path d="M22 70 Q38 32 82 26" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>
+      <rect x="66" y="58" width="5" height="30" rx="2" fill="#c9cdd6" transform="rotate(-40 68 73)"/><rect x="60" y="80" width="17" height="5" rx="2" fill="#8a6a3a" transform="rotate(-40 68 82)"/></svg>`;}
+  if(c.cat==='kill'){const cs=c.id==='kf_cori'?['#ff4d6a','#ffd27a','#7fe08a','#8fdcff','#b88cff']:[col,'#fff',col];let s='';
+    for(let i=0;i<12;i++){const a=i/12*Math.PI*2,r1=14,r2=34+(i%2)*8;s+=`<line x1="${50+Math.cos(a)*r1}" y1="${52+Math.sin(a)*r1}" x2="${50+Math.cos(a)*r2}" y2="${52+Math.sin(a)*r2}" stroke="${cs[i%cs.length]}" stroke-width="${i%2?3:5}" stroke-linecap="round"/>`;}
+    if(c.id==='kf_buco')s=`<circle cx="50" cy="52" r="30" fill="none" stroke="${col}" stroke-width="3" stroke-dasharray="6 5"/><circle cx="50" cy="52" r="20" fill="none" stroke="#c7a8ff" stroke-width="4" stroke-dasharray="10 6"/><circle cx="50" cy="52" r="10" fill="#0b0614" stroke="#fff" stroke-width="1.5"/>`;
+    return `<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true">${s}<circle cx="50" cy="52" r="9" fill="${c.id==='kf_buco'?'#0b0614':'#fff'}" opacity=".9"/></svg>`;}
+  if(c.cat==='aura')return `<span class="cos-aura" style="--ac:${col}"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span>`;
+  if(c.cat==='title')return `<span class="cos-tagp"><b>${esc(MP.name())}</b><small>${esc(c.n)}</small></span>`;
+  if(c.cat==='frame')return `<span class="cos-tagp fr" data-fr="${c.id}" style="--fc:${col}"><b>${esc(MP.name())}</b></span>`;
+  if(c.cat==='pet'){const im=petThumb(c.id);return im?`<img class="cos-petimg" src="${im}" alt="">`:`<span class="cos-aura" style="--ac:${col}"><b></b></span>`;}
+  return '';}
+const RI_SVG={
+  amu:'<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true"><path d="M30 14 Q50 44 70 14" fill="none" stroke="#d9b45a" stroke-width="4"/><path d="M50 40 L68 58 L50 88 L32 58 Z" fill="#ff4d6a" stroke="#fff" stroke-width="2"/><path d="M50 40 L58 58 L50 88 L42 58 Z" fill="#ff8a9c"/><circle cx="50" cy="40" r="6" fill="#d9b45a"/></svg>',
+  key:'<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true"><circle cx="34" cy="38" r="17" fill="none" stroke="#ffd27a" stroke-width="8"/><path d="M46 50 L80 84 M66 70 L74 62 M74 78 L82 70" stroke="#ffd27a" stroke-width="8" stroke-linecap="round"/><circle cx="34" cy="38" r="6" fill="#7a5a1a"/></svg>',
+  scr:'<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true"><rect x="24" y="22" width="52" height="58" rx="4" fill="#f3e6c8" stroke="#8a6a3a" stroke-width="3"/><rect x="18" y="16" width="64" height="10" rx="5" fill="#c9a06a"/><rect x="18" y="76" width="64" height="10" rx="5" fill="#c9a06a"/><path d="M34 40 H66 M34 50 H62 M34 60 H58" stroke="#8a6a3a" stroke-width="3"/><circle cx="64" cy="66" r="7" fill="#c7a8ff" stroke="#fff" stroke-width="2"/></svg>',
+  ton:'<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true"><rect x="42" y="14" width="16" height="14" rx="3" fill="#8a6a3a"/><path d="M40 28 H60 V40 Q78 50 74 70 Q70 88 50 88 Q30 88 26 70 Q22 50 40 40 Z" fill="#7fe08a" stroke="#fff" stroke-width="3"/><path d="M30 64 Q50 56 70 64 Q68 84 50 84 Q32 84 30 64" fill="#3fae5a"/><path d="M44 50 H56 M50 44 V56" stroke="#fff" stroke-width="5"/></svg>',
+  pack:'<svg class="cos-pic" viewBox="0 0 100 100" aria-hidden="true"><path d="M20 40 H80 V84 H20 Z" fill="#7a5434" stroke="#2a1a0e" stroke-width="3"/><path d="M14 30 H86 V42 H14 Z" fill="#9a6a3e" stroke="#2a1a0e" stroke-width="3"/><path d="M50 30 V84" stroke="#d9b45a" stroke-width="7"/><path d="M50 30 Q36 10 30 22 Q28 30 50 30 Q72 30 70 22 Q64 10 50 30" fill="#ff4d6a" stroke="#2a1a0e" stroke-width="2"/></svg>'};
+
+/* ---------- le schede del negozio ---------- */
+const buyB=(attr,p)=>`<button class="sh-buy" ${attr} ${COINS.n<p?'disabled':''}>${coinI}<span>${fmtC(p)}</span></button>`;
+function cosCard(c,weekly){const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id;
+  return `<article class="sh-card cos-card${on?' on':''}" style="--vc:${hexCss(c.col||'#ffd27a')}"><div class="sh-stage cos-stage">${cosPic(c)}${on?'<em class="sh-rib">In uso</em>':weekly?'<em class="sh-rib">Solo questa settimana</em>':''}</div>
+    <div class="sh-info"><b>${esc(c.n)}</b><span>${esc(c.d)}</span></div>
+    ${own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:buyB(`data-cbuy="${c.id}"`,c.p)}</article>`;}
+function weekHtml(){const w=weekItem();return `<div class="sh-h wk"><b>Offerta della settimana</b><span>finisce tra ${untilWeek()}</span></div>${cosCard(w,true)}
+  <article class="sh-card wk-note"><div class="sh-info"><b>Cosmetici rari</b><span>Ogni settimana il Mercante porta un cosmetico diverso che non vende in altri momenti. Quelli comprati restano tuoi per sempre.</span></div></article>`;}
+function renderCos(){let h=weekHtml();
+  for(const [cat,t,s] of COS_CATS){const list=COS_LIST.filter(c=>c.cat===cat&&(!c.week||cosOwn(c.id)));if(!list.length)continue;
+    h+=`<div class="sh-h"><b>${t}</b><span>${s}</span></div>`+list.map(c=>cosCard(c,false)).join('');}
+  return h+'<p class="note">Tocca «Usa» per indossarli: uno per tipo. Titoli e cornici li vedono gli amici e i compagni in co-op.</p>';}
+function riCard(o){const n=riN(o.id),on=!!RI.prep[o.id]&&n>0,full=n>=RI_MAX;
+  return `<article class="sh-card ri-card${on?' on':''}" style="--vc:${o.col}"><div class="sh-stage cos-stage">${RI_SVG[o.id]}<span class="sh-cnt">${n}/${RI_MAX}</span>${on?'<em class="sh-rib">Pronto</em>':''}</div>
+    <div class="sh-info"><b>${esc(o.n)}</b><span>${esc(o.d)}</span></div>
+    <div class="ri-act">${full?'<button class="sh-buy off" disabled>Pieno</button>':buyB(`data-ribuy="${o.id}"`,o.p)}${n?`<button class="sh-buy ${on?'off':'wear'}" data-riprep="${o.id}" aria-pressed="${on}">${on?'Non usare':'Prepara'}</button>`:''}</div></article>`;}
+function riHtml(){const canPack=RUN_ITEMS.every(o=>riN(o.id)<RI_MAX);
+  return `<div class="sh-h"><b>Per la prossima scalata</b><span>prepara quelli che vuoi: si consumano quando entri nella torre</span></div>`+RUN_ITEMS.map(riCard).join('')+
+  `<article class="sh-card ri-card pack" style="--vc:#ffd27a"><div class="sh-stage cos-stage">${RI_SVG.pack}<em class="sh-rib">−25%</em></div>
+    <div class="sh-info"><b>Pacchetto della scalata</b><span>Uno di ognuno dei 4 oggetti, già preparati per la prossima scalata</span></div>
+    <s class="sh-was">${fmtC(RUN_ITEMS.reduce((s,o)=>s+o.p,0))}</s>${canPack?buyB('data-bundle="run"',RUN_PACK_P):'<button class="sh-buy off" disabled>Ne hai già troppi</button>'}</article>`;}
+function packCrateHtml(){const cr=CRATES.find(c=>c.id==='eroe'),im=crateImg(cr.id);
+  return `<article class="sh-card cr-eroe pack3"><div class="sh-stage">${im?`<img src="${im}" alt="">`:''}<em class="sh-rib">3 casse −20%</em><span class="sh-cnt">×3</span></div>
+    <div class="sh-info"><b>Tris dell'eroe</b><span>Tre casse dell'eroe in una volta: tre oggetti almeno Rari</span></div><s class="sh-was">${fmtC(cr.p*3)}</s>${buyB('data-bundle="eroe3"',HERO3_P)}</article>`;}
+const _rsPlus=renderShop;
+renderShop=function(){
+  if(shTab==='cos'){const t=shTab;shTab='ogg';try{_rsPlus();}finally{shTab=t;}
+    for(const b of document.querySelectorAll('#shop .tab'))b.setAttribute('aria-selected',b.dataset.st===shTab);
+    const box=$('shBody');box.className='sh-body sh-cos';box.innerHTML=renderCos();return;}
+  _rsPlus();const box=$('shBody');
+  if(shTab==='casse'){box.insertAdjacentHTML('afterbegin',weekHtml()+'<div class="sh-h"><b>Casse</b><span>gli oggetti finiscono nell\'armadio</span></div>');
+    const note=box.querySelector('p.note');if(note)note.insertAdjacentHTML('beforebegin',packCrateHtml());
+    const leg=box.querySelector('.cr-leggenda .sh-info');if(leg)leg.insertAdjacentHTML('beforeend',`<span class="pity">${PITY>=PITY_N-1?'<b>La prossima è Leggendaria sicura!</b>':`Leggendaria sicura entro ${PITY_N-PITY} casse`}</span><i class="pity-bar"><i style="width:${PITY/(PITY_N-1)*100}%"></i></i>`);}
+  else if(shTab==='ogg')box.insertAdjacentHTML('afterbegin',riHtml());
+  else if(shTab==='skin'){const h=box.querySelector('.sh-h:not(.vn)');const left=SKRR_MAX-skrrN();
+    if(h)h.insertAdjacentHTML('beforeend',left>0?`<button class="sh-rr" data-rr="1" ${COINS.n<SKRR_P?'disabled':''}>Rinnova ${coinI}${SKRR_P} <small>(${left} oggi)</small></button>`:'<small class="sh-rr-off">Rinnovi finiti per oggi</small>');}};
+// una scheda in più: Cosmetici
+(function(){const tabs=document.querySelector('#shop .sh-tabs');if(tabs&&!tabs.querySelector('[data-st="cos"]')){const b=document.createElement('button');b.className='tab';b.dataset.st='cos';b.setAttribute('role','tab');b.textContent='Cosmetici';
+  const sk=tabs.querySelector('[data-st="skin"]');sk?sk.after(b):tabs.appendChild(b);}})();
+function shPay(p){if(COINS.n<p)return false;COINS.n-=p;saveCoins();coinHud();sfx('pick');tributo(p);return true;}
+$('shop').addEventListener('click',e=>{
+  const cb=e.target.closest('[data-cbuy]');if(cb&&!cb.disabled){const c=COS_BY[cb.dataset.cbuy];if(!c||cosOwn(c.id)||(c.week&&weekItem().id!==c.id))return;if(!shPay(c.p))return;
+    COS.own.push(c.id);COS.sel[c.cat]=c.id;saveCos();cosApply();toast('Nuovo cosmetico!',c.n+' · già in uso');renderShop();return;}
+  const cw=e.target.closest('[data-cwear]');if(cw){const c=COS_BY[cw.dataset.cwear];if(!c||!cosOwn(c.id))return;if(COS.sel[c.cat]===c.id)delete COS.sel[c.cat];else COS.sel[c.cat]=c.id;saveCos();cosApply();sfx('equip');renderShop();return;}
+  const rb=e.target.closest('[data-ribuy]');if(rb&&!rb.disabled){const o=RUN_ITEMS.find(x=>x.id===rb.dataset.ribuy);if(!o||riN(o.id)>=RI_MAX)return;if(!shPay(o.p))return;
+    RI.n[o.id]=riN(o.id)+1;RI.prep[o.id]=true;saveRI();toast(o.n,`Ne hai ${RI.n[o.id]} · pronto per la prossima scalata`);renderShop();return;}
+  const rp=e.target.closest('[data-riprep]');if(rp){const id=rp.dataset.riprep;RI.prep[id]=!RI.prep[id];saveRI();sfx('ui');renderShop();return;}
+  const bd=e.target.closest('[data-bundle]');if(bd&&!bd.disabled){const k=bd.dataset.bundle;
+    if(k==='run'){if(!RUN_ITEMS.every(o=>riN(o.id)<RI_MAX)||!shPay(RUN_PACK_P))return;for(const o of RUN_ITEMS){RI.n[o.id]=riN(o.id)+1;RI.prep[o.id]=true;}saveRI();toast('Pacchetto della scalata','4 oggetti pronti per la prossima scalata');renderShop();return;}
+    if(k==='eroe3'){if(!shPay(HERO3_P))return;const cr=CRATES.find(c=>c.id==='eroe'),os=[crateRoll(cr),crateRoll(cr),crateRoll(cr)];os.sort((a,b)=>b.rarity-a.rarity);
+      crateShow(cr,os[0]);setTimeout(()=>toast('Altri 2 oggetti nell\'armadio',os.slice(1).map(o=>RARITY[o.rarity].name+': '+o.name).join(' · ')),2600);renderShop();return;}}
+  const rr=e.target.closest('[data-rr]');if(rr&&!rr.disabled){if(skrrN()>=SKRR_MAX||!shPay(SKRR_P))return;SKRR={d:dayNo(),n:skrrN()+1};store.set('skrr',SKRR);toast('Skin rinnovate','Il mercante tira fuori altre 3 skin');renderShop();return;}
+});
+
+/* ---------- oggetti per la scalata: si consumano quando entri nella torre ---------- */
+G.rb=null;
+const _srRI=startRun;
+startRun=function(){const was=G.scene;G.rb=null;const r=_srRI.apply(this,arguments);
+  if(G.scene==='tower'&&was!=='tower'&&!G.pvp&&!G.tutorial&&!RESUMING){
+    const used=RUN_ITEMS.filter(o=>RI.prep[o.id]&&riN(o.id)>0);
+    if(used.length){G.rb={};for(const o of used){RI.n[o.id]--;if(!RI.n[o.id])RI.prep[o.id]=false;G.rb[o.id]=true;}saveRI();
+      if(G.rb.ton){const add=Math.round(S.maxHp*0.25);S.maxHp+=add;P.hp=S.maxHp;G.rb.ton=add;}
+      if(G.rb.scr)G.rbScroll=1.1;
+      setTimeout(()=>toast('Oggetti della scalata',used.map(o=>o.n).join(' · ')),1800);}}
+  return r;};
+const _ecRI=enterCellar;enterCellar=function(){G.rb=null;G.rbScroll=0;return _ecRI.apply(this,arguments);};
+// Amuleto: +50% rubini raccolti nella torre
+const _acRI=addCoins;addCoins=function(n,x,y){if(G.rb&&G.rb.amu&&G.scene==='tower'&&x!=null&&n>0)n=Math.round(n*1.5);return _acRI(n,x,y);};
+// Chiave d'oro: il primo forziere che apri dà un oggetto almeno Epico
+// (il forziere prima fa la sua animazione: il bottino si decide in chestBurst, lì si alza la rarità)
+let KEYC=false;
+const _rrRI=rollRarity;rollRarity=function(f,m){const r=_rrRI.apply(this,arguments);return KEYC?Math.max(3,r):r;};
+const _ocRI=openChest;openChest=function(c){if(c&&!c.open&&!c.fx&&G.rb&&G.rb.key){G.rb.key=false;c.gkey=true;}return _ocRI.apply(this,arguments);};
+const _cbRI=chestBurst;chestBurst=function(c){if(!c||!c.gkey)return _cbRI.apply(this,arguments);c.gkey=false;c.bonus=true;KEYC=true;
+  try{return _cbRI.apply(this,arguments);}finally{KEYC=false;popNum(c.x,c.y+2.4,'Chiave d\'oro!','crit');sfx('legend');}};
+// Tonico: resta finché non batti il primo guardiano (entri nel piano dopo); vale anche se ricalcoli l'equipaggiamento
+const _alRI=applyLoadout;applyLoadout=function(){const r=_alRI.apply(this,arguments);if(G.rb&&typeof G.rb.ton==='number'&&G.scene==='tower')S.maxHp+=G.rb.ton;return r;};
+const _sfRI=startFloor;startFloor=function(f){if(G.rb&&typeof G.rb.ton==='number'&&f>1&&isBossFloor(f-1)){S.maxHp=Math.max(1,S.maxHp-G.rb.ton);P.hp=Math.min(P.hp,S.maxHp);G.rb.ton=false;setTimeout(()=>toast('Il tonico svanisce','Torni alla tua vita normale'),900);}
+  return _sfRI.apply(this,arguments);};
+// Pergamena: appena sei nella torre (e non c'è già un'altra scelta aperta) scegli un potenziamento
+const _upRI=update;update=function(dt){_upRI(dt);
+  if(G.rbScroll>0&&G.state==='play'&&!P.dead&&!(G.warpPick>0)&&G.scene==='tower'){G.rbScroll-=dt;if(G.rbScroll<=0){G.rbScroll=0;openUpgrade();$('upEyebrow').textContent='Pergamena del sapere';$('upNext').textContent='Scegli un potenziamento: vale fino alla fine della scalata.';}}};
+
+/* ---------- scie dell'arma ---------- */
+function trailCol(){const c=cosOf('trail');if(!c)return null;return c.rain?null:c.col;}
+const _rbPlus=ribbonUpd;ribbonUpd=function(R){_rbPlus(R);if(R!==hero)return;const c=cosOf('trail');if(!c)return;const u=ribOf(R).m.material.uniforms.uColor.value;
+  if(c.rain)u.setHSL((G.time*0.7)%1,0.9,0.62);else u.setHex(c.col);};
+const _utPlus=updTrail;updTrail=function(dt){const r=_utPlus(dt);const c=cosOf('trail');if(c&&trailMat&&streakMat){const col=c.rain?new THREE.Color().setHSL((G.time*0.7)%1,0.9,0.62).getHex():c.col;
+  trailMat.uniforms.uColor.value.setHex(col);streakMat.uniforms.uColor.value.setHex(col);}return r;};
+
+/* ---------- effetti quando uccidi ---------- */
+const _heCos=hitEnemy;hitEnemy=function(e){if(e&&!e.dead)e._mh=G.time;return _heCos.apply(this,arguments);};
+const _keCos=killEnemy;killEnemy=function(e){const was=e&&e.dead,r=_keCos.apply(this,arguments);
+  if(e&&!was&&e.dead&&G.scene==='tower'&&e.pvp==null&&G.time-(e._mh!=null?e._mh:-9)<0.8){const c=cosOf('kill');if(c)try{killFx(c,e.x,e.y+(e.h||1)*0.5,e.type==='boss');}catch(err){}}
+  return r;};
+function killFx(c,x,y,big){const k=big?1.8:1;
+  switch(c.id){
+  case 'kf_pira':fxPillar(x,0,0,0xff7a2e,0.55*k,5*k,0.7);burst(x,y,0xff7a2e,22*k,6,6,-0.3);burst(x,y,0xffd27a,12*k,4,5,-0.2);break;
+  case 'kf_gelo':fxSpikes(x,0,0,0x8fdcff,8,0.9*k,1.1*k,0.8);burst(x,y,0xdff4ff,22*k,7,3);burst(x,y,0x8fdcff,10,5,2);break;
+  case 'kf_cori':for(const col of [0xff4d6a,0xffd27a,0x7fe08a,0x8fdcff,0xb88cff])burst(x,y+0.3,col,6*k,7,6,0.6);break;
+  case 'kf_anime':fxPillar(x,0,0,0xb88cff,0.3*k,6,0.9);burst(x,y,0xb88cff,14*k,2,7,-0.6);burst(x,y+0.5,0xffffff,6,1.5,6,-0.5);fxRing(x,0.06,0,0xb88cff,1.6*k,0.5);break;
+  case 'kf_fulmine':lightning(x+rand(-1.2,1.2),CEIL-0.4,x,y);burst(x,y,0xfff27a,20*k,8,3);fxRing(x,0.06,0,0xfff27a,2*k,0.4);sfx('zap');break;
+  case 'kf_buco':fxRing(x,y,0,0x7a4aff,2.4*k,0.6,true,0);fxRing(x,y,0,0xc7a8ff,1.4*k,0.45,true,0);for(let i=0;i<10;i++){const a=i/10*TAU;burst(x+Math.cos(a)*1.4,y+Math.sin(a)*1.1,0x7a4aff,2,1.5,0,-0.2);}burst(x,y,0x0b0614,16*k,3,1,0);break;}}
+
+/* ---------- aure ---------- */
+let auraT=0;
+function auraTick(dt){const c=cosOf('aura');if(!c||!hero||!hero.root.visible||SPEC.on)return;const st=G.state;if(st!=='play'&&st!=='cellar'&&st!=='climb'&&st!=='enter')return;
+  auraT-=dt;if(auraT>0)return;auraT=0.075;const x=P.x,y=P.y,z=P.z||0;
+  switch(c.id){
+  case 'au_brace':burst(x+rand(-0.45,0.45),y+rand(0.05,0.8),Math.random()<0.7?0xff7a2e:0xffd27a,1,0.6,2.2,-0.25,z+rand(-0.3,0.3));break;
+  case 'au_neve':burst(x+rand(-0.8,0.8),y+rand(1.8,2.4),0xe8f6ff,1,0.4,0,0.12,z+rand(-0.4,0.4));break;
+  case 'au_ombra':burst(x+rand(-0.5,0.5),y+0.1,Math.random()<0.6?0x7a4aff:0x2a1a4a,1,0.8,1.2,-0.1,z+rand(-0.3,0.3));break;
+  case 'au_lucciole':{const a=G.time*2.2+Math.random()*TAU,r=0.7;burst(x+Math.cos(a)*r,y+0.9+Math.sin(G.time*3+a)*0.5,0xd8ff7a,1,0.15,0.2,0,z+Math.sin(a)*r*0.6);break;}
+  case 'au_stelle':burst(x+rand(-0.7,0.7),y+rand(0.3,2.2),Math.random()<0.5?0xffe08a:0xffffff,1,0.3,0.4,0,z+rand(-0.4,0.4));break;}}
+
+/* ---------- compagni: un piccolo modello che ti segue ---------- */
+function petModel(id){const g=new THREE.Group(),bm=c=>new THREE.MeshBasicMaterial({color:c}),add=(c,o)=>new THREE.MeshBasicMaterial(Object.assign({color:c,transparent:true,opacity:0.35,depthWrite:false,blending:THREE.AdditiveBlending},o||{}));
+  const parts={};
+  if(id==='pet_luc'){mesh(sph(0.11,14,10),bm(0xf6ffb0),0,0,0,g,true);const h=mesh(sph(0.26,14,10),add(0xd8ff7a),0,0,0,g,true);parts.halo=h;
+    for(const s of [-1,1]){const w=mesh(new THREE.PlaneGeometry(0.16,0.09),add(0xffffff,{opacity:0.6,side:THREE.DoubleSide}),s*0.1,0.06,0,g,true);w.rotation.z=s*0.5;(parts.wings=parts.wings||[]).push(w);}}
+  else if(id==='pet_slime'){const m=toon(0x7fe08a,{emissive:0x1a5a2a,emissiveIntensity:0.4});const b=outline(mesh(sph(0.26,18,12),m,0,0.2,0,g),1.08);b.scale.set(1.1,0.8,1);parts.body=b;
+    for(const s of [-1,1]){mesh(sph(0.055,10,8),bm(0xffffff),s*0.09,0.27,0.21,g,true);mesh(sph(0.03,8,6),bm(0x111111),s*0.09,0.27,0.255,g,true);}mesh(sph(0.07,10,8),bm(0xd8ffd0),0.08,0.36,0.12,g,true);}
+  else if(id==='pet_gufo'){const br=toon(0x8a6a3a),lt=toon(0xe8d6b0);const b=outline(mesh(sph(0.22,16,12),br,0,0,0,g),1.08);b.scale.set(1,1.15,0.9);
+    mesh(sph(0.14,14,10),lt,0,-0.04,0.12,g,true).scale.set(1,1.2,0.6);
+    for(const s of [-1,1]){mesh(sph(0.075,12,10),bm(0xfff2c0),s*0.085,0.08,0.17,g,true);mesh(sph(0.04,10,8),bm(0x1a1208),s*0.085,0.08,0.235,g,true);
+      const ear=mesh(new THREE.ConeGeometry(0.05,0.12,6),br,s*0.12,0.24,0,g);ear.rotation.z=-s*0.3;
+      const w=outline(mesh(sph(0.12,12,8),br,s*0.2,-0.02,-0.02,g),1.1);w.scale.set(0.45,1,0.8);(parts.wings=parts.wings||[]).push(w);}
+    mesh(new THREE.ConeGeometry(0.03,0.07,6),toon(0xffb347),0,0.0,0.22,g).rotation.x=Math.PI/2;}
+  else if(id==='pet_teschio'){const bn=toon(0xf3ead7);const s=outline(mesh(sph(0.2,16,12),bn,0,0.04,0,g),1.08);s.scale.set(1,0.95,0.95);
+    const j=mesh(rbox(0.22,0.09,0.18,0.03),bn,0,-0.13,0.03,g);parts.jaw=j;
+    for(const k of [-1,1])mesh(sph(0.055,10,8),bm(0x14081e),k*0.075,0.05,0.165,g,true);
+    for(const k of [-1,1])mesh(sph(0.025,8,6),bm(0xc7a8ff),k*0.075,0.05,0.2,g,true);
+    const f=mesh(new THREE.ConeGeometry(0.1,0.32,10),add(0xb88cff,{opacity:0.75}),0,0.36,0,g,true);parts.flame=f;
+    mesh(new THREE.ConeGeometry(0.05,0.18,8),add(0xffffff,{opacity:0.7}),0,0.31,0.01,g,true);}
+  else if(id==='pet_drago'){const rd=toon(0xd8402a),bl=toon(0xffc56b);const b=outline(mesh(sph(0.17,16,12),rd,0,0,0,g),1.08);b.scale.set(1.3,1,0.9);
+    const hd=outline(mesh(sph(0.13,14,10),rd,0.2,0.12,0,g),1.1);mesh(rbox(0.12,0.07,0.1,0.03),rd,0.31,0.09,0,g);mesh(sph(0.1,12,8),bl,0.02,-0.06,0.07,g,true).scale.set(1.2,0.7,0.6);
+    for(const k of [-1,1]){mesh(sph(0.03,8,6),bm(0xffe08a),0.27,0.16,k*0.07,g,true);const hn=mesh(new THREE.ConeGeometry(0.025,0.1,6),bl,0.16,0.25,k*0.05,g);hn.rotation.z=0.5;
+      const w=new THREE.Mesh(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(-0.18,0.3,0),new THREE.Vector3(-0.36,0.04,0)]),toon(0xff7a5a,{side:THREE.DoubleSide}));
+      w.geometry.setIndex([0,1,2]);w.geometry.computeVertexNormals();w.position.set(0,0.08,k*0.08);w.rotation.x=k*0.6;g.add(w);(parts.wings=parts.wings||[]).push(w);}
+    const t=mesh(new THREE.ConeGeometry(0.06,0.3,8),rd,-0.3,-0.02,0,g);t.rotation.z=Math.PI/2+0.3;mesh(new THREE.ConeGeometry(0.05,0.08,4),bl,-0.45,0.02,0,g).rotation.z=Math.PI/2;}
+  g.userData.parts=parts;return g;}
+const PET_THUMB={};
+function petThumb(id){if(PET_THUMB[id]!=null)return PET_THUMB[id];try{const m=petModel(id);m.scale.setScalar(2.4);m.rotation.y=-0.45;m.position.y=id==='pet_slime'?-0.4:0;
+  const u=psURL(psShot(m,72,72,{cx:0,cy:0.05,h:1.5,dist:9}));disposeObj(m);return PET_THUMB[id]=u;}catch(e){return PET_THUMB[id]='';}}
+const CPET={id:null,g:null,x:0,y:0,t:0};
+function petSet(id){if(CPET.id===id)return;if(CPET.g){scene.remove(CPET.g);disposeObj(CPET.g);CPET.g=null;}CPET.id=id;if(!id)return;
+  try{CPET.g=petModel(id);scene.add(CPET.g);CPET.x=P.x;CPET.y=P.y+1.8;CPET.g.position.set(CPET.x,CPET.y,0.4);}catch(e){CPET.g=null;}}
+function petTick(dt){const c=cosOf('pet');petSet(c?c.id:null);const g=CPET.g;if(!g)return;
+  const show=!!hero&&hero.root.visible&&!SPEC.on&&!['cine','intro','waking','select','wardrobe','menu'].includes(G.state)&&(G.scene==='tower'||G.scene==='cellar');g.visible=show;if(!show)return;
+  CPET.t+=dt;const t=CPET.t,f=P.face||1,slime=CPET.id==='pet_slime';
+  const tx=P.x-f*(slime?1.0:0.85),ty=slime?P.y:P.y+1.9+Math.sin(t*2.4)*0.12;
+  CPET.x+=(tx-CPET.x)*damp(dt,slime?7:4.5);CPET.y+=(ty-CPET.y)*damp(dt,slime?10:4);
+  const hop=slime?Math.abs(Math.sin(t*6))*0.32:0;g.position.set(CPET.x,CPET.y+hop,(P.z||0)+0.45);
+  const dx=tx-CPET.x;g.rotation.y+=((Math.abs(dx)>0.05?(dx>0?0.5:-0.5):f*0.35)-g.rotation.y)*damp(dt,6);
+  const pp=g.userData.parts;
+  if(pp.wings)pp.wings.forEach((w,i)=>{const s=i?1:-1;if(CPET.id==='pet_drago')w.rotation.x=s*(0.6+Math.sin(t*12)*0.5);else if(CPET.id==='pet_gufo')w.rotation.z=s*(0.2+Math.sin(t*14)*0.35);else w.rotation.z=s*(0.5+Math.sin(t*30)*0.6);});
+  if(pp.halo){const k=1+Math.sin(t*5)*0.15;pp.halo.scale.setScalar(k);if(Math.random()<dt*6)burst(CPET.x,CPET.y,0xd8ff7a,1,0.2,0,0.1,0.45);}
+  if(pp.body){const s=1-hop*0.6;pp.body.scale.set(1.1/s*0.92,0.8*s+0.05,1);}
+  if(pp.flame){pp.flame.scale.set(1,1+Math.sin(t*14)*0.18,1);if(Math.random()<dt*5)burst(CPET.x,CPET.y+0.45,0xb88cff,1,0.3,1,-0.2,0.45);}
+  if(pp.jaw)pp.jaw.position.y=-0.13-Math.max(0,Math.sin(t*3))*0.03;}
+const _uhvCos=updHeroVisual;updHeroVisual=function(dt){_uhvCos(dt);try{auraTick(dt);petTick(dt);}catch(e){}if(SPEC.on&&SPEC.R&&SPEC.R.tag)cosTag(SPEC.R);};
+function cosApply(){const c=cosOf('pet');petSet(c?c.id:null);heartbeat();}
+
+/* ---------- titolo e cornice: li vedono gli altri (co-op, santuario, spettatori, amici) ---------- */
+const _msCos=mpMyState;mpMyState=function(){const s=_msCos.apply(this,arguments);const ti=cosOf('title'),fr=cosOf('frame');if(ti)s.ti=ti.id;if(fr)s.fr=fr.id;return s;};
+const _riCos=mpRecvInto;mpRecvInto=function(R,m){_riCos(R,m);R.ti=m.ti||'';R.fr=m.fr||'';};
+function cosTag(R){const el=R.tag;if(!el)return;const ti=COS_BY[R.ti],fr=COS_BY[R.fr],tv=ti?ti.n:'',fv=fr?fr.id:'';
+  if(el.dataset.ti!==tv){if(tv)el.dataset.ti=tv;else delete el.dataset.ti;R.tagW=0;}
+  if(el.dataset.fr!==fv){if(fv){el.dataset.fr=fv;el.style.setProperty('--fc',fr.col);}else{delete el.dataset.fr;el.style.removeProperty('--fc');}}}
+const _ptCos=mpPlaceTags;mpPlaceTags=function(){for(const R of [...MP.players.values(),...HUB.players.values()])if(R.tag)cosTag(R);return _ptCos.apply(this,arguments);};
+// nella lista amici e nel profilo: titolo sotto il nome
+const _hbCos=heartbeat;heartbeat=function(){_hbCos.apply(this,arguments);if(!fbOn()||!store.get('nameok',false))return;const ti=cosOf('title'),fr=cosOf('frame');
+  fbPatch('players/'+encodeURIComponent(nameKey(MP.name())),{n:MP.name(),pid:PID,t:Date.now(),ti:ti?ti.id:'',fr:fr?fr.id:''}).catch(()=>{});};
+const _slCos=statLine;statLine=function(p){const s=_slCos(p),ti=p&&COS_BY[p.ti];return ti?`<i class="cos-ti">${esc(ti.n)}</i> `+s:s;};
+
+/* ---------- avvio ---------- */
+setTimeout(()=>{try{cosApply();}catch(e){}},1500);
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{COS,RI,cosApply,openShop,renderShop,killFx,CPET,crateRoll,weekItem,setShTab:t=>{shTab=t;renderShop();},coins:n=>{COINS.n=n;saveCoins();coinHud();}});

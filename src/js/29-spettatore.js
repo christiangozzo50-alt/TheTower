@@ -59,11 +59,16 @@ setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
   const fl=run?G.floor:0,now=Date.now();
   if(run!==SPB.inRun||fl!==SPB.fl||(run&&now-SPB.presT>40000)){SPB.inRun=run;SPB.fl=fl;SPB.presT=now;specPresence();if(SPB.conns.length)specSend(specInfo());}
   specCountUi();},2000);
-// invio a chi guarda: eroe 15 volte al secondo, nemici 7-8 volte al secondo
+// invio a chi guarda: eroe, nemici, proiettili ed effetti 20 volte al secondo (come in co-op); forzieri e barili 4 volte al secondo
 setInterval(()=>{if(!SPB.conns.length||document.hidden)return;SPB.tk++;
-  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);if(SPB.tk%2===0&&!G.pvp)specSend(mpSnap());specSend(specProjMsg());if(FXQ.length){specSend({t:'fx',f:G.floor,l:FXQ.splice(0)});}}
+  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);
+      if(!G.pvp){specSend(mpSnap());specSend(specProjMsg());if(FXQ.length)specSend({t:'fx',f:G.floor,l:FXQ.splice(0)});if(SPB.tk%5===0)specSend(specPropsMsg());}}
     {const k=specInRun()?JSON.stringify(G.lv||{}):'{}';if(k!==SPB.lvKey){SPB.lvKey=k;specSend({t:'lv',lv:JSON.parse(k)});}}
-    if(SPB.tk%15===0)specSend(specInfo());}catch(e){}},66);
+    if(SPB.tk%20===0)specSend(specInfo());}catch(e){}},50);
+// forzieri (escono a caso solo da chi scala) e barili rotti
+function specPropsMsg(){return {t:'cb',f:G.floor,ex:G.entry?f2(G.entry.x):null,
+  c:(G.chests||[]).map(c=>[f2(c.x),f2(c.y),c.boss?1:0,c.open?1:0,f2(c.dy||0)]),
+  b:(G.barrels||[]).map(b=>b.dead?null:f2(b.g.position.x))};}
 
 /* ---------- mosse speciali, colpi ed effetti: chi scala li registra, chi guarda li rifà ----------
    Si registrano solo gli effetti "di primo livello": quelli fatti dentro un altro effetto registrato
@@ -97,7 +102,7 @@ const _azSp=addZone;addZone=function(o){if(fxRec()&&o)fxPush(['z',f2(o.x),f2(o.r
 const _afxSp=abilityFx;abilityFx=function(n,ab){if(fxRec())fxPush(['A',n,ab&&ab.name||'',G.cls.fx||CLS_COL[G.cls.id]||0x7ff0e4,f2(P.x),f2(P.y)]);fxDepth++;try{return _afxSp.apply(this,arguments);}finally{fxDepth--;}};
 // gli effetti già in volo si animano da soli anche da chi guarda: quello che fanno lì dentro non si registra
 const _uflSp=updFxl;updFxl=function(dt){fxDepth++;try{return _uflSp(dt);}finally{fxDepth--;}};
-setInterval(()=>{fxSfxN=0;},66);
+setInterval(()=>{fxSfxN=0;},50);
 
 // proiettili (di tutti): numerati, si mandano con posizione e velocità
 let projN=0;
@@ -140,12 +145,34 @@ function specZoneTick(dt){for(let i=SPX.zones.length-1;i>=0;i--){const z=SPX.zon
   if(z.t<=0){scene.remove(z.m);z.m.material.dispose();SPX.zones.splice(i,1);}}}
 function specFxClear(){for(const [id,p] of SPX.pj)specProjGone(id,p);for(const z of SPX.zones){scene.remove(z.m);z.m.material.dispose();}SPX.zones.length=0;G.timers=[];try{fxClear();}catch(e){}}
 
+function specProps(m){if(!SPEC.built||G.state!=='spec'||m.f!==G.floor)return;
+  // porta d'ingresso nello stesso punto
+  if(m.ex!=null&&SPEC.doorFl!==G.floor){SPEC.doorFl=G.floor;try{buildEntryDoor(m.ex);}catch(e){}}
+  // forzieri: si creano quando compaiono, si aprono quando li apre lui
+  G.chests=G.chests||[];
+  m.c.forEach((a,i)=>{let c=G.chests[i];if(!c){try{spawnChest(a[0],a[1],!!a[2]);}catch(e){return;}c=G.chests[i];if(!c)return;}
+    c.dy=a[4];c.g.position.set(a[0],a[1]+a[4],-0.5);
+    if(a[3]&&!c.open){c.open=true;c.lk.visible=false;}});
+  // barili: stessa posizione, e spariscono (in pezzi) quando li rompe
+  const bs=G.barrels||[];
+  m.b.forEach((x,i)=>{const b=bs[i];if(!b||b.dead)return;
+    if(x==null){b.dead=true;const bx=b.g.position.x,bz=b.g.position.z;levelGroup.remove(b.g);
+      for(let k=0;k<7;k++){const mm=new THREE.Mesh(chunkGeo,chunkMat(k%3?0x7a5a3a:0x55443a));mm.scale.set(0.5,rand(0.6,1.3),0.25);mm.position.set(bx+rand(-.3,.3),0.6,bz);scene.add(mm);
+        G.chunks.push({m:mm,vx:rand(-5,5),vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}}
+    else b.g.position.x=x;});}
+// animazione dei forzieri da chi guarda (coperchio, bagliore quando il piano è libero)
+function specChestTick(dt){for(const c of G.chests||[]){c.t+=dt;c.lid.rotation.x+=((c.open?-1.9:0)-c.lid.rotation.x)*damp(dt,7);
+  if(G.cleared&&!c.open){c.lm.emissive.setHex(0x7fe08a);c.glow.material.opacity=0.12+Math.sin(c.t*4)*0.06;}else c.glow.material.opacity=Math.max(0,c.glow.material.opacity-dt);
+  if(c.beam){c.beam.material.opacity=c.open?Math.max(0,c.beam.material.opacity-dt):0.16+Math.sin(c.t*3)*0.06;c.beam.rotation.y+=dt;}}}
+
 /* ---------- chi guarda ---------- */
 let specBar=null;
 function specBarUi(){if(!specBar){specBar=document.createElement('div');specBar.id='specBar';specBar.hidden=true;specBar.setAttribute('role','status');
     specBar.innerHTML=`<span class="sb-eye">${EYE_SVG}</span><div class="sb-txt"><b id="sbName"></b><small id="sbInfo"></small><div class="sb-bars" id="sbBars" hidden><div class="sb-row"><span>Vita</span><div class="sb-hp"><i id="sbHp"></i></div><em id="sbHpT"></em></div><div class="sb-row"><span>Stamina</span><div class="sb-st"><i id="sbSt"></i></div><em id="sbStT"></em></div></div></div><button class="mini" id="specExit">Esci</button>`;
     document.body.appendChild(specBar);
-    const pk=document.createElement('div');pk.id='specPerks';pk.hidden=true;pk.setAttribute('aria-label','Potenziamenti scelti');pk.innerHTML='<div class="sp-h">Potenziamenti</div><div class="sp-list" id="spList"></div>';document.body.appendChild(pk);
+    const pk=document.createElement('div');pk.id='specPerks';pk.hidden=true;pk.setAttribute('aria-label','Potenziamenti scelti');pk.innerHTML='<div class="sp-tip" id="spTip" hidden role="status"></div><div class="sp-h">Potenziamenti <small>tocca per i dettagli</small></div><div class="sp-list" id="spList"></div>';document.body.appendChild(pk);
+    pk.addEventListener('click',e=>{const c=e.target.closest('[data-up]');if(c){e.stopPropagation();sfx('ui');specTip(SPEC.tipId===c.dataset.up?null:c.dataset.up);return;}if(e.target.closest('#spTip'))specTip(null);});
+    document.addEventListener('pointerdown',e=>{if(SPEC.tipId&&!e.target.closest('#specPerks'))specTip(null);},true);
     $('specExit').onclick=()=>{sfx('ui');specExit();};}
   return specBar;}
 function specSetInfo(t){specBarUi();$('sbInfo').textContent=t;}
@@ -153,7 +180,7 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  Object.assign(SPEC,{on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
@@ -176,9 +203,10 @@ function specMsg(m){
   if(m.t==='e'){specApplySnap(m);return;}
   if(m.t==='lv'){specSetLv(m.lv);return;}
   if(m.t==='fx'){specFxPlay(m);return;}
-  if(m.t==='pj'){specProjSnap(m);return;}}
+  if(m.t==='pj'){specProjSnap(m);return;}
+  if(m.t==='cb'){specProps(m);return;}}
 function specFloor(f){
-  G.floor=f;G.pvp=false;G.tutorial=false;specFxClear();clearActors();SPEC.emap=new Map();G.boss=null;G.bi=null;
+  G.floor=f;G.pvp=false;G.tutorial=false;specFxClear();clearActors();SPEC.doorFl=0;SPEC.endT=0;SPEC.emap=new Map();G.boss=null;G.bi=null;
   try{buildLevel(f);}catch(e){console.warn('spettatore piano',e);}
   try{towerMood(f);}catch(e){}
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);if(G.safe){try{buildSafeRoom();}catch(e){}}
@@ -200,7 +228,17 @@ function specSetLv(lv){lv=lv||{};const k=JSON.stringify(lv);if(k===SPEC.lvKey)re
 function specPerks(nuovi){specBarUi();const box=$('specPerks'),list=$('spList'),lv=SPEC.lv||{};
   const ids=Object.keys(lv).filter(id=>lv[id]>0&&specUp(id));box.hidden=!SPEC.on||!ids.length;
   list.innerHTML=ids.map(id=>{const u=specUp(id),n=lv[id];
-    return `<span class="sp-chip${u.evo?' evo':''}${(nuovi||[]).includes(id)?' new':''}" title="${esc(typeof u.desc==='function'?u.desc():'')}">${svg(u.icon)}<b>${esc(u.name)}</b>${n>1||u.max>1&&u.max<99?`<i>${u.max<99?n+'/'+u.max:'×'+n}</i>`:''}</span>`;}).join('');}
+    return `<button type="button" class="sp-chip${u.evo?' evo':''}${(nuovi||[]).includes(id)?' new':''}${SPEC.tipId===id?' sel':''}" data-up="${esc(id)}" aria-expanded="${SPEC.tipId===id}">${svg(u.icon)}<b>${esc(u.name)}</b>${n>1||u.max>1&&u.max<99?`<i>${u.max<99?n+'/'+u.max:'×'+n}</i>`:''}</button>`;}).join('');
+  if(SPEC.tipId)specTip(lv[SPEC.tipId]?SPEC.tipId:null);}
+// effetti di un potenziamento al livello che ha l'amico (le descrizioni leggono il livello da G.lv: lo si cambia per un attimo)
+function specUpDesc(u,n){const gl=G.lv;G.lv=Object.assign({},SPEC.lv,{[u.id]:Math.max(0,n-1)});try{return typeof u.desc==='function'?u.desc():(u.desc||'');}catch(e){return '';}finally{G.lv=gl;}}
+function specTip(id){SPEC.tipId=id||null;const tip=$('spTip');if(!tip)return;
+  for(const c of document.querySelectorAll('#spList [data-up]')){const on=c.dataset.up===SPEC.tipId;c.classList.toggle('sel',on);c.setAttribute('aria-expanded',on);}
+  const u=id&&specUp(id),n=id&&(SPEC.lv||{})[id];if(!u||!n){tip.hidden=true;return;}
+  const lvTxt=u.evo?'Evoluzione':u.max<99?`Livello ${n} di ${u.max}`:`Preso ${n} volte`,more=!u.evo&&n<u.max&&u.max<99?specUpDesc(u,n+1):'';
+  const per=u.evo&&u.need?'Unisce '+u.need.map(x=>{const v=specUp(x);return v?v.name:x;}).join(' e '):'';
+  tip.innerHTML=`<div class="st-h">${svg(u.icon)}<b>${esc(u.name)}</b><span>${lvTxt}</span></div><p>${esc(specUpDesc(u,n))}</p>${per?`<small>${esc(per)}</small>`:''}${more&&more!==specUpDesc(u,n)?`<small>Al livello ${n+1}: ${esc(more)}</small>`:''}`;
+  tip.classList.toggle('evo',!!u.evo);tip.hidden=false;}
 // i nemici arrivano da chi scala: qui sono solo "marionette", e non danno niente a chi guarda
 function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)return;
   G.queue=s.q.slice();G.spawnT=1e9;const seen=new Set();
@@ -213,9 +251,9 @@ function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)retur
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
 function specKill(e){e.dead=true;
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
-function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;clearTimeout(SPEC.tm);
+function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
-  specFxClear();if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
+  specFxClear();SPEC.tipId=null;if($('spTip'))$('spTip').hidden=true;if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
   clearInput();G.state='menu';
   fadeThen(()=>{SPEC.built=false;if(safeG){scene.remove(safeG);safeG=null;}G.safe=false;G.boss=null;G.floor=SPEC.prevFl;if(hero)hero.root.visible=true;enterCellar();G.fadeTarget=0;});}
 // ogni fotogramma: la telecamera segue l'amico, i nemici si muovono, l'eroe dell'amico si anima
@@ -223,11 +261,13 @@ const _uhvSp=updHeroVisual;
 updHeroVisual=function(dt){if(!SPEC.on)return _uhvSp(dt);
   if(hero)hero.root.visible=false;const R=SPEC.R;if(!R||!SPEC.built||G.state!=='spec')return;
   for(const e of G.enemies)if(!e.dead&&e.net)mpPuppet(e,dt);
-  specProjTick(dt);specZoneTick(dt);
+  specProjTick(dt);specZoneTick(dt);specChestTick(dt);
   specDraw(R,dt);P.x=R.x;P.y=R.y;P.vx=0;P.vy=0;P.dead=false;P.atk=null;
   specBars(R);
   if(!R.dead&&!SPEC.endT){const up=R.st==='upgrade';if(up!==SPEC.upShown){SPEC.upShown=up;specSetInfo(up?'Sta scegliendo un potenziamento…':SPEC.flInfo||'');}}
-  if(R.st==='over'||R.dead){if(!SPEC.endT){SPEC.endT=1;specSetInfo(`È caduto al piano ${G.floor}`);}}};
+  if(R.st==='over'||R.dead){if(!SPEC.endT){SPEC.endT=1;specSetInfo(`È caduto al piano ${G.floor}`);}}
+  // partita finita (in co-op solo quando cadono tutti): dopo un attimo si torna al seminterrato
+  if(R.st==='over'&&!SPEC.outT){const nm=SPEC.name,fl=G.floor;SPEC.outT=setTimeout(()=>{SPEC.outT=0;if(SPEC.on)specExit(`${nm} è caduto al piano ${fl}`,'La scalata è finita');},2500);}};
 function specDraw(R,dt){
   const vis=!!R.hero&&R.sc==='tower'&&R.fl===G.floor&&!['intro','waking','cine','select'].includes(R.st)&&!(R.st==='climb'&&R.tz<-3.5);
   if(R.hero)R.hero.root.visible=vis;if(!vis){if(R.tag)R.tag.hidden=true;return;}
