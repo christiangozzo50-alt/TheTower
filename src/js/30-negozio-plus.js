@@ -244,7 +244,9 @@ function petModel(id){const g=new THREE.Group(),bm=c=>new THREE.MeshBasicMateria
     const t=mesh(new THREE.ConeGeometry(0.06,0.3,8),rd,-0.3,-0.02,0,g);t.rotation.z=Math.PI/2+0.3;mesh(new THREE.ConeGeometry(0.05,0.08,4),bl,-0.45,0.02,0,g).rotation.z=Math.PI/2;}
   g.userData.parts=parts;return g;}
 const PET_THUMB={};
-function petThumb(id){if(PET_THUMB[id]!=null)return PET_THUMB[id];try{const m=petModel(id);m.scale.setScalar(2.4);m.rotation.y=-0.45;m.position.y=id==='pet_slime'?-0.4:0;
+function petThumb(id){if(PET_THUMB[id]!=null)return PET_THUMB[id];try{const m=petModel(id);m.scale.setScalar(id==='pet_luc'?3.4:1.75);
+  // nelle anteprime le parti luminose si mescolerebbero col colore di sfondo: aloni via, il resto pieno
+  m.traverse(o=>{const mt=o.material;if(!mt||!mt.transparent)return;if(mt.opacity<0.5){o.visible=false;return;}o.material=new THREE.MeshBasicMaterial({color:mt.color.clone(),side:mt.side});});m.rotation.y=-0.45;m.position.y=id==='pet_slime'?-0.4:0;
   const u=psURL(psShot(m,72,72,{cx:0,cy:0.05,h:1.5,dist:9}));disposeObj(m);return PET_THUMB[id]=u;}catch(e){return PET_THUMB[id]='';}}
 const CPET={id:null,g:null,x:0,y:0,t:0};
 function petSet(id){if(CPET.id===id)return;if(CPET.g){scene.remove(CPET.g);disposeObj(CPET.g);CPET.g=null;}CPET.id=id;if(!id)return;
