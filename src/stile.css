@@ -923,9 +923,28 @@ body.fm-demo #rotate,body.fm-demo #installGate,body.fm-demo #nameGate,body.fm-de
 #specBar .sb-txt{min-width:0}
 #specBar b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #specBar small{display:block;font-size:11px;color:var(--ink-2);white-space:nowrap}
-#specBar .sb-hp{width:140px;height:4px;margin-top:5px;background:rgba(255,255,255,.12);overflow:hidden}
-#specBar .sb-hp[hidden]{display:none}
-#specBar .sb-hp i{display:block;height:100%;background:#7fe08a;transform-origin:left;transition:transform .2s}
+#specBar .sb-bars{display:grid;gap:4px;margin-top:6px}
+#specBar .sb-bars[hidden]{display:none}
+#specBar .sb-row{display:grid;grid-template-columns:52px 150px 64px;align-items:center;gap:6px}
+#specBar .sb-row span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-2)}
+#specBar .sb-row em{font-style:normal;font-size:11px;font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}
+#specBar .sb-hp,#specBar .sb-st{height:7px;background:rgba(255,255,255,.12);overflow:hidden}
+#specBar .sb-hp i,#specBar .sb-st i{display:block;height:100%;transform-origin:left;transition:transform .2s}
+#specBar .sb-hp i{background:#e0434f}
+#specBar .sb-st i{background:#ffd27a}
+#specPerks{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;max-width:calc(100vw - 24px);padding:8px 10px;background:rgba(10,8,14,.88);border:1px solid rgba(180,140,255,.45)}
+#specPerks[hidden]{display:none}
+#specPerks .sp-h{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#c7a8ff;margin-bottom:6px}
+#specPerks .sp-list{display:flex;flex-wrap:wrap;gap:6px;max-height:30vh;overflow:auto}
+.sp-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;background:rgba(180,140,255,.1);border:1px solid rgba(180,140,255,.4);color:var(--ink);font-size:12px;white-space:nowrap}
+.sp-chip svg{width:15px;height:15px;color:#c7a8ff;flex:none}
+.sp-chip b{font-weight:600}
+.sp-chip i{font-style:normal;font-size:10px;font-weight:700;color:#c7a8ff;font-variant-numeric:tabular-nums}
+.sp-chip.evo{background:rgba(255,197,107,.12);border-color:rgba(255,197,107,.6)}
+.sp-chip.evo svg,.sp-chip.evo i{color:#ffc56b}
+.sp-chip.new{animation:spNew 1.6s ease-out}
+@keyframes spNew{0%{transform:scale(1.15);box-shadow:0 0 14px rgba(199,168,255,.9)}100%{transform:none;box-shadow:none}}
+@media (max-width:560px){#specBar .sb-row{grid-template-columns:44px 1fr 56px}#specBar{width:calc(100vw - 24px)}.sp-chip{font-size:11px}}
 .spec-count{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));z-index:6;display:flex;align-items:center;gap:6px;padding:3px 8px;background:rgba(10,8,14,.8);border:1px solid rgba(127,240,228,.45);color:#7ff0e4;font-size:12px;font-weight:700;pointer-events:auto}
 .spec-count[hidden]{display:none}
-@media (prefers-reduced-motion:reduce){.eye{animation:none}#specBar .sb-hp i{transition:none}}
+@media (prefers-reduced-motion:reduce){.eye,.sp-chip.new{animation:none}#specBar .sb-hp i,#specBar .sb-st i{transition:none}}
