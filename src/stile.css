@@ -908,3 +908,24 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
 #cine.v2.on .cb.top{height:max(calc(11vh + env(safe-area-inset-top,0px)),var(--fmbar,0px))}
 #cine.v2.on .cb.bot{height:max(calc(11vh + env(safe-area-inset-bottom,0px)),var(--fmbar,0px))}
 body.fm-demo #rotate,body.fm-demo #installGate,body.fm-demo #nameGate,body.fm-demo #newsBox,body.fm-demo #account{display:none!important}
+
+/* ---------- modalità spettatore ---------- */
+.fr-n{display:flex;align-items:center;gap:8px;min-width:0}
+.fr-n b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eye{flex:none;display:inline-grid;place-items:center;width:28px;height:22px;padding:0;background:rgba(127,240,228,.08);border:1px solid rgba(127,240,228,.55);color:#7ff0e4;cursor:pointer;animation:eyePulse 2.2s ease-in-out infinite}
+.eye:hover,.eye:focus-visible{background:rgba(127,240,228,.22);border-color:#7ff0e4;outline:none}
+.fr-live{flex:none;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#7ff0e4;white-space:nowrap}
+@keyframes eyePulse{0%,100%{box-shadow:0 0 0 rgba(127,240,228,0)}50%{box-shadow:0 0 10px rgba(127,240,228,.45)}}
+#specBar{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:12px;max-width:calc(100vw - 24px);padding:8px 10px 8px 12px;background:rgba(10,8,14,.92);border:1px solid rgba(127,240,228,.5);color:var(--ink)}
+#specBar[hidden]{display:none}
+#specBar .sb-eye{display:grid;place-items:center;color:#7ff0e4}
+#specBar .sb-eye svg{width:20px;height:20px}
+#specBar .sb-txt{min-width:0}
+#specBar b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#specBar small{display:block;font-size:11px;color:var(--ink-2);white-space:nowrap}
+#specBar .sb-hp{width:140px;height:4px;margin-top:5px;background:rgba(255,255,255,.12);overflow:hidden}
+#specBar .sb-hp[hidden]{display:none}
+#specBar .sb-hp i{display:block;height:100%;background:#7fe08a;transform-origin:left;transition:transform .2s}
+.spec-count{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));top:calc(56px + env(safe-area-inset-top,0px));z-index:6;display:flex;align-items:center;gap:6px;padding:3px 8px;background:rgba(10,8,14,.8);border:1px solid rgba(127,240,228,.45);color:#7ff0e4;font-size:12px;font-weight:700;pointer-events:auto}
+.spec-count[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.eye{animation:none}#specBar .sb-hp i{transition:none}}

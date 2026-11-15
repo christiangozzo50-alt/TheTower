@@ -90,8 +90,8 @@ async function renderFriends(){for(const b of document.querySelectorAll('#friend
     if(!FRIENDS.length){box.innerHTML='<p class="note">Non hai ancora amici: cercali per nome nella scheda «Cerca».</p>'+pendHtml;return;}
     box.innerHTML='<p class="note">Carico…</p>';
     const rows=await Promise.all(FRIENDS.map(async f=>{try{return {f,p:await fbGet('players/'+encodeURIComponent(f.k))};}catch(e){return {f,p:null};}}));
-    rows.sort((a,b)=>(isOnline(b.p)?1:0)-(isOnline(a.p)?1:0));
-    box.innerHTML=rows.map(({f,p})=>`<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><b>${esc((p&&p.n)||f.n)}</b><small>${p?statLine(p):'Nessuna statistica'}</small></div>
+    rows.sort((a,b)=>((isOnline(b.p)?1:0)+(specCan(b.p)?2:0))-((isOnline(a.p)?1:0)+(specCan(a.p)?2:0)));
+    box.innerHTML=rows.map(({f,p})=>`<div class="fr-r"><span class="dot${isOnline(p)?' on':''}"></span><div><span class="fr-n"><b>${esc((p&&p.n)||f.n)}</b>${specEyeHtml(f.k,p)}</span><small>${p?statLine(p):'Nessuna statistica'}</small></div>
       <button class="mini" data-inv="${esc(f.k)}" ${isOnline(p)?'':'disabled'}>Invita</button><button class="mini del" data-rm="${esc(f.k)}">Togli</button></div>`).join('')+pendHtml;}
   else{box.innerHTML=`<div class="fr-search"><input id="frQ" placeholder="Nome del giocatore" maxlength="14" autocomplete="off"><button class="ghost" id="frGo">Cerca</button></div><div id="frRes"></div>`;
     const go=async()=>{const q=nameKey($('frQ').value);const res=$('frRes');if(q.length<2){res.innerHTML='<p class="note">Scrivi almeno 2 lettere.</p>';return;}res.innerHTML='<p class="note">Cerco…</p>';
@@ -102,6 +102,7 @@ async function renderFriends(){for(const b of document.querySelectorAll('#friend
       catch(e){res.innerHTML='<p class="note">Ricerca non riuscita. Controlla la connessione.</p>';}};
     $('frGo').onclick=go;$('frQ').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter')go();});setTimeout(()=>$('frQ').focus(),60);}}
 $('friends').addEventListener('click',async e=>{const t=e.target.closest('.tab');if(t){frTab=t.dataset.ft;sfx('ui');renderFriends();return;}
+  const sp=e.target.closest('[data-spec]');if(sp){specStart(sp.dataset.spec,sp.dataset.n);return;}
   const a=e.target.closest('[data-add]');if(a){a.disabled=true;a.textContent='Invio…';const ok=await sendFriendReq(a.dataset.add,a.dataset.n);a.textContent=ok?'Richiesta inviata':'Riprova';a.disabled=ok;return;}
   const u=e.target.closest('[data-unp]');if(u){FRPEND=FRPEND.filter(f=>f.k!==u.dataset.unp);saveFrPend();fbDel(`invites/${encodeURIComponent(u.dataset.unp)}/${encodeURIComponent(nameKey(MP.name())+'__f')}`).catch(()=>{});renderFriends();return;}
   const r=e.target.closest('[data-rm]');if(r){FRIENDS=FRIENDS.filter(f=>f.k!==r.dataset.rm);saveFriends();sfx('ui');renderFriends();return;}
