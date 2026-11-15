@@ -879,3 +879,31 @@ body.no-fight #combo,body.no-fight #bAtk,body.no-fight #bDash,body.no-fight #bAb
 .vs-p.me b{color:#ffd27a}
 .vs-mid{font-family:var(--f-display);font-size:clamp(40px,8vw,76px);color:#fff;text-shadow:0 0 22px rgba(255,200,120,.8),4px 4px 0 #000;animation:vsm .5s .25s cubic-bezier(.2,.9,.3,1.4) both}
 @keyframes vsl{from{transform:translateX(-60vw)}}@keyframes vsr{from{transform:translateX(60vw)}}@keyframes vsm{from{transform:scale(2.4);opacity:0}}
+
+/* ---------- filmato introduttivo v2 ---------- */
+#cineVig{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 52%,rgba(0,0,0,.62) 100%);opacity:0;transition:opacity .8s}
+#cine.v2.on #cineVig{opacity:1}
+#cineFlash{position:absolute;inset:0;background:#fff;opacity:0}
+#cineTitle{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:0 24px;font-family:var(--f-display);font-size:clamp(22px,4.6vw,54px);letter-spacing:.2em;text-transform:uppercase;color:#f3ead7;text-shadow:0 0 26px rgba(255,170,90,.35),0 3px 0 #000;opacity:0;transition:opacity .7s}
+#cineTitle.on{opacity:1}
+#game.fm-epic{filter:contrast(1.07) saturate(1.08)}
+#game.fm-mem{filter:sepia(.55) saturate(.8) contrast(1.14) brightness(1.05)}
+#game.fm-cold{filter:saturate(.62) brightness(.9) contrast(1.05) hue-rotate(-10deg)}
+#fmDemo{position:fixed;inset:0;z-index:400;display:grid;place-items:center;padding:16px;background:radial-gradient(circle at 50% 30%,#221733,#07060b 70%);overflow:auto}
+#fmDemo[hidden]{display:none}
+#fmDemo .fd-box{width:min(980px,100%);display:grid;gap:14px;text-align:center;color:#f3ead7}
+#fmDemo small{letter-spacing:.2em;text-transform:uppercase;color:#b4ab9b;font-size:12px}
+#fmDemo h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(24px,4.4vw,44px);color:#ffd27a;text-shadow:0 3px 0 #000}
+#fmDemo .fd-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+#fmDemo .fd-btn{display:grid;gap:6px;justify-items:start;text-align:left;padding:14px;background:rgba(10,8,14,.88);border:2px solid #3a3446;color:#f3ead7;font:inherit;cursor:pointer;transition:transform .15s,border-color .15s}
+#fmDemo .fd-btn:hover,#fmDemo .fd-btn:focus-visible{border-color:#ffd27a;transform:translateY(-3px);outline:none}
+#fmDemo .fd-btn i{font-style:normal;font-family:var(--f-display);font-size:28px;line-height:1;color:#111;background:#ffd27a;padding:2px 12px}
+#fmDemo .fd-btn b{font-family:var(--f-display);font-weight:400;font-size:22px}
+#fmDemo .fd-btn span{font-size:13px;color:#cfc6b4}
+#fmDemo .fd-btn em{font-style:normal;font-size:12px;color:#7fe08a}
+#fmDemo p{margin:0;font-size:13px;color:#b4ab9b}
+@media (max-width:640px){#fmDemo .fd-row{grid-template-columns:1fr}#fmDemo .fd-btn{padding:10px 12px}}
+@media (max-height:440px){#fmDemo .fd-row{grid-template-columns:repeat(3,minmax(0,1fr))}#fmDemo .fd-btn span{display:none}#fmDemo h2{font-size:22px}}
+#cine.v2.on .cb.top{height:max(calc(11vh + env(safe-area-inset-top,0px)),var(--fmbar,0px))}
+#cine.v2.on .cb.bot{height:max(calc(11vh + env(safe-area-inset-bottom,0px)),var(--fmbar,0px))}
+body.fm-demo #rotate,body.fm-demo #installGate,body.fm-demo #nameGate,body.fm-demo #newsBox,body.fm-demo #account{display:none!important}

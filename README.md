@@ -22,3 +22,11 @@ quindi vedono tutti le stesse variabili, come prima quando era un file solo.
 1. Modifica il file giusto in `src/` (per esempio le carte potenziamento sono in `src/js/22-carte.js` e `src/js/03-dati-gioco.js`).
 2. Lancia `python3 build.py --rilascio` (rigenera `index.html` e cambia il numero di versione, così le app installate si aggiornano da sole).
 3. Carica `index.html` (e i file cambiati in `src/`) sul repository.
+
+## Filmato introduttivo
+
+Il filmato è in `src/js/26-filmato.js` (stile in fondo a `src/stile.css`). Ha tre regie sullo stesso racconto:
+`A` L'assedio, `B` Senza stacchi, `C` Il ricordo. Quella usata dal gioco è il valore salvato `intro-var` (se manca: `A`).
+
+- per provarne una: aggiungi `#intro=B` (o `A`, `C`) all'indirizzo;
+- per il menu di anteprima con tutte e tre: aggiungi `#anteprima-intro` all'indirizzo.
