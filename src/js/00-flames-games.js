@@ -5,11 +5,12 @@
    Uso:   FlamesGames.play().then(()=>{ ...fai partire il gioco... });
    Opzioni (tutte facoltative):
      volume   0..1 (default 0.8)      suono della sigla
-     hint     testo mostrato se il browser blocca l'audio (default "Tocca o premi un tasto")
+     wait     true = se il browser blocca l'audio aspetta il primo tocco, così ha sempre il suono
+              (default false: parte subito da sola, muta se l'audio è bloccato)
+     hint     testo mostrato mentre aspetta (default "Tocca o premi un tasto")
      sound    false per farla muta
      skip     false per non farla saltare con tocco/tasto
      onEnd    funzione chiamata quando la sigla è sparita del tutto
-   Se il browser blocca l'audio all'apertura, la sigla aspetta il primo tocco e poi parte col suono.
    La promessa si risolve quando la sigla comincia a dissolversi,
    così il gioco appare sotto mentre lei svanisce.
    ========================================================= */
@@ -97,8 +98,9 @@
     const ctx=o.sound===false?null:makeCtx(),vol=o.volume==null?0.8:Math.max(0,Math.min(1,o.volume));
     return new Promise(res=>{
       let started=false,closing=false,tm=0,tw=0;
-      // I browser tengono l'audio fermo finché l'utente non tocca la pagina. Se l'audio è libero la sigla parte subito;
-      // se è bloccato compare "Tocca o premi un tasto" e la sigla parte, col suono, al primo tocco.
+      // I browser tengono l'audio fermo finché l'utente non tocca la pagina. La sigla parte comunque subito:
+      // col suono se l'audio è libero, muta se è bloccato. Con wait:true invece aspetta il primo tocco
+      // ("Tocca o premi un tasto") e parte sempre col suono.
       function start(){
         if(started)return;started=true;clearTimeout(tw);el.classList.remove('fg-hold','fg-ask');
         if(ctx&&ctx.state==='running')sound(ctx,vol);
@@ -117,7 +119,10 @@
       const click=e=>{e.stopPropagation();if(!started)unlock();};   // "click" e non "pointerdown": sul touch è lui che sblocca l'audio
       addEventListener('keydown',key,true);el.addEventListener('pointerdown',tap);el.addEventListener('click',click);
       if(!ctx||ctx.state==='running')start();
-      else{try{ctx.resume().then(()=>{if(!started&&ctx.state==='running')start();},()=>{});}catch(e){}
+      else if(!o.wait){   // parte subito: se l'audio si sblocca entro un attimo suona, altrimenti resta muta
+        const t0=performance.now();start();
+        try{ctx.resume().then(()=>{if(!closing&&ctx.state==='running'&&performance.now()-t0<400)sound(ctx,vol);},()=>{});}catch(e){}
+      }else{try{ctx.resume().then(()=>{if(!started&&ctx.state==='running')start();},()=>{});}catch(e){}
         tw=setTimeout(()=>{if(!started){if(ctx.state==='running')start();else el.classList.add('fg-ask');}},300);}
     });
   }};
