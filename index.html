@@ -2232,15 +2232,15 @@ const clsRar=c=>RARITY[TIER_R[c.tier||0]];
 // ---- sblocco delle classi ----
 const STARTERS=['cavaliere','berserker','lanciere'];
 const UNLOCK={cavaliere:{t:'starter'},berserker:{t:'starter'},lanciere:{t:'starter'},arciere:{t:'floor',n:15},
-  assassino:{t:'cage',n:15},monaco:{t:'cage',n:20},druido:{t:'cage',n:25},criomante:{t:'cage',n:35},
+  assassino:{t:'cage',n:20},monaco:{t:'cage',n:25},druido:{t:'cage',n:30},criomante:{t:'cage',n:35},
   mago:{t:'cage',n:45},tempesta:{t:'cage',n:55},negromante:{t:'cage',n:65},samurai:{t:'cage',n:80},
   paladino:{t:'win',k:15000},astromante:{t:'feat',k:30000}};
 const UNL=Object.assign({u:{},frag:{},best:0,kills:0},store.get('unlock',{}));
 if(!UNL.starter&&UNL.u.cavaliere)UNL.starter='cavaliere';
 const starterIdx=()=>CLASSES.findIndex(c=>c.id===(UNL.starter||'cavaliere'));
-function cageClassAt(f){const rest=STARTERS.filter(i=>i!==(UNL.starter||'cavaliere'));if(f===5)return rest[0];if(f===10)return rest[1];
+function cageClassAt(f){const rest=STARTERS.filter(i=>i!==(UNL.starter||'cavaliere'));if(f===10)return rest[0];if(f===15)return rest[1];   // prima del piano 10 si gioca solo con l'eroe scelto
   const c=CLASSES.find(c=>UNLOCK[c.id]&&UNLOCK[c.id].t==='cage'&&UNLOCK[c.id].n===f);return c?c.id:null;}
-const cageFloorOf=id=>{const u=UNLOCK[id];if(u.t==='cage')return u.n;const rest=STARTERS.filter(i=>i!==(UNL.starter||'cavaliere'));return rest.indexOf(id)===0?5:10;};
+const cageFloorOf=id=>{const u=UNLOCK[id];if(u.t==='cage')return u.n;const rest=STARTERS.filter(i=>i!==(UNL.starter||'cavaliere'));return rest.indexOf(id)===0?10:15;};
 UNL.best=Math.max(UNL.best,STATS.best||0);UNL.kills=Math.max(UNL.kills,STATS.kills||0);
 const saveUnl=()=>store.set('unlock',UNL);
 const isUnlocked=c=>!!UNL.u[c.id]||(!UNL.starter&&c.id==='cavaliere');
@@ -10481,7 +10481,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794828381';
+const BUILD_ID='1794828637';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
