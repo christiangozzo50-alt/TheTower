@@ -284,9 +284,11 @@ function cosHeroModel(){const c=G.cls,k=SSEL[c.id];if(k&&ownsS(k))try{return ski
   const R=buildSkin(c,SKINPICK[c.id]||0);poseShop(R,c);return R.root;}
 function cosView(id){const c=COS_BY[id];if(!c)return;closeView(true);
   let g;try{g=new THREE.Group();const h=cosHeroModel();g.add(h);g.userData.hero=h;
-    const pc=c.cat==='pet'?c:cosOf('pet');if(pc){const pm=petModel(pc.id);pm.position.set(-0.85,1.85,0.2);if(pc.id==='pet_slime')pm.position.set(-0.95,0,0.3);g.add(pm);g.userData.pet=pm;g.userData.petId=pc.id;}}
+    const pc=c.cat==='pet'?c:cosOf('pet');if(pc){const pm=petModel(pc.id);pm.scale.setScalar(1.7);pm.position.set(-1.35,1.75,0.5);if(pc.id==='pet_slime')pm.position.set(-1.4,0,0.5);
+      pm.traverse(o=>{const mt=o.material;if(!mt||!mt.transparent)return;if(mt.opacity<0.5){o.visible=false;return;}o.material=new THREE.MeshBasicMaterial({color:mt.color.clone(),side:mt.side});});
+      g.add(pm);g.userData.pet=pm;g.userData.petId=pc.id;}}
   catch(e){return;}
-  SV.m=g;SV.k='cos:'+id;SV.a=0.45;SV.spin=0.5;SV.fr=psFrame(g.userData.hero,1.3,0.8);SV.fr.cy-=0.02;
+  SV.m=g;SV.k='cos:'+id;SV.a=0.45;SV.spin=0.5;SV.fr=psFrame(g.userData.pet?g:g.userData.hero,g.userData.pet?1.2:1.3,0.8);SV.fr.cy-=0.02;
   Object.assign(CV,{c,ps:[],t:0,k:0.3,sw:null});
   const R=COS_R[c.r];$('svHero').textContent=COS_CAT1[c.cat]+' · '+R.n;$('svName').textContent=c.n;$('svName').style.color=R.css;$('svDesc').textContent=c.d;$('shView').style.setProperty('--vc',R.css);
   // livello sopra il modello: effetti 2D e nome
@@ -304,7 +306,7 @@ function cvAct(){const c=CV.c;if(!c)return;const own=cosOwn(c.id),on=own&&COS.se
   $('svNote').textContent=own?'È tuo.':can?(COINS.n<c.p?'Ti mancano '+fmtC(c.p-COINS.n)+' rubini.':''):'Oggi il Mercante non lo vende: torna un altro giorno.';}
 // il compagno nell'anteprima: vola e sbatte le ali
 function cvPet(g,dt){CV.t+=dt;const pm=g.userData.pet;if(!pm)return;const t=CV.t,pp=pm.userData.parts,id=g.userData.petId;
-  if(id==='pet_slime'){const hop=Math.abs(Math.sin(t*5))*0.3;pm.position.y=hop;if(pp.body)pp.body.scale.set(1.1,0.8-hop*0.4,1);}else pm.position.y=1.85+Math.sin(t*2.4)*0.1;
+  if(id==='pet_slime'){const hop=Math.abs(Math.sin(t*5))*0.45;pm.position.y=hop;if(pp.body)pp.body.scale.set(1.1,0.8-hop*0.4,1);}else pm.position.y=1.75+Math.sin(t*2.4)*0.14;
   if(pp.wings)pp.wings.forEach((w,i)=>{const s=i?1:-1;if(id==='pet_drago')w.rotation.x=s*(0.6+Math.sin(t*12)*0.5);else if(id==='pet_gufo')w.rotation.z=s*(0.2+Math.sin(t*14)*0.35);else w.rotation.z=s*(0.5+Math.sin(t*30)*0.6);});
   if(pp.halo)pp.halo.scale.setScalar(1+Math.sin(t*5)*0.15);if(pp.flame)pp.flame.scale.set(1,1+Math.sin(t*14)*0.18,1);}
 // effetti disegnati sopra il modello (coordinate della tela 112x140: eroe al centro, piedi in basso)
