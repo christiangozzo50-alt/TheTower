@@ -330,40 +330,59 @@ const FORGE_X=-7.2,BOARD_X=-1.25;
   mesh(new THREE.ConeGeometry(0.15,0.4,10),iron,FORGE_X+1.45,0.56,-1.3,C).rotation.z=-Math.PI/2;
   mesh(rbox(0.36,0.06,0.12,0.02),new THREE.MeshBasicMaterial({color:0xffb040}),FORGE_X+0.85,0.69,-1.3,C,true);
   const fl=new THREE.PointLight(orange,2.0,8,1.6);fl.position.set(FORGE_X-0.4,1.2,-1.3);C.add(fl);cellarLights.push({light:fl,base:2.0,seed:4});
-  // --- il nano fabbro: sta all'incudine e la martella, con scintille ad ogni colpo ---
+  // --- il nano fabbro: DAVANTI AL FORNO, batte il ferro rovente stagliato contro il bagliore ---
   (function(){
-    const skin=toon(0xc9956a),beard=toon(0xb24a24),leather=toon(0x5a3420),ironM=toon(0x3a3d45),steel=toon(0x8a9099),gold=toon(0xc8963a),wood=toon(0x6a4a2e);
-    const S=new THREE.Group();S.position.set(FORGE_X+1.55,0,-1.2);S.rotation.y=-0.18;C.add(S);
+    const skin=toon(0xc9956a),beard=toon(0xa33f1e),leather=toon(0x4e2d18),ironM=toon(0x34373f),ironD2=toon(0x24262c),steel=toon(0x9aa0aa),gold=toon(0xc8963a),wood=toon(0x6a4a2e);
+    const S=new THREE.Group();S.position.set(FORGE_X-0.55,0,-1.05);S.rotation.y=0.1;C.add(S);
+    // la sua piccola incudine, col ferro rovente sopra
+    const aX=0.6;
+    mesh(new THREE.CylinderGeometry(0.17,0.24,0.34,10),ironD2,aX,0.17,0.3,S);
+    mesh(rbox(0.6,0.17,0.26,0.03),ironM,aX,0.44,0.3,S);
+    mesh(new THREE.ConeGeometry(0.1,0.3,10),ironM,aX+0.42,0.46,0.3,S).rotation.z=-Math.PI/2;
+    const billet=mesh(rbox(0.3,0.06,0.1,0.02),new THREE.MeshBasicMaterial({color:0xff9a3c}),aX-0.02,0.55,0.3,S,true);
     // gambe tozze con stivali
-    for(const s of [-1,1]){mesh(rbox(0.22,0.4,0.26,0.06),ironD,s*0.16,0.22,0,S);mesh(rbox(0.26,0.13,0.32,0.05),ironM,s*0.16,0.07,0.04,S);}
-    // corpo largo con grembiule di cuoio
-    mesh(rbox(0.68,0.6,0.46,0.1),leather,0,0.74,0,S);
-    mesh(rbox(0.5,0.5,0.3,0.06),toon(0x7a4a2e),0,0.76,0.2,S);
-    mesh(rbox(0.1,0.5,0.1,0.03),gold,0,0.98,0.26,S,true);
-    // testa, elmo e barbona
-    mesh(sph(0.2,16,12),skin,0,1.32,0.02,S);
-    mesh(new THREE.SphereGeometry(0.225,16,10,0,Math.PI*2,0,Math.PI/2),ironM,0,1.38,0.02,S);
-    mesh(rbox(0.47,0.08,0.31,0.03),steel,0,1.22,0.02,S);
-    const bd=mesh(new THREE.ConeGeometry(0.27,0.52,10),beard,0,1.1,0.13,S);bd.rotation.x=Math.PI;
-    mesh(sph(0.07,8,6),toon(0xd8a07a),0,1.28,0.22,S,true);
-    // braccio sinistro che regge il pezzo rovente sull'incudine
-    mesh(rbox(0.16,0.14,0.52,0.05),skin,-0.34,0.96,0.18,S);
-    // braccio destro col martello (pivot alla spalla, oscilla e abbatte)
-    const arm=new THREE.Group();arm.position.set(0.36,1.06,0.06);S.add(arm);
+    for(const s of [-1,1]){mesh(rbox(0.23,0.42,0.27,0.06),ironD2,s*0.17,0.23,0,S);mesh(rbox(0.27,0.13,0.33,0.05),ironM,s*0.17,0.07,0.05,S);}
+    // corpo largo, grembiule di cuoio con borchie e cinghia
+    mesh(rbox(0.72,0.62,0.48,0.1),leather,0,0.76,0,S);
+    mesh(rbox(0.52,0.54,0.3,0.06),toon(0x6e3f22),0,0.78,0.22,S);
+    for(const [x,y] of [[-0.16,0.95],[0.16,0.95],[-0.16,0.66],[0.16,0.66],[0,0.8]])mesh(sph(0.03,6,5),gold,x,y,0.3,S,true);
+    mesh(rbox(0.12,0.5,0.1,0.03),toon(0x3a2416),0,1.0,0.27,S);
+    // spallaccio di ferro sul braccio del martello
+    mesh(new THREE.SphereGeometry(0.2,12,8,0,Math.PI*2,0,Math.PI/2),steel,0.33,1.12,0.04,S);
+    // testa, elmo cornuto, barba intrecciata con anello
+    mesh(sph(0.2,16,12),skin,0,1.34,0.02,S);
+    mesh(new THREE.SphereGeometry(0.225,16,10,0,Math.PI*2,0,Math.PI/2),ironM,0,1.4,0.02,S);
+    mesh(rbox(0.47,0.08,0.31,0.03),steel,0,1.24,0.02,S);
+    for(const s of [-1,1]){const h=mesh(new THREE.ConeGeometry(0.06,0.26,8),steel,s*0.2,1.57,0.02,S,true);h.rotation.z=s*0.5;}
+    const bd=mesh(new THREE.ConeGeometry(0.28,0.56,10),beard,0,1.1,0.14,S);bd.rotation.x=Math.PI;
+    mesh(new THREE.TorusGeometry(0.08,0.02,6,12),gold,0,0.86,0.22,S,true);
+    mesh(sph(0.07,8,6),toon(0xd8a07a),0,1.3,0.22,S,true);
+    // braccio sinistro con le tenaglie che tengono il ferro sull'incudine
+    const tong=new THREE.Group();tong.position.set(-0.36,0.95,0.2);S.add(tong);
+    mesh(rbox(0.14,0.13,0.5,0.05),skin,0.04,0,-0.04,tong);
+    mesh(new THREE.CylinderGeometry(0.02,0.02,0.42,6),ironM,0.26,-0.02,0.2,tong).rotation.x=Math.PI/2.4;
+    // braccio destro col martello (pivot alla spalla)
+    const arm=new THREE.Group();arm.position.set(0.34,1.08,0.08);S.add(arm);
     mesh(rbox(0.16,0.46,0.16,0.05),skin,0,-0.2,0,arm);
     const ham=new THREE.Group();ham.position.set(0,-0.44,0);arm.add(ham);
-    mesh(new THREE.CylinderGeometry(0.03,0.03,0.5,8),wood,0,0,0,ham);
-    mesh(rbox(0.28,0.17,0.17,0.04),ironM,0,0.3,0,ham);
-    mesh(rbox(0.07,0.19,0.19,0.02),steel,0.17,0.3,0,ham,true);
-    // colpo: il martello scende, risale e a fine corsa fa volare le scintille sull'incudine
-    const anvilX=FORGE_X+0.9;let prev=1;
+    mesh(new THREE.CylinderGeometry(0.03,0.03,0.52,8),wood,0,0,0,ham);
+    mesh(rbox(0.3,0.18,0.18,0.04),ironM,0,0.3,0,ham);
+    mesh(rbox(0.07,0.2,0.2,0.02),steel,0.18,0.3,0,ham,true);
+    // luce calda che lo staglia contro il forno
+    const gl=new THREE.PointLight(0xff8030,1.3,5,1.8);gl.position.set(S.position.x+0.4,1.0,-0.5);C.add(gl);cellarLights.push({light:gl,base:1.3,seed:7});
+    // battitura: martello giù sul ferro, lampo caldo e scintille a ogni colpo
+    const sX=S.position.x+aX,sY=0.6;let prev=1;
     cellarAnims.push((dt,t)=>{
-      const ph=(t*1.05)%1;
-      const sw=ph<0.72?1.25*(ph/0.72):1.25*(1-(ph-0.72)/0.28);
-      arm.rotation.x=-0.35+sw;
-      if(prev<0.72&&ph>=0.72){burst(anvilX,0.82,0xffc24a,9,5,3);burst(anvilX,0.82,0xff6a1e,6,4,2);}
+      const ph=(t*1.15)%1;
+      const sw=ph<0.7?1.3*(ph/0.7):1.3*(1-(ph-0.7)/0.3);
+      arm.rotation.x=-0.4+sw;
+      billet.material.color.setHex(ph>0.7&&ph<0.82?0xfff0c0:0xff9a3c);
+      if(prev<0.7&&ph>=0.7){burst(sX,sY,0xffd27a,7,6,3);burst(sX,sY,0xffb24a,10,5,3);burst(sX,sY,0xff6a1e,6,4,2);}
       prev=ph;
     });
+    // braci che salgono pigramente dal ferro rovente
+    for(let i=0;i<4;i++){const e=mesh(sph(0.025,6,5),new THREE.MeshBasicMaterial({color:0xffd27a}),sX+rand(-0.2,0.2),0.6,0.3,C,true);const sd=i*1.7;
+      cellarAnims.push((dt,t)=>{e.position.y+=dt*0.35;if(e.position.y>1.9)e.position.y=0.6;e.position.x=sX+Math.sin(t*1.3+sd)*0.12;});}
   })();
   // bacheca: lastra di ferro rivettata con i fogli appesi
   const b=new THREE.Group();b.position.set(BOARD_X,2.4,-3.0);C.add(b);
