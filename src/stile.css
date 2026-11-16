@@ -1049,3 +1049,4 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 #cvFx[hidden],#cvTag[hidden]{display:none}
 #cvTag{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:1;pointer-events:none}
 @media (max-width:600px){#cvFx{width:min(260px,70vw,calc((100dvh - 330px)*0.8))}}
+.cv-on .sv-rot{display:none}

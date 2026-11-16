@@ -184,7 +184,7 @@ const _upRI=update;update=function(dt){_upRI(dt);
 
 /* ---------- scie dell'arma ---------- */
 function trailCol(){const c=cosOf('trail');if(!c)return null;return c.rain?null:c.col;}
-const _rbPlus=ribbonUpd;ribbonUpd=function(R){_rbPlus(R);if(R!==hero)return;const c=cosOf('trail');if(!c)return;const u=ribOf(R).m.material.uniforms.uColor.value;
+const _rbPlus=ribbonUpd;ribbonUpd=function(R){RIB_LIFE=(R===hero&&cosOf('trail'))?0.26:RIB_LIFE0;_rbPlus(R);RIB_LIFE=RIB_LIFE0;if(R!==hero)return;const c=cosOf('trail');if(!c)return;const u=ribOf(R).m.material.uniforms.uColor.value;
   if(c.rain)u.setHSL((G.time*0.7)%1,0.9,0.62);else u.setHex(c.col);};
 const _utPlus=updTrail;updTrail=function(dt){const r=_utPlus(dt);const c=cosOf('trail');if(c&&trailMat&&streakMat){const col=c.rain?new THREE.Color().setHSL((G.time*0.7)%1,0.9,0.62).getHex():c.col;
   trailMat.uniforms.uColor.value.setHex(col);streakMat.uniforms.uColor.value.setHex(col);}return r;};
@@ -311,7 +311,7 @@ function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='sh
   const fx=$('cvFx');if(fx)fx.hidden=true;
   cvAct();$('shView').hidden=false;sfx('ui');
   const loop=()=>{if(!CV.on||SV.k!=='cos:'+id)return;try{cvAim();$('svCan').getContext('2d').putImageData(cvShot(CV.cam),0,0);cvTagPos();}catch(err){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
-function cvAim(){const cx=CV.base+CV.dir*1.3,cam=CV.cam;cam.position.set(cx,1.45,5.6);cam.lookAt(cx,1.15,0);cam.updateMatrixWorld();}
+function cvAim(){const cx=CV.base+CV.dir*1.6,cam=CV.cam;cam.position.set(cx,1.45,5.6);cam.lookAt(cx,1.15,0);cam.updateMatrixWorld();}
 function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THREE.Vector3(P.x,P.y+2.6,P.z||0).project(CV.cam),cv=$('svCan'),r=cv.getBoundingClientRect(),pr=cv.parentNode.getBoundingClientRect();
   tg.style.left=(r.left-pr.left+(v.x+1)/2*r.width)+'px';tg.style.top=(r.top-pr.top+(1-v.y)/2*r.height)+'px';}
 // la coreografia: attacca tre volte, il nemico cade, corre indietro, corre avanti, ricomincia
@@ -343,4 +343,4 @@ setInterval(venomZero,15000);
 
 /* ---------- avvio ---------- */
 setTimeout(()=>{try{cosApply();venomZero();}catch(e){}},1500);
-if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{COS,RI,cosApply,openShop,renderShop,killFx,CPET,crateRoll,setShTab:t=>{shTab=t;renderShop();},coins:n=>{COINS.n=n;saveCoins();coinHud();}});
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{COS,RI,cosApply,openShop,renderShop,killFx,CPET,crateRoll,setShTab:t=>{shTab=t;renderShop();},rib:()=>{const r=ribOf(hero);return {vis:r.m.visible,n:r.s.length,col:r.m.material.uniforms.uColor.value.getHexString()};},CV:()=>CV,coins:n=>{COINS.n=n;saveCoins();coinHud();}});

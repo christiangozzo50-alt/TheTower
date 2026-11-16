@@ -249,7 +249,7 @@ const _apkC=atkPose;atkPose=function(A){const r=_apkC(A);if(A.rev)r.tw=-r.tw;ret
    5c · SCIA DELL'ARMA A NASTRO (segue davvero la lama: archi, affondi, giri, salti)
    con fasce di trasparenza a gradini e bordo luminoso davanti, in stile pixel
    ========================================================= */
-const RIB_N=16,RIB_LIFE=0.13;
+const RIB_N=16,RIB_LIFE0=0.13;let RIB_LIFE=RIB_LIFE0;   // con una scia del negozio dura di più (si vede meglio)
 const ribMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,
   uniforms:{uColor:{value:new THREE.Color(0xffe2b0)},uOp:{value:1}},
   vertexShader:'attribute float aAge;attribute float aSide;varying float vA;varying float vS;void main(){vA=aAge;vS=aSide;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
