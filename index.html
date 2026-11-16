@@ -10481,7 +10481,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794827898';
+const BUILD_ID='1794828017';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13209,7 +13209,7 @@ function cvKill(){const e=CV.e;if(!e)return;const x=e.x,y=e.y+(e.h||0.9)*0.5,col
   CV.respawn=1.1;}
 function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='shop')return;closeView(true);
   CV.bk={x:P.x,y:P.y,face:P.face};CV.base=P.x;CV.dir=P.x<0?1:-1;CV.ex=CV.base+CV.dir*2.5;
-  Object.assign(CV,{c,on:true,t:0,ph:'atk',pt:0.25,hits:0,respawn:0});P.vx=0;P.atk=null;P.face=CV.dir;
+  Object.assign(CV,{c,on:true,t:0,ph:'atk',pt:0.25,hits:0,respawn:0,cx:null});P.vx=0;P.atk=null;P.face=CV.dir;
   if(!CV.cam)CV.cam=new THREE.PerspectiveCamera(42,CVW/CVH,0.1,80);
   cvEnemy();const pc=cosOf('pet');petSet(pc?pc.id:null);
   SV.m=null;SV.k='cos:'+id;
@@ -13221,7 +13221,10 @@ function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='sh
   const fx=$('cvFx');if(fx)fx.hidden=true;
   cvAct();$('shView').hidden=false;sfx('ui');
   const loop=()=>{if(!CV.on||SV.k!=='cos:'+id)return;try{cvAim();$('svCan').getContext('2d').putImageData(cvShot(CV.cam),0,0);cvTagPos();}catch(err){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
-function cvAim(){const cx=CV.base+CV.dir*1.6,cam=CV.cam;cam.position.set(cx,1.45,5.6);cam.lookAt(cx,1.15,0);cam.updateMatrixWorld();}
+function cvAim(){const cat=CV.c&&CV.c.cat,wide=cat==='trail'||cat==='kill',cam=CV.cam;
+  // scia ed effetti: eroe e nemico; compagno, aura, nome: stretto sull'eroe (e il compagno, che gli sta dietro)
+  const cx=wide?CV.base+CV.dir*1.6:cat==='pet'?(P.x+CPET.x)/2:P.x+CV.dir*0.15,cy=cat==='pet'?1.45:1.2,z=wide?5.6:cat==='pet'?4.6:4.2;
+  CV.cx=CV.cx==null?cx:CV.cx+(cx-CV.cx)*0.12;cam.position.set(CV.cx,cy+0.3,z);cam.lookAt(CV.cx,cy,0);cam.updateMatrixWorld();}
 function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THREE.Vector3(P.x,P.y+2.6,P.z||0).project(CV.cam),cv=$('svCan'),r=cv.getBoundingClientRect(),pr=cv.parentNode.getBoundingClientRect();
   tg.style.left=(r.left-pr.left+(v.x+1)/2*r.width)+'px';tg.style.top=(r.top-pr.top+(1-v.y)/2*r.height)+'px';}
 // la coreografia: attacca tre volte, il nemico cade, corre indietro, corre avanti, ricomincia
