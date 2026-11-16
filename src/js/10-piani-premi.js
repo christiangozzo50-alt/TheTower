@@ -6,7 +6,7 @@ const TW={slime:3,guard:2.2,mage:2,bat:2,archer:2,knight:1.6,imp:1.6,wraith:1.5,
 function newTypeAt(f){for(const k in TYPES)if(TYPES[k].from===f)return k;return null;}
 function buildQueue(f){
   if(isBossFloor(f))return ['boss'];if(isSafeFloor(f))return [];
-  const n=Math.min(8+(f-1),64),pool=[];   // più si sale, più nemici
+  const n=crowdN(f),pool=[];   // più si sale, più nemici (ma meno di prima: sono più forti)
   for(const k in TYPES){const T=TYPES[k];if(T.from>f)continue;pool.push([k,TW[k]*(f-T.from>30?0.5:1)]);}
   const tot=pool.reduce((s,p)=>s+p[1],0),q=[],nt=newTypeAt(f);if(nt){q.push(nt);if(n>4)q.push(nt);}
   while(q.length<n){let r=Math.random()*tot;for(const [t,w] of pool){if((r-=w)<0){q.push(t);break;}}}

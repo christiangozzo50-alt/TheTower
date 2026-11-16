@@ -1738,7 +1738,7 @@ const PROG=store.get('prog',{});               // livello, esperienza e punti sp
 const prog=id=>{let p=PROG[id];if(!p)p=PROG[id]={lv:1,xp:0};
   if(p.pts==null){p.pts=Math.max(0,p.lv-1);p.alloc={};}if(!p.alloc)p.alloc={};return p;};
 const xpNeed=lv=>Math.round(18+lv*12+lv*lv*1.5+lv*lv*lv*0.04);   // ogni livello costa sempre di più
-const MAX_LV=80, LV_ABIL2=30, LV_ABIL3=50;
+const MAX_LV=80, LV_ABIL2=40, LV_ABIL3=70;
 // ogni livello dà un punto da spendere su una di queste statistiche
 const PSTATS=[
   {id:'hp',  name:'Vita',               txt:n=>'+'+(10*n)},
@@ -1928,6 +1928,8 @@ const GATE_X=HALF-5,STAIR_X0=GATE_X+0.7,STAIR_N=5,STAIR_W=0.5,STAIR_RISE=0.6,LAN
 const DSC=(GATE_X+HALF)/31,MX=x=>-HALF+(x+18)*DSC;   // allarga gli arredi pensati per la stanza vecchia
 const CH=13,CELLAR_CEIL=6.4,PED_X=2.2,PED_Z=-1.2;
 const TOP_FLOOR=100;
+// nemici per piano: crescono più piano di prima (8 al primo piano, massimo 50), ma ognuno è più forte in proporzione
+const crowdN=f=>Math.min(8+Math.round((f-1)*0.75),50),crowdOld=f=>Math.min(8+(f-1),64),crowdK=f=>crowdOld(f)/crowdN(f);
 const hpMul=f=>1+0.22*(f-1)+0.012*(f-1)*(f-1), dmgMul=f=>1+0.11*(f-1)+0.0018*(f-1)*(f-1), spdMul=f=>Math.min(1.6,1+0.008*(f-1));
 // santuari ogni 13 piani (13, 26, 39, 52, 66, 78, 91): se il multiplo di 13 è un piano del guardiano (65) il santuario è subito dopo
 const isBossFloor=f=>f%5===0,isSafeFloor=f=>f>=13&&((f%13===0&&f%5!==0)||((f-1)%13===0&&(f-1)%5===0));
@@ -5560,7 +5562,7 @@ function hurtPlayer(dmg,fromX,eff){
   if(eff==='slow'||eff==='web'){if(P.slowT<=0)popNum(P.x,P.y+2.6,eff==='web'?'Invischiato':'Congelato','info');P.slowT=2.2;}
   else if(PEFF[eff]){const E=PEFF[eff];if(!P.dot)popNum(P.x,P.y+2.6,E.label,'info');P.dot={t:E.t,acc:0,dmg:Math.max(1,Math.round(d*E.k)),col:E.col};}
 }
-// tre mosse speciali per classe: la seconda dal livello 30, la terza dal 50
+// tre mosse speciali per classe: la seconda dal livello 40, la terza dal 70
 const SLOT=[null,{k:'ability',cd:'abilCd',lv:1},{k:'ability2',cd:'abil2Cd',lv:LV_ABIL2},{k:'ability3',cd:'abil3Cd',lv:LV_ABIL3}];
 function useAbility(){useSlot(1);}function useAbility2(){useSlot(2);}function useAbility3(){useSlot(3);}
 function useSlot(n){const s=SLOT[n],ab=G.cls[s.k];
@@ -5692,6 +5694,7 @@ function dragonImpact(){
    ========================================================= */
 // in co-op l'esperienza va solo a chi ha dato il colpo finale: l'host la manda al giocatore giusto, gli ospiti la ricevono dall'host
 function xpToKiller(e,x,y,v){
+  v*=(e&&e.crowd)||1;   // meno nemici per piano: ognuno dà più esperienza
   if(G.scene==='tower'&&!G.pvp&&MP.live()){
     if(e.net)return;
     if(MP.host){const by=e.lastBy!=null?e.lastBy:MP.myPid;if(by!==MP.myPid){if(MP.players.has(by))MP.sendTo(by,{t:'xp',f:G.floor,x:r2(x),y:r2(y),v:Math.round(v*10)/10});return;}}}
@@ -5772,6 +5775,7 @@ function spawnEnemy(type,o){
     face:x<P.x?1:-1,state:(!boss&&A.fly)?'hover':'move',t:0,cd:rand(1,2.2),touchCd:0,spawnT:boss?1.3:0.7,kbT:0,flash:0,warn:0,slowT:0,burn:null,flinch:0,landT:0,castT:0,walk:0,stunT:0,immT:0,
     fly:!!A.fly,ghost:boss||!!A.fly||type==='brute'||type==='minotaur',isEnemy:true,onGround:false,hopT:rand(0.4,1),seed:Math.random()*10,dead:false,lastDir:1,
     elite,summon:!!o.summon,sc:elite?1.2:1,color:boss?def.color:A.color,eff:boss?def.eff:null,phase:1,blockN:0,adds:0};
+  {const ck=(boss||G.horde||G.pvp)?1:crowdK(f);if(ck>1){e.hp*=ck;e.dmg*=1+(ck-1)*0.5;}e.crowd=ck;}   // meno nemici ma più forti
   if(G.event==='giganti'&&!boss&&G.scene==='tower'){e.sc*=1.4;e.w*=1.25;e.h*=1.3;if(!o.summon){e.hp*=1.9;e.dmg*=1.2;e.speed*=0.85;}}   // piano dei giganti
   e.spawnMax=e.spawnT;e.maxHp=e.hp;
   e.parts=boss?bossParts(def):enemyParts(type);
@@ -6458,7 +6462,7 @@ const TW={slime:3,guard:2.2,mage:2,bat:2,archer:2,knight:1.6,imp:1.6,wraith:1.5,
 function newTypeAt(f){for(const k in TYPES)if(TYPES[k].from===f)return k;return null;}
 function buildQueue(f){
   if(isBossFloor(f))return ['boss'];if(isSafeFloor(f))return [];
-  const n=Math.min(8+(f-1),64),pool=[];   // più si sale, più nemici
+  const n=crowdN(f),pool=[];   // più si sale, più nemici (ma meno di prima: sono più forti)
   for(const k in TYPES){const T=TYPES[k];if(T.from>f)continue;pool.push([k,TW[k]*(f-T.from>30?0.5:1)]);}
   const tot=pool.reduce((s,p)=>s+p[1],0),q=[],nt=newTypeAt(f);if(nt){q.push(nt);if(n>4)q.push(nt);}
   while(q.length<n){let r=Math.random()*tot;for(const [t,w] of pool){if((r-=w)<0){q.push(t);break;}}}
@@ -10497,7 +10501,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794830227';
+const BUILD_ID='1794832610';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));

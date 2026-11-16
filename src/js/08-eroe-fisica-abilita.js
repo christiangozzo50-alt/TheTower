@@ -383,7 +383,7 @@ function hurtPlayer(dmg,fromX,eff){
   if(eff==='slow'||eff==='web'){if(P.slowT<=0)popNum(P.x,P.y+2.6,eff==='web'?'Invischiato':'Congelato','info');P.slowT=2.2;}
   else if(PEFF[eff]){const E=PEFF[eff];if(!P.dot)popNum(P.x,P.y+2.6,E.label,'info');P.dot={t:E.t,acc:0,dmg:Math.max(1,Math.round(d*E.k)),col:E.col};}
 }
-// tre mosse speciali per classe: la seconda dal livello 30, la terza dal 50
+// tre mosse speciali per classe: la seconda dal livello 40, la terza dal 70
 const SLOT=[null,{k:'ability',cd:'abilCd',lv:1},{k:'ability2',cd:'abil2Cd',lv:LV_ABIL2},{k:'ability3',cd:'abil3Cd',lv:LV_ABIL3}];
 function useAbility(){useSlot(1);}function useAbility2(){useSlot(2);}function useAbility3(){useSlot(3);}
 function useSlot(n){const s=SLOT[n],ab=G.cls[s.k];

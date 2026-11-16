@@ -6,6 +6,8 @@ const GATE_X=HALF-5,STAIR_X0=GATE_X+0.7,STAIR_N=5,STAIR_W=0.5,STAIR_RISE=0.6,LAN
 const DSC=(GATE_X+HALF)/31,MX=x=>-HALF+(x+18)*DSC;   // allarga gli arredi pensati per la stanza vecchia
 const CH=13,CELLAR_CEIL=6.4,PED_X=2.2,PED_Z=-1.2;
 const TOP_FLOOR=100;
+// nemici per piano: crescono più piano di prima (8 al primo piano, massimo 50), ma ognuno è più forte in proporzione
+const crowdN=f=>Math.min(8+Math.round((f-1)*0.75),50),crowdOld=f=>Math.min(8+(f-1),64),crowdK=f=>crowdOld(f)/crowdN(f);
 const hpMul=f=>1+0.22*(f-1)+0.012*(f-1)*(f-1), dmgMul=f=>1+0.11*(f-1)+0.0018*(f-1)*(f-1), spdMul=f=>Math.min(1.6,1+0.008*(f-1));
 // santuari ogni 13 piani (13, 26, 39, 52, 66, 78, 91): se il multiplo di 13 è un piano del guardiano (65) il santuario è subito dopo
 const isBossFloor=f=>f%5===0,isSafeFloor=f=>f>=13&&((f%13===0&&f%5!==0)||((f-1)%13===0&&(f-1)%5===0));

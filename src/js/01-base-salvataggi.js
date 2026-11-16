@@ -174,7 +174,7 @@ const PROG=store.get('prog',{});               // livello, esperienza e punti sp
 const prog=id=>{let p=PROG[id];if(!p)p=PROG[id]={lv:1,xp:0};
   if(p.pts==null){p.pts=Math.max(0,p.lv-1);p.alloc={};}if(!p.alloc)p.alloc={};return p;};
 const xpNeed=lv=>Math.round(18+lv*12+lv*lv*1.5+lv*lv*lv*0.04);   // ogni livello costa sempre di più
-const MAX_LV=80, LV_ABIL2=30, LV_ABIL3=50;
+const MAX_LV=80, LV_ABIL2=40, LV_ABIL3=70;
 // ogni livello dà un punto da spendere su una di queste statistiche
 const PSTATS=[
   {id:'hp',  name:'Vita',               txt:n=>'+'+(10*n)},

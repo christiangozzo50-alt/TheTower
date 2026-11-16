@@ -3,6 +3,7 @@
    ========================================================= */
 // in co-op l'esperienza va solo a chi ha dato il colpo finale: l'host la manda al giocatore giusto, gli ospiti la ricevono dall'host
 function xpToKiller(e,x,y,v){
+  v*=(e&&e.crowd)||1;   // meno nemici per piano: ognuno dà più esperienza
   if(G.scene==='tower'&&!G.pvp&&MP.live()){
     if(e.net)return;
     if(MP.host){const by=e.lastBy!=null?e.lastBy:MP.myPid;if(by!==MP.myPid){if(MP.players.has(by))MP.sendTo(by,{t:'xp',f:G.floor,x:r2(x),y:r2(y),v:Math.round(v*10)/10});return;}}}
@@ -83,6 +84,7 @@ function spawnEnemy(type,o){
     face:x<P.x?1:-1,state:(!boss&&A.fly)?'hover':'move',t:0,cd:rand(1,2.2),touchCd:0,spawnT:boss?1.3:0.7,kbT:0,flash:0,warn:0,slowT:0,burn:null,flinch:0,landT:0,castT:0,walk:0,stunT:0,immT:0,
     fly:!!A.fly,ghost:boss||!!A.fly||type==='brute'||type==='minotaur',isEnemy:true,onGround:false,hopT:rand(0.4,1),seed:Math.random()*10,dead:false,lastDir:1,
     elite,summon:!!o.summon,sc:elite?1.2:1,color:boss?def.color:A.color,eff:boss?def.eff:null,phase:1,blockN:0,adds:0};
+  {const ck=(boss||G.horde||G.pvp)?1:crowdK(f);if(ck>1){e.hp*=ck;e.dmg*=1+(ck-1)*0.5;}e.crowd=ck;}   // meno nemici ma più forti
   if(G.event==='giganti'&&!boss&&G.scene==='tower'){e.sc*=1.4;e.w*=1.25;e.h*=1.3;if(!o.summon){e.hp*=1.9;e.dmg*=1.2;e.speed*=0.85;}}   // piano dei giganti
   e.spawnMax=e.spawnT;e.maxHp=e.hp;
   e.parts=boss?bossParts(def):enemyParts(type);
