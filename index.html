@@ -10480,7 +10480,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794826639';
+const BUILD_ID='1794826752';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13203,7 +13203,7 @@ function cosView(id){const c=COS_BY[id];if(!c)return;closeView(true);
   tg.innerHTML=`<b>${esc(MP.name())}</b>${ti?`<small>${esc(ti.n)}</small>`:''}`;if(fr){tg.dataset.fr=fr.id;tg.style.setProperty('--fc',fr.col);}else{delete tg.dataset.fr;tg.style.removeProperty('--fc');}
   tg.hidden=!(c.cat==='title'||c.cat==='frame');fx.hidden=false;st.classList.add('cv-on');
   cvAct();$('shView').hidden=false;sfx('ui');
-  let last=performance.now();const loop=tt=>{if(!SV.m||SV.k!=='cos:'+id)return;const dt=Math.min(0.05,(tt-last)/1000);last=tt;if(!SV.drag)SV.a+=SV.spin*dt;g.rotation.y=SV.a;
+  let last=performance.now();const loop=tt=>{if(!SV.m||SV.k!=='cos:'+id)return;const dt=Math.min(0.05,(tt-last)/1000);last=tt;if(!SV.drag)SV.a+=SV.spin*dt;g.userData.hero.rotation.y=SV.a;if(g.userData.pet)g.userData.pet.rotation.y=0.35+Math.sin(CV.t*0.9)*0.25;
     cvPet(g,dt);try{const img=psShot(g,112,140,SV.fr,true);$('svCan').getContext('2d').putImageData(img,0,0);}catch(e){}
     try{cvFx(dt);}catch(e){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
 function cvAct(){const c=CV.c;if(!c)return;const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id,can=!own&&cosToday().includes(c);
