@@ -2722,11 +2722,12 @@ CFX.points=(P,o)=>{const n=o.n,pos=new Float32Array(n*3);for(let i=0;i<n;i++){po
   mesh(new THREE.PlaneGeometry(CH*2+4,0.9),new THREE.MeshBasicMaterial({color:0xff6a1a,transparent:true,opacity:0.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),0,0.3,3.7,C,true);
   for(const x of [-6,6])CFX.light(C,0xff6a1a,1.0,8,x,0.6,3.7,true);
   // scaffali e casse della bottega (il mercante è in 16-pvp-negozio-mercante.js)
-  for(const y of [2.0,2.8])mesh(rbox(2.2,0.08,0.4,0.02),ironD,-12.0,y,-2.95,C);
-  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.scale.setScalar(0.55);w.position.set(-12.0-0.75+i*0.5,2.75,-2.85);w.rotation.y=Math.PI/2;C.add(w);});
-  CFX.crate(C,-10.7,0,-2.4,0.8,wood,ironD);CFX.crate(C,-10.55,0.8,-2.45,0.5,wood,ironD);
+  const MERCH_X=-4.0;   // bottega del mercante (scambiata col banco da lavoro)
+  for(const y of [2.0,2.8])mesh(rbox(2.2,0.08,0.4,0.02),ironD,MERCH_X,y,-2.95,C);
+  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.scale.setScalar(0.55);w.position.set(MERCH_X-0.75+i*0.5,2.75,-2.85);w.rotation.y=Math.PI/2;C.add(w);});
+  CFX.crate(C,MERCH_X+1.3,0,-2.4,0.8,wood,ironD);CFX.crate(C,MERCH_X+1.45,0.8,-2.45,0.5,wood,ironD);
   // banco da lavoro = impostazioni: ferro, morsa, progetti, attrezzi appesi
-  const bx=-4.0;
+  const bx=-11.6;   // banco da lavoro (dove prima c'era il mercante)
   mesh(rbox(2.6,0.12,1.0,0.03),iron,bx,1.0,-1.7,C);for(const dx of [-1.15,1.15])mesh(rbox(0.12,1.0,0.9,0.02),ironD,bx+dx,0.5,-1.7,C);mesh(rbox(2.3,0.06,0.8,0.02),ironD,bx,0.3,-1.7,C);
   mesh(rbox(0.36,0.2,0.2,0.03),toon(0x5a6a8a),bx-0.85,1.16,-1.45,C);mesh(new THREE.CylinderGeometry(0.02,0.02,0.4,6),brass,bx-0.85,1.2,-1.3,C).rotation.z=Math.PI/2;
   const [cB,gB]=cv(64,48);gB.fillStyle='#2a4a8a';gB.fillRect(0,0,64,48);gB.strokeStyle='#cfe0ff';gB.lineWidth=1;gB.strokeRect(6,6,52,36);gB.beginPath();gB.arc(32,24,12,0,TAU);gB.stroke();gB.beginPath();gB.moveTo(6,24);gB.lineTo(58,24);gB.stroke();
@@ -9632,8 +9633,10 @@ function openCrate(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,r
   const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();crateShow(cr,o);return o;}
 
 /* ---------- il mercante ---------- */
-const SHOP_X=-12.0;
-function merchantModel(){const g=new THREE.Group();
+const SHOP_X=-4.0;
+// il mercante del seminterrato è lo stesso che compare sui piani (con la sua bancarella)
+function merchantModel(){return travelMerchantModel();}
+function merchantModelOld(){const g=new THREE.Group();
   const robe=toon(0x3a2a55),robe2=toon(0x4b3770),hood=toon(0x2a1e40),gold=toon(0xd9b45a,{emissive:0x5a3a00,emissiveIntensity:0.4}),wood=toon(0x5a3a22);
   mesh(new THREE.ConeGeometry(0.55,1.7,14),robe,0,0.85,0,g);mesh(new THREE.CylinderGeometry(0.3,0.42,0.12,14),robe2,0,0.95,0,g);
   mesh(rbox(0.5,0.08,0.06,0.02),gold,0,0.95,0.38,g);mesh(sph(0.3,14,12),hood,0,1.85,0,g);
@@ -9656,12 +9659,12 @@ function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a4
 const CRATE_IMG={},PORTRAIT={v:null};
 function crateImg(id){if(CRATE_IMG[id]!=null)return CRATE_IMG[id];try{const m=crateModel(id);m.rotation.y=-0.55;m.position.y=0.06;const u=psURL(psShot(m,72,96,{cx:0,cy:0.55,h:2.5,dist:9,oy:2.2},true));disposeObj(m);return CRATE_IMG[id]=u;}catch(e){return CRATE_IMG[id]='';}}
 function portraitImg(){if(PORTRAIT.v!=null)return PORTRAIT.v;try{const m=merchantModel();m.rotation.y=0.35;const u=psURL(psShot(m,48,48,{cx:0.05,cy:1.65,h:1.15,dist:9,oy:0.1},false));disposeObj(m);return PORTRAIT.v=u;}catch(e){return PORTRAIT.v='';}}
-(function(){const C=cellarG,g=merchantModel();g.position.set(-12.25,0,-2.1);C.add(g);
+(function(){const C=cellarG,g=merchantModel();g.position.set(SHOP_X+0.35,0,-2.1);g.rotation.y=-0.25;C.add(g);
   // insegna appesa sopra il banco
   const [cn,x]=cv(128,48);x.fillStyle='#5a4020';x.fillRect(0,0,128,48);
   x.strokeStyle='#c8963a';x.lineWidth=4;x.strokeRect(3,3,122,42);x.fillStyle='#ffd27a';x.font='bold 22px "Pixelify Sans", monospace';x.textAlign='center';x.textBaseline='middle';x.fillText('BOTTEGA',64,25);
   const tx=new THREE.CanvasTexture(cn);tx.magFilter=THREE.NearestFilter;
-  const sg=new THREE.Group();sg.position.set(-12.05,3.55,-1.7);C.add(sg);
+  const sg=new THREE.Group();sg.position.set(SHOP_X-0.4,3.7,-1.7);C.add(sg);
   mesh(new THREE.PlaneGeometry(1.7,0.64),new THREE.MeshBasicMaterial({map:tx}),0,0,0.04,sg,true);mesh(rbox(1.78,0.7,0.06,0.02),toon(0x2a2a32),0,0,0,sg);
   for(const s of [-0.7,0.7])mesh(new THREE.CylinderGeometry(0.02,0.02,CELLAR_CEIL-3.9,6),toon(0x3a3a44),s,(CELLAR_CEIL-3.9)/2+0.32,0,sg,true);
   const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),SHOP_X,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);
@@ -10481,7 +10484,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794828637';
+const BUILD_ID='1794828969';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));

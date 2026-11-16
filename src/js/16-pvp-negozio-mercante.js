@@ -359,8 +359,10 @@ function openCrate(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,r
   const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();crateShow(cr,o);return o;}
 
 /* ---------- il mercante ---------- */
-const SHOP_X=-12.0;
-function merchantModel(){const g=new THREE.Group();
+const SHOP_X=-4.0;
+// il mercante del seminterrato è lo stesso che compare sui piani (con la sua bancarella)
+function merchantModel(){return travelMerchantModel();}
+function merchantModelOld(){const g=new THREE.Group();
   const robe=toon(0x3a2a55),robe2=toon(0x4b3770),hood=toon(0x2a1e40),gold=toon(0xd9b45a,{emissive:0x5a3a00,emissiveIntensity:0.4}),wood=toon(0x5a3a22);
   mesh(new THREE.ConeGeometry(0.55,1.7,14),robe,0,0.85,0,g);mesh(new THREE.CylinderGeometry(0.3,0.42,0.12,14),robe2,0,0.95,0,g);
   mesh(rbox(0.5,0.08,0.06,0.02),gold,0,0.95,0.38,g);mesh(sph(0.3,14,12),hood,0,1.85,0,g);
@@ -383,12 +385,12 @@ function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a4
 const CRATE_IMG={},PORTRAIT={v:null};
 function crateImg(id){if(CRATE_IMG[id]!=null)return CRATE_IMG[id];try{const m=crateModel(id);m.rotation.y=-0.55;m.position.y=0.06;const u=psURL(psShot(m,72,96,{cx:0,cy:0.55,h:2.5,dist:9,oy:2.2},true));disposeObj(m);return CRATE_IMG[id]=u;}catch(e){return CRATE_IMG[id]='';}}
 function portraitImg(){if(PORTRAIT.v!=null)return PORTRAIT.v;try{const m=merchantModel();m.rotation.y=0.35;const u=psURL(psShot(m,48,48,{cx:0.05,cy:1.65,h:1.15,dist:9,oy:0.1},false));disposeObj(m);return PORTRAIT.v=u;}catch(e){return PORTRAIT.v='';}}
-(function(){const C=cellarG,g=merchantModel();g.position.set(-12.25,0,-2.1);C.add(g);
+(function(){const C=cellarG,g=merchantModel();g.position.set(SHOP_X+0.35,0,-2.1);g.rotation.y=-0.25;C.add(g);
   // insegna appesa sopra il banco
   const [cn,x]=cv(128,48);x.fillStyle='#5a4020';x.fillRect(0,0,128,48);
   x.strokeStyle='#c8963a';x.lineWidth=4;x.strokeRect(3,3,122,42);x.fillStyle='#ffd27a';x.font='bold 22px "Pixelify Sans", monospace';x.textAlign='center';x.textBaseline='middle';x.fillText('BOTTEGA',64,25);
   const tx=new THREE.CanvasTexture(cn);tx.magFilter=THREE.NearestFilter;
-  const sg=new THREE.Group();sg.position.set(-12.05,3.55,-1.7);C.add(sg);
+  const sg=new THREE.Group();sg.position.set(SHOP_X-0.4,3.7,-1.7);C.add(sg);
   mesh(new THREE.PlaneGeometry(1.7,0.64),new THREE.MeshBasicMaterial({map:tx}),0,0,0.04,sg,true);mesh(rbox(1.78,0.7,0.06,0.02),toon(0x2a2a32),0,0,0,sg);
   for(const s of [-0.7,0.7])mesh(new THREE.CylinderGeometry(0.02,0.02,CELLAR_CEIL-3.9,6),toon(0x3a3a44),s,(CELLAR_CEIL-3.9)/2+0.32,0,sg,true);
   const r=mesh(new THREE.TorusGeometry(1.0,0.035,8,48),new THREE.MeshBasicMaterial({color:0xffb347,transparent:true,opacity:0,depthWrite:false}),SHOP_X,0.03,-0.2,C,true);r.rotation.x=Math.PI/2;r.scale.set(1,0.55,1);

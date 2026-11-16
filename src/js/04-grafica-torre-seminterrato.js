@@ -424,11 +424,12 @@ CFX.points=(P,o)=>{const n=o.n,pos=new Float32Array(n*3);for(let i=0;i<n;i++){po
   mesh(new THREE.PlaneGeometry(CH*2+4,0.9),new THREE.MeshBasicMaterial({color:0xff6a1a,transparent:true,opacity:0.18,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}),0,0.3,3.7,C,true);
   for(const x of [-6,6])CFX.light(C,0xff6a1a,1.0,8,x,0.6,3.7,true);
   // scaffali e casse della bottega (il mercante è in 16-pvp-negozio-mercante.js)
-  for(const y of [2.0,2.8])mesh(rbox(2.2,0.08,0.4,0.02),ironD,-12.0,y,-2.95,C);
-  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.scale.setScalar(0.55);w.position.set(-12.0-0.75+i*0.5,2.75,-2.85);w.rotation.y=Math.PI/2;C.add(w);});
-  CFX.crate(C,-10.7,0,-2.4,0.8,wood,ironD);CFX.crate(C,-10.55,0.8,-2.45,0.5,wood,ironD);
+  const MERCH_X=-4.0;   // bottega del mercante (scambiata col banco da lavoro)
+  for(const y of [2.0,2.8])mesh(rbox(2.2,0.08,0.4,0.02),ironD,MERCH_X,y,-2.95,C);
+  CLASSES.slice(0,4).forEach((c,i)=>{const w=buildWeaponMesh(c.weapon,0,null).g;w.scale.setScalar(0.55);w.position.set(MERCH_X-0.75+i*0.5,2.75,-2.85);w.rotation.y=Math.PI/2;C.add(w);});
+  CFX.crate(C,MERCH_X+1.3,0,-2.4,0.8,wood,ironD);CFX.crate(C,MERCH_X+1.45,0.8,-2.45,0.5,wood,ironD);
   // banco da lavoro = impostazioni: ferro, morsa, progetti, attrezzi appesi
-  const bx=-4.0;
+  const bx=-11.6;   // banco da lavoro (dove prima c'era il mercante)
   mesh(rbox(2.6,0.12,1.0,0.03),iron,bx,1.0,-1.7,C);for(const dx of [-1.15,1.15])mesh(rbox(0.12,1.0,0.9,0.02),ironD,bx+dx,0.5,-1.7,C);mesh(rbox(2.3,0.06,0.8,0.02),ironD,bx,0.3,-1.7,C);
   mesh(rbox(0.36,0.2,0.2,0.03),toon(0x5a6a8a),bx-0.85,1.16,-1.45,C);mesh(new THREE.CylinderGeometry(0.02,0.02,0.4,6),brass,bx-0.85,1.2,-1.3,C).rotation.z=Math.PI/2;
   const [cB,gB]=cv(64,48);gB.fillStyle='#2a4a8a';gB.fillRect(0,0,64,48);gB.strokeStyle='#cfe0ff';gB.lineWidth=1;gB.strokeRect(6,6,52,36);gB.beginPath();gB.arc(32,24,12,0,TAU);gB.stroke();gB.beginPath();gB.moveTo(6,24);gB.lineTo(58,24);gB.stroke();
