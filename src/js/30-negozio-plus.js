@@ -205,7 +205,7 @@ function killFx(c,x,y,big){const k=big?1.8:1;
 
 /* ---------- aure ---------- */
 let auraT=0;
-function auraTick(dt){const c=cosOf('aura');if(!c||!hero||!hero.root.visible||SPEC.on)return;const st=G.state;if(st!=='play'&&st!=='cellar'&&st!=='climb'&&st!=='enter')return;
+function auraTick(dt){const c=cosOf('aura');if(!c||!hero||!hero.root.visible||SPEC.on)return;const st=G.state;if(st!=='play'&&st!=='cellar'&&st!=='climb'&&st!=='enter'&&!(st==='shop'&&CV.on))return;
   auraT-=dt;if(auraT>0)return;auraT=0.075;const x=P.x,y=P.y,z=P.z||0;
   switch(c.id){
   case 'au_brace':burst(x+rand(-0.45,0.45),y+rand(0.05,0.8),Math.random()<0.7?0xff7a2e:0xffd27a,1,0.6,2.2,-0.25,z+rand(-0.3,0.3));break;
@@ -276,81 +276,66 @@ const _hbCos=heartbeat;heartbeat=function(){_hbCos.apply(this,arguments);if(!fbO
   fbPatch('players/'+encodeURIComponent(nameKey(MP.name())),{n:MP.name(),pid:PID,t:Date.now(),ti:ti?ti.id:'',fr:fr?fr.id:''}).catch(()=>{});};
 const _slCos=statLine;statLine=function(p){const s=_slCos(p),ti=p&&COS_BY[p.ti];return ti?`<i class="cos-ti">${esc(ti.n)}</i> `+s:s;};
 
-/* ---------- anteprima dentro il negozio: il tuo eroe (con la skin che usi) prova il cosmetico ----------
-   Riusa la finestra delle skin: il modello 3D gira, il compagno gli vola accanto, e sopra si disegnano
-   scia, effetto uccisione e aura; titolo e cornice compaiono sopra la testa. */
-const CV={c:null,ps:[],t:0,k:0,sw:null};
-function cosHeroModel(){const c=G.cls,k=SSEL[c.id];if(k&&ownsS(k))try{return skinModel(k);}catch(e){}
-  const R=buildSkin(c,SKINPICK[c.id]||0);poseShop(R,c);return R.root;}
-function cosView(id){const c=COS_BY[id];if(!c)return;closeView(true);
-  let g;try{g=new THREE.Group();const h=cosHeroModel();g.add(h);g.userData.hero=h;
-    const pc=c.cat==='pet'?c:cosOf('pet');if(pc){const pm=petModel(pc.id);pm.scale.setScalar(1.7);pm.position.set(-1.35,1.75,0.5);if(pc.id==='pet_slime')pm.position.set(-1.4,0,0.5);
-      pm.traverse(o=>{const mt=o.material;if(!mt||!mt.transparent)return;if(mt.opacity<0.5){o.visible=false;return;}o.material=new THREE.MeshBasicMaterial({color:mt.color.clone(),side:mt.side});});
-      g.add(pm);g.userData.pet=pm;g.userData.petId=pc.id;}}
-  catch(e){return;}
-  SV.m=g;SV.k='cos:'+id;SV.a=0.45;SV.spin=0.5;SV.fr=psFrame(g.userData.pet?g:g.userData.hero,g.userData.pet?1.2:1.3,0.8);SV.fr.cy-=0.02;
-  Object.assign(CV,{c,ps:[],t:0,k:0.3,sw:null});
+/* ---------- anteprima dentro il negozio: una scena vera, ripresa da una seconda telecamera ----------
+   Il tuo eroe (quello vero, nel seminterrato dietro al negozio) corre verso un nemico, lo colpisce con tre
+   fendenti e lo sconfigge; poi torna indietro e il nemico ricompare. Scia, effetto uccisione, aura e compagno
+   sono quelli del gioco; titolo e cornice compaiono sopra la testa. */
+const CV={c:null,on:false,t:0,ph:'run',pt:0,hits:0,base:0,dir:1,ex:0,e:null,cam:null,bk:null,respawn:0};
+const CVW=168,CVH=210;
+const _cosOfCv=cosOf;cosOf=function(cat){if(CV.on&&CV.c&&CV.c.cat===cat)return CV.c;return _cosOfCv(cat);};
+// foto della scena principale con la telecamera dell'anteprima (stessa resa a pixel del gioco)
+function cvShot(cam){const E=psEnv(),T=psRT(CVW,CVH);
+  try{if(PIX.ok){renderer.setRenderTarget(T.a);renderer.render(scene,cam);const u=E.mat.uniforms;u.tCol.value=T.a.texture;u.tDep.value=T.a.depthTexture;u.res.value.set(CVW,CVH);u.cn.value=cam.near;u.cf.value=cam.far;
+      renderer.setRenderTarget(T.b);renderer.render(E.q,E.oc);}
+    else{renderer.setRenderTarget(T.b);renderer.render(scene,cam);}
+    renderer.readRenderTargetPixels(T.b,0,0,CVW,CVH,T.buf);}finally{renderer.setRenderTarget(null);}
+  const img=new ImageData(CVW,CVH),d=img.data;for(let y=0;y<CVH;y++)d.set(T.buf.subarray((CVH-1-y)*CVW*4,(CVH-y)*CVW*4),y*CVW*4);for(let i=3;i<d.length;i+=4)d[i]=255;return img;}
+function cvEnemy(){cvEnemyOff();try{const n=G.enemies.length;spawnEnemy('slime',{x:CV.ex,summon:true});const e=G.enemies[n];if(!e)return;
+  e.cvPrev=true;e.face=-CV.dir;e.x=CV.ex;e.y=0;e.state='idle';CV.e=e;}catch(err){CV.e=null;}}
+function cvEnemyOff(){const e=CV.e;CV.e=null;if(!e)return;e.dead=true;try{scene.remove(e.parts.root);disposeObj(e.parts.root);}catch(err){}const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);}
+function cvKill(){const e=CV.e;if(!e)return;const x=e.x,y=e.y+(e.h||0.9)*0.5,col=e.color||0x86d46a;cvEnemyOff();
+  const k=cosOf('kill');if(k)try{killFx(k,x,y,false);}catch(err){}
+  burst(x,y,col,18,6,5);sfx('die');for(let i=0;i<5;i++){const mm=new THREE.Mesh(chunkGeo,chunkMat(col));mm.scale.setScalar(rand(0.25,0.45));mm.position.set(x,y,0);scene.add(mm);G.chunks.push({m:mm,vx:rand(-4,4),vy:rand(4,8),vz:rand(-1,1.5),rx:rand(-10,10),rz:rand(-10,10),t:0});}
+  CV.respawn=1.1;}
+function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar')return;closeView(true);
+  CV.bk={x:P.x,y:P.y,face:P.face};CV.base=P.x;CV.dir=P.x<0?1:-1;CV.ex=CV.base+CV.dir*3.4;
+  Object.assign(CV,{c,on:true,t:0,ph:'atk',pt:0.25,hits:0,respawn:0});P.vx=0;P.atk=null;P.face=CV.dir;
+  if(!CV.cam)CV.cam=new THREE.PerspectiveCamera(42,CVW/CVH,0.1,80);
+  cvEnemy();const pc=cosOf('pet');petSet(pc?pc.id:null);
+  SV.m=null;SV.k='cos:'+id;
+  const cv=$('svCan');cv.width=CVW;cv.height=CVH;cv.parentNode.classList.add('cv-on');
   const R=COS_R[c.r];$('svHero').textContent=COS_CAT1[c.cat]+' · '+R.n;$('svName').textContent=c.n;$('svName').style.color=R.css;$('svDesc').textContent=c.d;$('shView').style.setProperty('--vc',R.css);
-  // livello sopra il modello: effetti 2D e nome
-  const st=$('svCan').parentNode;let fx=$('cvFx');if(!fx){fx=document.createElement('canvas');fx.id='cvFx';fx.width=112;fx.height=140;fx.setAttribute('aria-hidden','true');st.insertBefore(fx,$('svCan').nextSibling);}
-  let tg=$('cvTag');if(!tg){tg=document.createElement('span');tg.id='cvTag';tg.className='cos-tagp';st.insertBefore(tg,$('svCan'));}
-  const ti=c.cat==='title'?c:cosOf('title'),fr=c.cat==='frame'?c:cosOf('frame');
-  tg.innerHTML=`<b>${esc(MP.name())}</b>${ti?`<small>${esc(ti.n)}</small>`:''}`;if(fr){tg.dataset.fr=fr.id;tg.style.setProperty('--fc',fr.col);}else{delete tg.dataset.fr;tg.style.removeProperty('--fc');}
-  tg.hidden=!(c.cat==='title'||c.cat==='frame');fx.hidden=false;st.classList.add('cv-on');
+  let tg=$('cvTag');if(!tg){tg=document.createElement('span');tg.id='cvTag';tg.className='cos-tagp';cv.parentNode.insertBefore(tg,cv);}
+  const ti=cosOf('title'),fr=cosOf('frame');tg.innerHTML=`<b>${esc(MP.name())}</b>${ti?`<small>${esc(ti.n)}</small>`:''}`;
+  if(fr){tg.dataset.fr=fr.id;tg.style.setProperty('--fc',fr.col);}else{delete tg.dataset.fr;tg.style.removeProperty('--fc');}tg.hidden=!(ti||fr);
+  const fx=$('cvFx');if(fx)fx.hidden=true;
   cvAct();$('shView').hidden=false;sfx('ui');
-  let last=performance.now();const loop=tt=>{if(!SV.m||SV.k!=='cos:'+id)return;const dt=Math.min(0.05,(tt-last)/1000);last=tt;if(!SV.drag)SV.a+=SV.spin*dt;g.userData.hero.rotation.y=SV.a;if(g.userData.pet)g.userData.pet.rotation.y=0.35+Math.sin(CV.t*0.9)*0.25;
-    cvPet(g,dt);try{const img=psShot(g,112,140,SV.fr,true);$('svCan').getContext('2d').putImageData(img,0,0);}catch(e){}
-    try{cvFx(dt);}catch(e){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
+  const loop=()=>{if(!CV.on||SV.k!=='cos:'+id)return;try{cvAim();$('svCan').getContext('2d').putImageData(cvShot(CV.cam),0,0);cvTagPos();}catch(err){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
+function cvAim(){const cx=CV.base+CV.dir*1.7,cam=CV.cam;cam.position.set(cx,1.55,6.6);cam.lookAt(cx,1.05,0);cam.updateMatrixWorld();}
+function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THREE.Vector3(P.x,P.y+2.6,P.z||0).project(CV.cam),cv=$('svCan'),r=cv.getBoundingClientRect(),pr=cv.parentNode.getBoundingClientRect();
+  tg.style.left=(r.left-pr.left+(v.x+1)/2*r.width)+'px';tg.style.top=(r.top-pr.top+(1-v.y)/2*r.height)+'px';}
+// la coreografia: attacca tre volte, il nemico cade, corre indietro, corre avanti, ricomincia
+function cvTick(dt){if(!CV.on)return;if(G.scene!=='cellar'||G.state!=='shop'){cvStop();return;}CV.t+=dt;
+  P.landT-=dt;if(P.atk){P.atk.t+=dt;if(P.atk.t>=P.atk.wind+P.atk.act+P.atk.rec)P.atk=null;}
+  if(CV.respawn>0){CV.respawn-=dt;if(CV.respawn<=0)cvEnemy();}
+  CV.pt-=dt;const near=CV.base+CV.dir*1.6,sp=6;
+  if(CV.ph==='atk'){P.vx=0;P.face=CV.dir;if(CV.pt<=0&&!P.atk){if(CV.hits<3&&CV.e){try{startAttack(true);}catch(err){}CV.hits++;CV.pt=0.12;
+        const e=CV.e;if(e){setTimeout(()=>{if(CV.e===e){e.flash=0.12;e.flinch=0.2;burst(e.x,e.y+0.5,0xffffff,5,4,2);sfx('hit');if(CV.hits>=3)cvKill();}},180);}}
+      else if(!CV.e&&CV.hits>=3&&CV.pt<=-0.5){CV.ph='back';CV.hits=0;}}}
+  else if(CV.ph==='back'){P.face=-CV.dir;P.vx=-CV.dir*sp;P.x+=P.vx*dt;if((P.x-CV.base)*CV.dir<=0){P.x=CV.base;P.vx=0;CV.ph='wait';CV.pt=0.5;}}
+  else if(CV.ph==='wait'){P.vx=0;if(CV.pt<=0&&CV.e){CV.ph='fwd';}}
+  else if(CV.ph==='fwd'){P.face=CV.dir;P.vx=CV.dir*sp;P.x+=P.vx*dt;if((P.x-near)*CV.dir>=0){P.x=near;P.vx=0;CV.ph='atk';CV.pt=0.15;CV.hits=0;}}
+  if(CV.ph==='atk'&&CV.hits===0&&(P.x-near)*CV.dir<0){/* prima volta: l'eroe è ancora alla base */CV.ph='fwd';}}
+function cvStop(){if(!CV.on)return;CV.on=false;cvEnemyOff();if(CV.bk){P.x=CV.bk.x;P.y=CV.bk.y;P.face=CV.bk.face;}P.vx=0;P.atk=null;CV.c=null;
+  const pc=cosOf('pet');petSet(pc?pc.id:null);const cv=$('svCan');if(cv){cv.width=112;cv.height=140;cv.parentNode.classList.remove('cv-on');}const tg=$('cvTag');if(tg)tg.hidden=true;}
 function cvAct(){const c=CV.c;if(!c)return;const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id,can=!own&&cosToday().includes(c);
   $('svAct').innerHTML=own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:can?`<button class="sh-buy" data-cbuy="${c.id}" ${COINS.n<c.p?'disabled':''}>${coinI}<span>${fmtC(c.p)}</span></button>`:'';
   $('svNote').textContent=own?'È tuo.':can?(COINS.n<c.p?'Ti mancano '+fmtC(c.p-COINS.n)+' rubini.':''):'Oggi il Mercante non lo vende: torna un altro giorno.';}
-// il compagno nell'anteprima: vola e sbatte le ali
-function cvPet(g,dt){CV.t+=dt;const pm=g.userData.pet;if(!pm)return;const t=CV.t,pp=pm.userData.parts,id=g.userData.petId;
-  if(id==='pet_slime'){const hop=Math.abs(Math.sin(t*5))*0.45;pm.position.y=hop;if(pp.body)pp.body.scale.set(1.1,0.8-hop*0.4,1);}else pm.position.y=1.75+Math.sin(t*2.4)*0.14;
-  if(pp.wings)pp.wings.forEach((w,i)=>{const s=i?1:-1;if(id==='pet_drago')w.rotation.x=s*(0.6+Math.sin(t*12)*0.5);else if(id==='pet_gufo')w.rotation.z=s*(0.2+Math.sin(t*14)*0.35);else w.rotation.z=s*(0.5+Math.sin(t*30)*0.6);});
-  if(pp.halo)pp.halo.scale.setScalar(1+Math.sin(t*5)*0.15);if(pp.flame)pp.flame.scale.set(1,1+Math.sin(t*14)*0.18,1);}
-// effetti disegnati sopra il modello (coordinate della tela 112x140: eroe al centro, piedi in basso)
-const CX=56,CY=82,FEET=128;
-const cvCol=c=>c.id==='tr_arc'?`hsl(${(CV.t*250)%360},90%,62%)`:hexCss(c.col||0xffd27a);
-function cvBurst(x,y,col,n,sp,up,g,life){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=sp*(0.3+Math.random());CV.ps.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-(up||0),g:g||0,l:life||0.7,m:life||0.7,c:typeof col==='function'?col():col,sz:Math.random()<0.3?2:1});}}
-function cvFx(dt){const fx=$('cvFx');if(!fx)return;const x=fx.getContext('2d'),c=CV.c,t=CV.t;x.clearRect(0,0,112,140);CV.k-=dt;
-  if(c.cat==='trail'){if(CV.k<=0){CV.k=1.1;CV.sw={t:0};}
-    if(CV.sw){const s=CV.sw;s.t+=dt;const p=Math.min(1,s.t/0.22),fade=s.t<0.22?1:Math.max(0,1-(s.t-0.22)/0.35);
-      for(let i=0;i<14;i++){const u=i/13;if(u>p)break;const a=-2.4+u*2.7,r=30;const px=CX+8+Math.cos(a)*r,py=CY-6+Math.sin(a)*r*0.9;
-        x.globalAlpha=fade*(0.25+0.75*u);x.fillStyle=c.id==='tr_arc'?`hsl(${(u*300+t*200)%360},90%,62%)`:cvCol(c);x.fillRect(Math.round(px)-2,Math.round(py)-2,4,4);
-        if(u>0.6){x.fillStyle='#fff';x.globalAlpha=fade*0.8*(u-0.6)/0.4;x.fillRect(Math.round(px)-1,Math.round(py)-1,2,2);}}
-      if(s.t>0.6)CV.sw=null;}}
-  else if(c.cat==='kill'){if(CV.k<=0){CV.k=1.5;const ex=CX+30,ey=CY+14,col=cvCol(c);
-      switch(c.id){case 'kf_pira':CV.ps.push({pil:1,x:ex,c:col,l:0.6,m:0.6});cvBurst(ex,ey,col,22,40,30,-20,0.8);cvBurst(ex,ey,'#ffd27a',10,30,25,-10,0.6);break;
-        case 'kf_gelo':for(let i=-3;i<=3;i++)CV.ps.push({spk:1,x:ex+i*5,h:10+Math.random()*10,c:col,l:0.8,m:0.8});cvBurst(ex,ey,'#dff4ff',18,45,10,40,0.6);break;
-        case 'kf_cori':cvBurst(ex,ey,()=>['#ff4d6a','#ffd27a','#7fe08a','#8fdcff','#b88cff'][Math.floor(Math.random()*5)],34,55,35,70,1);break;
-        case 'kf_anime':CV.ps.push({pil:1,x:ex,c:col,l:0.8,m:0.8,thin:1});cvBurst(ex,ey,col,14,12,35,-25,1);CV.ps.push({ring:1,x:ex,y:FEET-2,c:col,l:0.5,m:0.5,r:14});break;
-        case 'kf_fulmine':CV.ps.push({bolt:1,x:ex,y:ey,c:col,l:0.3,m:0.3,pts:Array.from({length:7},(_,i)=>[ex+(Math.random()-0.5)*14*(1-i/7),i/6*ey])});cvBurst(ex,ey,col,20,50,15,30,0.5);CV.ps.push({ring:1,x:ex,y:FEET-2,c:col,l:0.4,m:0.4,r:18});break;
-        case 'kf_buco':CV.ps.push({ring:1,x:ex,y:ey,c:col,l:0.7,m:0.7,r:20,inw:1});CV.ps.push({ring:1,x:ex,y:ey,c:'#c7a8ff',l:0.55,m:0.55,r:12,inw:1});cvBurst(ex,ey,'#2a1640',12,15,0,0,0.6);break;}}
-    // il nemico che viene sconfitto (una sagoma che sparisce)
-    const k=CV.k;if(k>0.9){x.globalAlpha=Math.min(1,(k-0.9)*4);x.fillStyle='#3a5a2a';x.fillRect(CX+24,CY+6,12,FEET-CY-6);x.fillStyle='#7fe08a';x.fillRect(CX+26,CY+8,8,4);x.globalAlpha=1;}}
-  else if(c.cat==='aura'){if(Math.random()<dt*28){const col=hexCss(c.col);
-      switch(c.id){case 'au_brace':CV.ps.push({x:CX+(Math.random()-0.5)*40,y:FEET-Math.random()*40,vx:0,vy:-25,g:0,l:1,m:1,c:Math.random()<0.7?'#ff7a2e':'#ffd27a',sz:1});break;
-        case 'au_neve':CV.ps.push({x:CX+(Math.random()-0.5)*60,y:20+Math.random()*10,vx:(Math.random()-0.5)*6,vy:20,g:0,l:2.4,m:2.4,c:'#e8f6ff',sz:Math.random()<0.4?2:1});break;
-        case 'au_ombra':CV.ps.push({x:CX+(Math.random()-0.5)*44,y:FEET-2,vx:(Math.random()-0.5)*8,vy:-12,g:0,l:1.2,m:1.2,c:Math.random()<0.6?'#7a4aff':'#2a1a4a',sz:2});break;
-        case 'au_lucciole':{const a=Math.random()*TAU;CV.ps.push({orb:1,a,r:24+Math.random()*10,y0:CY-10+(Math.random()-0.5)*40,l:1.6,m:1.6,c:'#d8ff7a'});break;}
-        case 'au_stelle':CV.ps.push({x:CX+(Math.random()-0.5)*56,y:CY-50+Math.random()*90,vx:0,vy:0,g:0,l:0.9,m:0.9,c:Math.random()<0.5?'#ffe08a':'#ffffff',star:1});break;}}}
-  // particelle
-  for(let i=CV.ps.length-1;i>=0;i--){const p=CV.ps[i];p.l-=dt;if(p.l<=0){CV.ps.splice(i,1);continue;}const k=p.l/p.m;x.globalAlpha=Math.min(1,k*1.4);x.fillStyle=p.c;x.strokeStyle=p.c;
-    if(p.pil){const w=p.thin?4:10;x.globalAlpha=k*0.7;x.fillRect(p.x-w/2,0,w,FEET);x.fillStyle='#fff';x.fillRect(p.x-1,0,2,FEET);continue;}
-    if(p.spk){const h=p.h*Math.min(1,(1-k)*4);x.beginPath();x.moveTo(p.x-3,FEET);x.lineTo(p.x,FEET-h);x.lineTo(p.x+3,FEET);x.fill();continue;}
-    if(p.ring){const r=p.inw?p.r*k:p.r*(1-k)+2;x.lineWidth=2;x.beginPath();x.ellipse(p.x,p.y,r,p.inw?r:r*0.35,0,0,TAU);x.stroke();continue;}
-    if(p.bolt){x.lineWidth=2;x.beginPath();p.pts.forEach(([a,b],j)=>j?x.lineTo(a,b):x.moveTo(a,b));x.stroke();continue;}
-    if(p.orb){p.a+=dt*2;const px=CX+Math.cos(p.a)*p.r,py=p.y0+Math.sin(p.a*1.7)*6;x.globalAlpha=Math.sin(k*Math.PI);x.fillRect(Math.round(px),Math.round(py),2,2);continue;}
-    if(p.star){x.globalAlpha=Math.sin(k*Math.PI);x.fillRect(Math.round(p.x),Math.round(p.y)-1,1,3);x.fillRect(Math.round(p.x)-1,Math.round(p.y),3,1);continue;}
-    p.vy+=(p.g||0)*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;x.fillRect(Math.round(p.x),Math.round(p.y),p.sz||1,p.sz||1);}
-  x.globalAlpha=1;}
-// chiudendo la finestra si spengono gli effetti
-const _cvClose=closeView;closeView=function(q){const r=_cvClose.apply(this,arguments);CV.c=null;CV.ps=[];const fx=$('cvFx');if(fx){fx.getContext('2d').clearRect(0,0,112,140);fx.hidden=true;}const tg=$('cvTag');if(tg)tg.hidden=true;
-  const st=$('svCan')&&$('svCan').parentNode;if(st)st.classList.remove('cv-on');return r;};
+const _uhvCv=updHeroVisual;updHeroVisual=function(dt){try{cvTick(dt);}catch(e){}return _uhvCv(dt);};
+const _cvClose=closeView;closeView=function(q){cvStop();return _cvClose.apply(this,arguments);};
 $('shop').addEventListener('click',e=>{const b=e.target.closest('[data-cprev]');if(b){e.stopPropagation();cosView(b.dataset.cprev);}},true);
-// dopo un acquisto o «Usa» dalla finestra, si aggiornano i pulsanti
-const _rsCv=renderShop;renderShop=function(){const r=_rsCv.apply(this,arguments);if(CV.c&&SV.k&&SV.k.startsWith('cos:'))cvAct();return r;};
+const _rsCv=renderShop;renderShop=function(){const r=_rsCv.apply(this,arguments);if(CV.on&&CV.c)cvAct();return r;};
+const _csCv=closeShop;closeShop=function(){cvStop();return _csCv.apply(this,arguments);};
 
 /* ---------- Venom: non si vende più; è del giocatore «zero» ---------- */
 function venomZero(){if(nameKey(MP.name())!=='zero'||!store.get('nameok',false))return;const k=VENOM_K;if(!OWNS.includes(k)){OWNS.push(k);store.set('shopskins',OWNS);toast('Skin Venom','È tua: la trovi tra le skin dell\'eroe');}}
