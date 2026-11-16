@@ -39,7 +39,7 @@ function specSend(m){for(const c of SPB.conns)if(c.open){try{c.send(m);}catch(e)
 function specInfo(){return {t:'si',seed:SPB.lvSeed,fl:G.floor,n:MP.name(),sc:specInRun()?'tower':'cellar',st:G.state,lv:specInRun()?Object.assign({},G.lv):{}};}
 function specOpen(){if(SPB.peer||SPB.loading)return;SPB.loading=true;setTimeout(()=>{SPB.loading=false;},8000);
   mpLib(()=>{SPB.loading=false;if(SPB.peer||!specInRun())return;
-    const p=new Peer(specId(nameKey(MP.name())));SPB.peer=p;
+    const p=new Peer(specId(nameKey(MP.name())));SPB.peer=p;SPB.openT=Date.now();p.on('open',()=>{SPB.openT=0;});
     p.on('connection',c=>{
       c.on('open',()=>{SPB.conns=SPB.conns.filter(x=>x.open);if(SPB.conns.length>=SPEC_MAX){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}
         SPB.conns.push(c);try{c.send(specInfo());}catch(e){}specCountUi();});
@@ -58,8 +58,10 @@ function specCountUi(){const n=SPB.conns.filter(c=>c.open).length;
   if(show){const names=SPB.conns.filter(c=>c.open&&c.who).map(c=>c.who);specCountEl.innerHTML=EYE_SVG+`<span>${n}</span>`;specCountEl.title=names.length?'Ti guardano: '+names.join(', '):'Spettatori';}}
 // ogni 2 s: apre o chiude il canale e aggiorna la presenza quando cambia qualcosa
 setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
-  if(run&&SPB.peer){const p=SPB.peer;   // il canale è caduto: lo si riapre (come fa la stanza della co-op)
-    if(p.destroyed)SPB.peer=null;else if(p.disconnected){try{p.reconnect();}catch(e){try{p.destroy();}catch(_){}SPB.peer=null;}}}
+  if(run&&SPB.peer){const p=SPB.peer;   // il canale è caduto o non si è mai aperto: lo si riapre (come fa la stanza della co-op)
+    if(p.destroyed)SPB.peer=null;
+    else if(p.disconnected){try{p.reconnect();}catch(e){try{p.destroy();}catch(_){}SPB.peer=null;}}
+    else if(!p.open&&SPB.openT&&Date.now()-SPB.openT>12000){try{p.destroy();}catch(e){}SPB.peer=null;}}
   if(run&&!SPB.peer)specOpen();else if(!run&&SPB.peer)specCloseB();
   const fl=run?G.floor:0,now=Date.now();
   if(run!==SPB.inRun||fl!==SPB.fl||(run&&now-SPB.presT>40000)){SPB.inRun=run;SPB.fl=fl;SPB.presT=now;specPresence();if(SPB.conns.length)specSend(specInfo());}
