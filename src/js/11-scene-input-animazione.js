@@ -176,7 +176,7 @@ function renderSelect(){
   const c=G.cls,pr=prog(c.id),st=classStats(c,pr),T=WTYPES[c.weapon],need=xpNeed(pr.lv),lock2=pr.lv<LV_ABIL2,lock3=pr.lv<LV_ABIL3;
   const rows=[['Vita',st.maxHp,200,st.maxHp],['Danno',T.dmg*(1+st.lvDmg),40,Math.round(T.dmg*(1+st.lvDmg))],['Attacchi al secondo',st.atkSpd/T.cd,6,(st.atkSpd/T.cd).toFixed(1).replace('.',',')],
     ['Velocità',st.speed,12,st.speed.toFixed(1).replace('.',',')],['Portata',T.hit[1]*st.reach,4,(T.hit[1]*st.reach).toFixed(1).replace('.',',')+' m'],
-    ['Armatura',st.armor,0.6,pct(st.armor)],['Critico',st.crit,0.5,pct(st.crit)],['Stamina',st.stamMax,200,st.stamMax],['Salti in aria',c.jumps,2,c.jumps]];
+    ['Armatura',st.armor,0.6,statPt(st.armor)],['Critico',st.crit,0.5,statPt(st.crit)],['Stamina',st.stamMax,200,st.stamMax],['Salti in aria',c.jumps,2,c.jumps]];
   const tab=G.selTab,tb=(k,l)=>`<button data-tab="${k}" aria-selected="${tab===k}">${l}${k==='pt'&&pr.pts?' ('+pr.pts+')':''}</button>`;
   $('cstats').innerHTML=`<div><div class="cs-name">${c.name}</div><div class="cs-sub"><b style="color:${clsRar(c).css}">${clsRar(c).name}</b> · ${c.wname} · Liv ${pr.lv} · ${pr.lv>=MAX_LV?'max':Math.floor(pr.xp)+'/'+need+' XP'}</div></div>
     <div class="cs-tabs">${tb('st','Statistiche')}${tb('ab','Abilità')}${tb('pt','Punti')}</div>

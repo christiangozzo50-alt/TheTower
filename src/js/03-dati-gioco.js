@@ -306,7 +306,9 @@ const GEAR={
   corazza:{label:'Corazza',icon:'chest',names:['Giubba imbottita','Cotta di maglia','Corazza runica','Corazza d\'ossidiana','Armatura dell\'Alba','Egida del Titano','Manto degli Dèi'],make:(m,ff)=>({hp:Math.round(18*m*ff),armor:+(0.03*m).toFixed(3)})},
 };
 function makeGear(slot,r,f){return Object.assign({slot,rarity:r,name:GEAR[slot].names[r]},GEAR[slot].make(RARITY[r].mul,1+0.04*(f-1)));}
-const gearDesc=g=>[g.hp?`+${g.hp} Vita`:'',g.armor?`+${pct1(g.armor)} Armatura`:'',g.atkSpd?`+${pct1(g.atkSpd)} Vel. d'attacco`:'',g.crit?`+${pct1(g.crit)} Critico`:''].filter(Boolean).join(' · ');
+// statistiche dell'equipaggiamento in punti (1 punto = 0,1%), non in percentuale
+const statPt=v=>Math.round((v||0)*1000);
+const gearDesc=g=>[g.hp?`+${g.hp} Vita`:'',g.armor?`+${statPt(g.armor)} Armatura`:'',g.atkSpd?`+${statPt(g.atkSpd)} Velocità d'attacco`:'',g.crit?`+${statPt(g.crit)} Critico`:''].filter(Boolean).join(' · ');
 const pct1=v=>String(+(v*100).toFixed(1)).replace('.',',')+'%';
 // Le armi più rare compaiono solo ai piani alti
 const maxRarity=f=>f<3?0:f<11?1:f<31?2:f<61?3:f<86?4:f<100?5:6;
