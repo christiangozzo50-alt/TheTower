@@ -289,20 +289,22 @@ const CVW=168,CVH=210;
 const _cosOfCv=cosOf;cosOf=function(cat){if(CV.on&&CV.c&&CV.c.cat===cat)return CV.c;return _cosOfCv(cat);};
 // foto della scena principale con la telecamera dell'anteprima (stessa resa a pixel del gioco)
 function cvShot(cam){const E=psEnv(),T=psRT(CVW,CVH);
+  const bk={t:towerG.visible,l:levelGroup.visible,c:cellarG.visible,h:hemi.intensity,s:sun.intensity,fn:scene.fog.near,ff:scene.fog.far,sg:safeG&&safeG.visible};
+  towerG.visible=true;levelGroup.visible=true;cellarG.visible=false;if(safeG)safeG.visible=false;hemi.intensity=0.6;sun.intensity=0.7;scene.fog.near=26;scene.fog.far=70;
   try{if(PIX.ok){renderer.setRenderTarget(T.a);renderer.render(scene,cam);const u=E.mat.uniforms;u.tCol.value=T.a.texture;u.tDep.value=T.a.depthTexture;u.res.value.set(CVW,CVH);u.cn.value=cam.near;u.cf.value=cam.far;
       renderer.setRenderTarget(T.b);renderer.render(E.q,E.oc);}
     else{renderer.setRenderTarget(T.b);renderer.render(scene,cam);}
-    renderer.readRenderTargetPixels(T.b,0,0,CVW,CVH,T.buf);}finally{renderer.setRenderTarget(null);}
+    renderer.readRenderTargetPixels(T.b,0,0,CVW,CVH,T.buf);}finally{renderer.setRenderTarget(null);towerG.visible=bk.t;levelGroup.visible=bk.l;cellarG.visible=bk.c;if(safeG)safeG.visible=bk.sg;hemi.intensity=bk.h;sun.intensity=bk.s;scene.fog.near=bk.fn;scene.fog.far=bk.ff;}
   const img=new ImageData(CVW,CVH),d=img.data;for(let y=0;y<CVH;y++)d.set(T.buf.subarray((CVH-1-y)*CVW*4,(CVH-y)*CVW*4),y*CVW*4);for(let i=3;i<d.length;i+=4)d[i]=255;return img;}
-function cvEnemy(){cvEnemyOff();try{const n=G.enemies.length;spawnEnemy('slime',{x:CV.ex,summon:true});const e=G.enemies[n];if(!e)return;
-  e.cvPrev=true;e.face=-CV.dir;e.x=CV.ex;e.y=0;e.state='idle';CV.e=e;}catch(err){CV.e=null;}}
+function cvEnemy(){cvEnemyOff();try{const n=G.enemies.length;spawnEnemy('guard',{x:CV.ex,summon:true});const e=G.enemies[n];if(!e)return;
+  e.cvPrev=true;e.face=-CV.dir;e.x=CV.ex;e.y=0;e.state='idle';e.sc=(e.sc||1)*1.1;CV.e=e;}catch(err){CV.e=null;}}
 function cvEnemyOff(){const e=CV.e;CV.e=null;if(!e)return;e.dead=true;try{scene.remove(e.parts.root);disposeObj(e.parts.root);}catch(err){}const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);}
-function cvKill(){const e=CV.e;if(!e)return;const x=e.x,y=e.y+(e.h||0.9)*0.5,col=e.color||0x86d46a;cvEnemyOff();
+function cvKill(){const e=CV.e;if(!e)return;const x=e.x,y=e.y+(e.h||2)*0.5,col=e.color||0xe8e0cc;cvEnemyOff();
   const k=cosOf('kill');if(k)try{killFx(k,x,y,false);}catch(err){}
   burst(x,y,col,18,6,5);sfx('die');for(let i=0;i<5;i++){const mm=new THREE.Mesh(chunkGeo,chunkMat(col));mm.scale.setScalar(rand(0.25,0.45));mm.position.set(x,y,0);scene.add(mm);G.chunks.push({m:mm,vx:rand(-4,4),vy:rand(4,8),vz:rand(-1,1.5),rx:rand(-10,10),rz:rand(-10,10),t:0});}
-  CV.respawn=1.1;}
+  CV.respawn=1.6;}
 function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='shop')return;closeView(true);
-  CV.bk={x:P.x,y:P.y,face:P.face};CV.base=P.x;CV.dir=P.x<0?1:-1;CV.ex=CV.base+CV.dir*2.5;
+  CV.bk={x:P.x,y:P.y,face:P.face};CV.base=-3.6;CV.dir=1;CV.ex=CV.base+CV.dir*2.9;P.x=CV.base;P.y=0;
   Object.assign(CV,{c,on:true,t:0,ph:'atk',pt:0.25,hits:0,respawn:0,cx:null});P.vx=0;P.atk=null;P.face=CV.dir;
   if(!CV.cam)CV.cam=new THREE.PerspectiveCamera(42,CVW/CVH,0.1,80);
   cvEnemy();const pc=cosOf('pet');petSet(pc?pc.id:null);
@@ -317,7 +319,7 @@ function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='sh
   const loop=()=>{if(!CV.on||SV.k!=='cos:'+id)return;try{cvAim();$('svCan').getContext('2d').putImageData(cvShot(CV.cam),0,0);cvTagPos();}catch(err){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
 function cvAim(){const cat=CV.c&&CV.c.cat,wide=cat==='trail'||cat==='kill',cam=CV.cam;
   // scia ed effetti: eroe e nemico; compagno, aura, nome: stretto sull'eroe (e il compagno, che gli sta dietro)
-  const cx=wide?CV.base+CV.dir*1.6:cat==='pet'?(P.x+CPET.x)/2:P.x+CV.dir*0.15,cy=cat==='pet'?1.45:1.2,z=wide?5.6:cat==='pet'?4.6:4.2;
+  const cx=wide?CV.base+CV.dir*1.55:cat==='pet'?(P.x+CPET.x)/2:P.x+CV.dir*0.15,cy=cat==='pet'?1.5:1.3,z=wide?7.4:cat==='pet'?6.0:5.6;
   CV.cx=CV.cx==null?cx:CV.cx+(cx-CV.cx)*0.12;cam.position.set(CV.cx,cy+0.3,z);cam.lookAt(CV.cx,cy,0);cam.updateMatrixWorld();}
 function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THREE.Vector3(P.x,P.y+2.6,P.z||0).project(CV.cam),cv=$('svCan'),r=cv.getBoundingClientRect(),pr=cv.parentNode.getBoundingClientRect();
   tg.style.left=(r.left-pr.left+(v.x+1)/2*r.width)+'px';tg.style.top=(r.top-pr.top+(1-v.y)/2*r.height)+'px';}
@@ -325,11 +327,11 @@ function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THR
 function cvTick(dt){if(!CV.on)return;if(G.scene!=='cellar'||G.state!=='shop'){cvStop();return;}CV.t+=dt;
   P.landT-=dt;if(P.atk){P.atk.t+=dt;if(P.atk.t>=P.atk.wind+P.atk.act+P.atk.rec)P.atk=null;}
   if(CV.respawn>0){CV.respawn-=dt;if(CV.respawn<=0)cvEnemy();}
-  CV.pt-=dt;const near=CV.base+CV.dir*1.0,sp=5;
-  if(CV.ph==='atk'){P.vx=0;P.face=CV.dir;if(CV.pt<=0&&!P.atk){if(CV.hits<3&&CV.e){try{startAttack(true);}catch(err){}CV.hits++;CV.pt=0.12;
+  CV.pt-=dt;const near=CV.base+CV.dir*1.2,sp=4;
+  if(CV.ph==='atk'){P.vx=0;P.face=CV.dir;if(CV.pt<=0&&!P.atk){if(CV.hits<3&&CV.e){try{startAttack(true);}catch(err){}CV.hits++;CV.pt=0.38;
         const e=CV.e;if(e){setTimeout(()=>{if(CV.e===e){e.flash=0.12;e.flinch=0.2;burst(e.x,e.y+0.5,0xffffff,5,4,2);sfx('hit');if(CV.hits>=3)cvKill();}},180);}}
-      else if(!CV.e&&CV.hits>=3&&CV.pt<=-0.5){CV.ph='back';CV.hits=0;}}}
-  else if(CV.ph==='back'){P.face=-CV.dir;P.vx=-CV.dir*sp;P.x+=P.vx*dt;if((P.x-CV.base)*CV.dir<=0){P.x=CV.base;P.vx=0;CV.ph='wait';CV.pt=0.5;}}
+      else if(!CV.e&&CV.hits>=3&&CV.pt<=-1.2){CV.ph='back';CV.hits=0;}}}
+  else if(CV.ph==='back'){P.face=-CV.dir;P.vx=-CV.dir*sp;P.x+=P.vx*dt;if((P.x-CV.base)*CV.dir<=0){P.x=CV.base;P.vx=0;CV.ph='wait';CV.pt=0.7;}}
   else if(CV.ph==='wait'){P.vx=0;if(CV.pt<=0&&CV.e){CV.ph='fwd';}}
   else if(CV.ph==='fwd'){P.face=CV.dir;P.vx=CV.dir*sp;P.x+=P.vx*dt;if((P.x-near)*CV.dir>=0){P.x=near;P.vx=0;CV.ph='atk';CV.pt=0.15;CV.hits=0;}}
   if(CV.ph==='atk'&&CV.hits===0&&(P.x-near)*CV.dir<0){/* prima volta: l'eroe è ancora alla base */CV.ph='fwd';}}
