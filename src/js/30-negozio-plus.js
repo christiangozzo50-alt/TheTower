@@ -10,48 +10,49 @@
 const COS_CATS=[['trail','Scie dell\'arma','il colore del fendente'],['kill','Effetti uccisione','quando finisci un nemico'],['aura','Aure','intorno al tuo eroe'],
   ['pet','Compagni','ti seguono ovunque, solo per bellezza'],['title','Titoli','sotto il tuo nome'],['frame','Cornici','intorno al tuo nome']];
 const COS_LIST=[
-  {id:'tr_brace',cat:'trail',n:'Scia di brace',d:'Fendenti color fuoco',p:600,col:0xff7a2e},
-  {id:'tr_gelo',cat:'trail',n:'Scia gelida',d:'Fendenti azzurro ghiaccio',p:600,col:0x8fdcff},
-  {id:'tr_veleno',cat:'trail',n:'Scia velenosa',d:'Fendenti verde acido',p:600,col:0x7fe08a},
-  {id:'tr_ombra',cat:'trail',n:'Scia d\'ombra',d:'Fendenti viola profondo',p:800,col:0xb88cff},
-  {id:'tr_oro',cat:'trail',n:'Scia d\'oro',d:'Fendenti d\'oro puro',p:900,col:0xffd27a},
-  {id:'tr_arc',cat:'trail',n:'Scia arcobaleno',d:'Il colore cambia di continuo',p:1800,rain:true,week:true},
-  {id:'kf_pira',cat:'kill',n:'Pira',d:'Il nemico brucia in una colonna di fuoco',p:800,col:0xff7a2e},
-  {id:'kf_gelo',cat:'kill',n:'Frantumi',d:'Spuntoni di ghiaccio e schegge',p:800,col:0x8fdcff},
-  {id:'kf_cori',cat:'kill',n:'Coriandoli',d:'Festa a ogni nemico sconfitto',p:700,col:0xffd27a},
-  {id:'kf_anime',cat:'kill',n:'Anime',d:'Lo spirito sale verso il soffitto',p:900,col:0xb88cff},
-  {id:'kf_fulmine',cat:'kill',n:'Fulmine del cielo',d:'Un fulmine colpisce il nemico caduto',p:1000,col:0xfff27a},
-  {id:'kf_buco',cat:'kill',n:'Buco nero',d:'Il nemico viene risucchiato in un vortice',p:2400,col:0x7a4aff,week:true},
-  {id:'au_brace',cat:'aura',n:'Aura di brace',d:'Scintille che salgono',p:900,col:0xff7a2e},
-  {id:'au_neve',cat:'aura',n:'Aura di neve',d:'Fiocchi che cadono intorno a te',p:900,col:0xe8f6ff},
-  {id:'au_ombra',cat:'aura',n:'Aura d\'ombra',d:'Fumo viola ai tuoi piedi',p:1100,col:0x7a4aff},
-  {id:'au_lucciole',cat:'aura',n:'Lucciole',d:'Piccole luci che ti girano intorno',p:1000,col:0xd8ff7a},
-  {id:'au_stelle',cat:'aura',n:'Polvere di stelle',d:'Stelle d\'oro e bianche che brillano',p:2200,col:0xffe08a,week:true},
-  {id:'pet_luc',cat:'pet',n:'Lucciola',d:'Una lucina che ti svolazza accanto',p:1200,col:0xd8ff7a},
-  {id:'pet_slime',cat:'pet',n:'Melmina',d:'Una piccola melma amica che saltella',p:1400,col:0x7fe08a},
-  {id:'pet_gufo',cat:'pet',n:'Gufetto',d:'Sbatte le ali e ti tiene d\'occhio',p:1600,col:0xc9a06a},
-  {id:'pet_teschio',cat:'pet',n:'Teschietto',d:'Un teschio con una fiammella viola',p:1800,col:0xb88cff},
-  {id:'pet_drago',cat:'pet',n:'Draghetto',d:'Un drago in miniatura, raro',p:3000,col:0xff4a2e,week:true},
-  {id:'ti_scal',cat:'title',n:'Scalatore',d:'Per chi sale senza fermarsi',p:300},
-  {id:'ti_senza',cat:'title',n:'Senza paura',d:'Nessun guardiano ti spaventa',p:400},
-  {id:'ti_drago',cat:'title',n:'Ammazzadraghi',d:'Per chi ha visto la cima',p:600},
-  {id:'ti_combo',cat:'title',n:'Maestro di combo',d:'Colpi a raffica',p:600},
-  {id:'ti_re',cat:'title',n:'Re della torre',d:'Il titolo più ambito',p:1200},
-  {id:'fr_oro',cat:'frame',n:'Cornice d\'oro',d:'Bordo dorato',p:600,col:'#ffd27a'},
-  {id:'fr_gelo',cat:'frame',n:'Cornice di ghiaccio',d:'Bordo azzurro',p:600,col:'#8fdcff'},
-  {id:'fr_brace',cat:'frame',n:'Cornice di brace',d:'Bordo che arde',p:800,col:'#ff7a2e'},
-  {id:'fr_reale',cat:'frame',n:'Cornice regale',d:'Bordo viola e oro',p:900,col:'#b88cff'},
-  {id:'fr_neon',cat:'frame',n:'Cornice neon',d:'Bordo rosa che pulsa',p:2000,col:'#ff4dd8',week:true}];
-const COS_BY={};for(const c of COS_LIST)COS_BY[c.id]=c;
+  {id:'tr_brace',cat:'trail',n:'Scia di brace',d:'Fendenti color fuoco',r:1,col:0xff7a2e},
+  {id:'tr_gelo',cat:'trail',n:'Scia gelida',d:'Fendenti azzurro ghiaccio',r:1,col:0x8fdcff},
+  {id:'tr_veleno',cat:'trail',n:'Scia velenosa',d:'Fendenti verde acido',r:1,col:0x7fe08a},
+  {id:'tr_ombra',cat:'trail',n:'Scia d\'ombra',d:'Fendenti viola profondo',r:2,col:0xb88cff},
+  {id:'tr_oro',cat:'trail',n:'Scia d\'oro',d:'Fendenti d\'oro puro',r:2,col:0xffd27a},
+  {id:'tr_arc',cat:'trail',n:'Scia arcobaleno',d:'Il colore cambia di continuo',r:4,rain:true},
+  {id:'kf_pira',cat:'kill',n:'Pira',d:'Il nemico brucia in una colonna di fuoco',r:2,col:0xff7a2e},
+  {id:'kf_gelo',cat:'kill',n:'Frantumi',d:'Spuntoni di ghiaccio e schegge',r:2,col:0x8fdcff},
+  {id:'kf_cori',cat:'kill',n:'Coriandoli',d:'Festa a ogni nemico sconfitto',r:1,col:0xffd27a},
+  {id:'kf_anime',cat:'kill',n:'Anime',d:'Lo spirito sale verso il soffitto',r:2,col:0xb88cff},
+  {id:'kf_fulmine',cat:'kill',n:'Fulmine del cielo',d:'Un fulmine colpisce il nemico caduto',r:3,col:0xfff27a},
+  {id:'kf_buco',cat:'kill',n:'Buco nero',d:'Il nemico viene risucchiato in un vortice',r:4,col:0x7a4aff},
+  {id:'au_brace',cat:'aura',n:'Aura di brace',d:'Scintille che salgono',r:2,col:0xff7a2e},
+  {id:'au_neve',cat:'aura',n:'Aura di neve',d:'Fiocchi che cadono intorno a te',r:2,col:0xe8f6ff},
+  {id:'au_ombra',cat:'aura',n:'Aura d\'ombra',d:'Fumo viola ai tuoi piedi',r:3,col:0x7a4aff},
+  {id:'au_lucciole',cat:'aura',n:'Lucciole',d:'Piccole luci che ti girano intorno',r:3,col:0xd8ff7a},
+  {id:'au_stelle',cat:'aura',n:'Polvere di stelle',d:'Stelle d\'oro e bianche che brillano',r:4,col:0xffe08a},
+  {id:'pet_luc',cat:'pet',n:'Lucciola',d:'Una lucina che ti svolazza accanto',r:2,col:0xd8ff7a},
+  {id:'pet_slime',cat:'pet',n:'Melmina',d:'Una piccola melma amica che saltella',r:2,col:0x7fe08a},
+  {id:'pet_gufo',cat:'pet',n:'Gufetto',d:'Sbatte le ali e ti tiene d\'occhio',r:3,col:0xc9a06a},
+  {id:'pet_teschio',cat:'pet',n:'Teschietto',d:'Un teschio con una fiammella viola',r:3,col:0xb88cff},
+  {id:'pet_drago',cat:'pet',n:'Draghetto',d:'Un drago in miniatura, raro',r:4,col:0xff4a2e},
+  {id:'ti_scal',cat:'title',n:'Scalatore',d:'Per chi sale senza fermarsi',r:1},
+  {id:'ti_senza',cat:'title',n:'Senza paura',d:'Nessun guardiano ti spaventa',r:1},
+  {id:'ti_drago',cat:'title',n:'Ammazzadraghi',d:'Per chi ha visto la cima',r:2},
+  {id:'ti_combo',cat:'title',n:'Maestro di combo',d:'Colpi a raffica',r:2},
+  {id:'ti_re',cat:'title',n:'Re della torre',d:'Il titolo più ambito',r:3},
+  {id:'fr_oro',cat:'frame',n:'Cornice d\'oro',d:'Bordo dorato',r:1,col:'#ffd27a'},
+  {id:'fr_gelo',cat:'frame',n:'Cornice di ghiaccio',d:'Bordo azzurro',r:1,col:'#8fdcff'},
+  {id:'fr_brace',cat:'frame',n:'Cornice di brace',d:'Bordo che arde',r:2,col:'#ff7a2e'},
+  {id:'fr_reale',cat:'frame',n:'Cornice regale',d:'Bordo viola e oro',r:3,col:'#b88cff'},
+  {id:'fr_neon',cat:'frame',n:'Cornice neon',d:'Bordo rosa che pulsa',r:4,col:'#ff4dd8'}];
+const COS_R=[null,{n:'Comune',css:'#c9c1b0'},{n:'Raro',css:'#5aa9ff'},{n:'Epico',css:'#c27bff'},{n:'Leggendario',css:'#ffb347'}];
+const COS_P=[0,1500,3200,5800,9500];
+const COS_BY={};for(const c of COS_LIST){c.p=COS_P[c.r];COS_BY[c.id]=c;}
+// ogni giorno il Mercante porta 6 cosmetici: 2 comuni, 2 rari, 1 epico, 1 leggendario (uguali per tutti)
+const COS_DAY=[[1,2],[2,2],[3,1],[4,1]];
+function cosToday(){let s=((dayNo()*2246822519)^0x5bd1e995)>>>0;const rnd=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};const out=[];
+  for(const [r,n] of COS_DAY){const pool=COS_LIST.filter(c=>c.r===r);for(let i=0;i<n&&pool.length;i++)out.push(pool.splice(Math.floor(rnd()*pool.length),1)[0]);}
+  return out;}
 const COS=Object.assign({own:[],sel:{}},store.get('cosm',{}));const saveCos=()=>store.set('cosm',COS);
-const cosOwn=id=>COS.own.includes(id),cosOf=cat=>{const id=COS.sel[cat];return id&&cosOwn(id)?COS_BY[id]:null;};
+const cosOwn=id=>COS.own.includes(id);let cosOf=cat=>{const id=COS.sel[cat];return id&&cosOwn(id)?COS_BY[id]:null;};
 const hexCss=h=>typeof h==='string'?h:'#'+(h||0).toString(16).padStart(6,'0');
-
-/* ---------- offerta della settimana: un cosmetico raro, si compra solo nella sua settimana ---------- */
-const weekNo=()=>Math.floor((dayNo()+3)/7);   // la settimana cambia il lunedì
-const WEEK_POOL=COS_LIST.filter(c=>c.week);
-const weekItem=()=>WEEK_POOL[weekNo()%WEEK_POOL.length];
-function untilWeek(){const n=new Date(),m=new Date(n);m.setHours(24,0,0,0);const d=(8-(n.getDay()||7))%7;m.setDate(m.getDate()+d);const ms=m-n,dd=Math.floor(ms/864e5),h=Math.floor(ms%864e5/36e5);return dd?dd+'g '+h+'h':h+'h '+Math.floor(ms%36e5/6e4)+'m';}
 
 /* ---------- oggetti per una scalata ---------- */
 const RUN_ITEMS=[
@@ -63,7 +64,6 @@ const RI_MAX=5;
 const RI=Object.assign({n:{},prep:{}},store.get('runitems',{}));const saveRI=()=>store.set('runitems',RI);
 const riN=id=>RI.n[id]||0;
 const RUN_PACK_P=Math.round(RUN_ITEMS.reduce((s,o)=>s+o.p,0)*0.75);
-const HERO3_P=Math.round(CRATES.find(c=>c.id==='eroe').p*3*0.8);
 
 /* ---------- garanzia sulle casse leggendarie e rinnovo delle skin ---------- */
 const PITY_N=10;let PITY=store.get('crpity',0);
@@ -104,16 +104,17 @@ const RI_SVG={
 
 /* ---------- le schede del negozio ---------- */
 const buyB=(attr,p)=>`<button class="sh-buy" ${attr} ${COINS.n<p?'disabled':''}>${coinI}<span>${fmtC(p)}</span></button>`;
-function cosCard(c,weekly){const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id;
-  return `<article class="sh-card cos-card${on?' on':''}" style="--vc:${hexCss(c.col||'#ffd27a')}"><div class="sh-stage cos-stage">${cosPic(c)}${on?'<em class="sh-rib">In uso</em>':weekly?'<em class="sh-rib">Solo questa settimana</em>':''}</div>
-    <div class="sh-info"><b>${esc(c.n)}</b><span>${esc(c.d)}</span></div>
-    ${own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:buyB(`data-cbuy="${c.id}"`,c.p)}</article>`;}
-function weekHtml(){const w=weekItem();return `<div class="sh-h wk"><b>Offerta della settimana</b><span>finisce tra ${untilWeek()}</span></div>${cosCard(w,true)}
-  <article class="sh-card wk-note"><div class="sh-info"><b>Cosmetici rari</b><span>Ogni settimana il Mercante porta un cosmetico diverso che non vende in altri momenti. Quelli comprati restano tuoi per sempre.</span></div></article>`;}
-function renderCos(){let h=weekHtml();
-  for(const [cat,t,s] of COS_CATS){const list=COS_LIST.filter(c=>c.cat===cat&&(!c.week||cosOwn(c.id)));if(!list.length)continue;
-    h+=`<div class="sh-h"><b>${t}</b><span>${s}</span></div>`+list.map(c=>cosCard(c,false)).join('');}
-  return h+'<p class="note">Tocca «Usa» per indossarli: uno per tipo. Titoli e cornici li vedono gli amici e i compagni in co-op.</p>';}
+const COS_CAT1={trail:'Scia dell\'arma',kill:'Effetto uccisione',aura:'Aura',pet:'Compagno',title:'Titolo',frame:'Cornice'};
+function cosCard(c,offer){const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id,R=COS_R[c.r];
+  return `<article class="sh-card cos-card r${c.r}${on?' on':''}" style="--vc:${hexCss(c.col||'#ffd27a')};--rc:${R.css}"><button class="sh-stage cos-stage" data-cprev="${c.id}" aria-label="Anteprima di ${esc(c.n)}">${cosPic(c)}${on?'<em class="sh-rib">In uso</em>':''}<span class="cos-rar">${R.n}</span><span class="cos-try">Anteprima</span></button>
+    <div class="sh-info"><b>${esc(c.n)}</b><span>${COS_CAT1[c.cat]} · ${esc(c.d)}</span></div>
+    ${own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:offer?buyB(`data-cbuy="${c.id}"`,c.p):'<button class="sh-buy off" disabled>Non in vendita oggi</button>'}</article>`;}
+function renderCos(){const today=cosToday();let h=`<div class="sh-h"><b>Oggi dal Mercante</b><span>nuovi tra ${untilNew()} · tocca l'immagine per vederli in azione</span></div>`;
+  for(let r=4;r>=1;r--){const l=today.filter(c=>c.r===r);if(!l.length)continue;h+=`<div class="sh-h rr" style="--rc:${COS_R[r].css}"><b>${COS_R[r].n}${l.length>1&&r<3?'i':''}</b><span>${fmtC(COS_P[r])} rubini</span></div>`+l.map(c=>cosCard(c,true)).join('');}
+  const mine=COS_LIST.filter(c=>cosOwn(c.id));
+  h+=`<div class="sh-h"><b>I tuoi cosmetici</b><span>${mine.length?'uno per tipo: tocca «Usa» per indossarlo':'non ne hai ancora'}</span></div>`;
+  for(const [cat,tt] of COS_CATS){const l=mine.filter(c=>c.cat===cat);if(l.length)h+=`<div class="sh-h sub"><b>${tt}</b></div>`+l.map(c=>cosCard(c,false)).join('');}
+  return h+'<p class="note">Titoli e cornici li vedono gli amici e i compagni in co-op. Aure ed effetti li vede anche chi ti guarda come spettatore.</p>';}
 function riCard(o){const n=riN(o.id),on=!!RI.prep[o.id]&&n>0,full=n>=RI_MAX;
   return `<article class="sh-card ri-card${on?' on':''}" style="--vc:${o.col}"><div class="sh-stage cos-stage">${RI_SVG[o.id]}<span class="sh-cnt">${n}/${RI_MAX}</span>${on?'<em class="sh-rib">Pronto</em>':''}</div>
     <div class="sh-info"><b>${esc(o.n)}</b><span>${esc(o.d)}</span></div>
@@ -123,27 +124,24 @@ function riHtml(){const canPack=RUN_ITEMS.every(o=>riN(o.id)<RI_MAX);
   `<article class="sh-card ri-card pack" style="--vc:#ffd27a"><div class="sh-stage cos-stage">${RI_SVG.pack}<em class="sh-rib">−25%</em></div>
     <div class="sh-info"><b>Pacchetto della scalata</b><span>Uno di ognuno dei 4 oggetti, già preparati per la prossima scalata</span></div>
     <s class="sh-was">${fmtC(RUN_ITEMS.reduce((s,o)=>s+o.p,0))}</s>${canPack?buyB('data-bundle="run"',RUN_PACK_P):'<button class="sh-buy off" disabled>Ne hai già troppi</button>'}</article>`;}
-function packCrateHtml(){const cr=CRATES.find(c=>c.id==='eroe'),im=crateImg(cr.id);
-  return `<article class="sh-card cr-eroe pack3"><div class="sh-stage">${im?`<img src="${im}" alt="">`:''}<em class="sh-rib">3 casse −20%</em><span class="sh-cnt">×3</span></div>
-    <div class="sh-info"><b>Tris dell'eroe</b><span>Tre casse dell'eroe in una volta: tre oggetti almeno Rari</span></div><s class="sh-was">${fmtC(cr.p*3)}</s>${buyB('data-bundle="eroe3"',HERO3_P)}</article>`;}
 const _rsPlus=renderShop;
 renderShop=function(){
   if(shTab==='cos'){const t=shTab;shTab='ogg';try{_rsPlus();}finally{shTab=t;}
     for(const b of document.querySelectorAll('#shop .tab'))b.setAttribute('aria-selected',b.dataset.st===shTab);
     const box=$('shBody');box.className='sh-body sh-cos';box.innerHTML=renderCos();return;}
   _rsPlus();const box=$('shBody');
-  if(shTab==='casse'){box.insertAdjacentHTML('afterbegin',weekHtml()+'<div class="sh-h"><b>Casse</b><span>gli oggetti finiscono nell\'armadio</span></div>');
-    const note=box.querySelector('p.note');if(note)note.insertAdjacentHTML('beforebegin',packCrateHtml());
+  if(shTab==='casse'){
     const leg=box.querySelector('.cr-leggenda .sh-info');if(leg)leg.insertAdjacentHTML('beforeend',`<span class="pity">${PITY>=PITY_N-1?'<b>La prossima è Leggendaria sicura!</b>':`Leggendaria sicura entro ${PITY_N-PITY} casse`}</span><i class="pity-bar"><i style="width:${PITY/(PITY_N-1)*100}%"></i></i>`);}
   else if(shTab==='ogg')box.insertAdjacentHTML('afterbegin',riHtml());
-  else if(shTab==='skin'){const h=box.querySelector('.sh-h:not(.vn)');const left=SKRR_MAX-skrrN();
+  else if(shTab==='skin'){const vn=box.querySelector('.sh-h.vn');if(vn){const nx=vn.nextElementSibling;if(nx&&nx.classList.contains('sh-card'))nx.remove();vn.remove();}
+    const h=box.querySelector('.sh-h:not(.vn)');const left=SKRR_MAX-skrrN();
     if(h)h.insertAdjacentHTML('beforeend',left>0?`<button class="sh-rr" data-rr="1" ${COINS.n<SKRR_P?'disabled':''}>Rinnova ${coinI}${SKRR_P} <small>(${left} oggi)</small></button>`:'<small class="sh-rr-off">Rinnovi finiti per oggi</small>');}};
 // una scheda in più: Cosmetici
 (function(){const tabs=document.querySelector('#shop .sh-tabs');if(tabs&&!tabs.querySelector('[data-st="cos"]')){const b=document.createElement('button');b.className='tab';b.dataset.st='cos';b.setAttribute('role','tab');b.textContent='Cosmetici';
   const sk=tabs.querySelector('[data-st="skin"]');sk?sk.after(b):tabs.appendChild(b);}})();
 function shPay(p){if(COINS.n<p)return false;COINS.n-=p;saveCoins();coinHud();sfx('pick');tributo(p);return true;}
 $('shop').addEventListener('click',e=>{
-  const cb=e.target.closest('[data-cbuy]');if(cb&&!cb.disabled){const c=COS_BY[cb.dataset.cbuy];if(!c||cosOwn(c.id)||(c.week&&weekItem().id!==c.id))return;if(!shPay(c.p))return;
+  const cb=e.target.closest('[data-cbuy]');if(cb&&!cb.disabled){const c=COS_BY[cb.dataset.cbuy];if(!c||cosOwn(c.id)||!cosToday().includes(c))return;if(!shPay(c.p))return;
     COS.own.push(c.id);COS.sel[c.cat]=c.id;saveCos();cosApply();toast('Nuovo cosmetico!',c.n+' · già in uso');renderShop();return;}
   const cw=e.target.closest('[data-cwear]');if(cw){const c=COS_BY[cw.dataset.cwear];if(!c||!cosOwn(c.id))return;if(COS.sel[c.cat]===c.id)delete COS.sel[c.cat];else COS.sel[c.cat]=c.id;saveCos();cosApply();sfx('equip');renderShop();return;}
   const rb=e.target.closest('[data-ribuy]');if(rb&&!rb.disabled){const o=RUN_ITEMS.find(x=>x.id===rb.dataset.ribuy);if(!o||riN(o.id)>=RI_MAX)return;if(!shPay(o.p))return;
@@ -151,8 +149,7 @@ $('shop').addEventListener('click',e=>{
   const rp=e.target.closest('[data-riprep]');if(rp){const id=rp.dataset.riprep;RI.prep[id]=!RI.prep[id];saveRI();sfx('ui');renderShop();return;}
   const bd=e.target.closest('[data-bundle]');if(bd&&!bd.disabled){const k=bd.dataset.bundle;
     if(k==='run'){if(!RUN_ITEMS.every(o=>riN(o.id)<RI_MAX)||!shPay(RUN_PACK_P))return;for(const o of RUN_ITEMS){RI.n[o.id]=riN(o.id)+1;RI.prep[o.id]=true;}saveRI();toast('Pacchetto della scalata','4 oggetti pronti per la prossima scalata');renderShop();return;}
-    if(k==='eroe3'){if(!shPay(HERO3_P))return;const cr=CRATES.find(c=>c.id==='eroe'),os=[crateRoll(cr),crateRoll(cr),crateRoll(cr)];os.sort((a,b)=>b.rarity-a.rarity);
-      crateShow(cr,os[0]);setTimeout(()=>toast('Altri 2 oggetti nell\'armadio',os.slice(1).map(o=>RARITY[o.rarity].name+': '+o.name).join(' · ')),2600);renderShop();return;}}
+}
   const rr=e.target.closest('[data-rr]');if(rr&&!rr.disabled){if(skrrN()>=SKRR_MAX||!shPay(SKRR_P))return;SKRR={d:dayNo(),n:skrrN()+1};store.set('skrr',SKRR);toast('Skin rinnovate','Il mercante tira fuori altre 3 skin');renderShop();return;}
 });
 
@@ -279,6 +276,37 @@ const _hbCos=heartbeat;heartbeat=function(){_hbCos.apply(this,arguments);if(!fbO
   fbPatch('players/'+encodeURIComponent(nameKey(MP.name())),{n:MP.name(),pid:PID,t:Date.now(),ti:ti?ti.id:'',fr:fr?fr.id:''}).catch(()=>{});};
 const _slCos=statLine;statLine=function(p){const s=_slCos(p),ti=p&&COS_BY[p.ti];return ti?`<i class="cos-ti">${esc(ti.n)}</i> `+s:s;};
 
+/* ---------- anteprima: il tuo eroe prova il cosmetico nel seminterrato per qualche secondo ---------- */
+const PREV={c:null,t:0,k:0,tag:null};let prevBar=null;
+const _cosOfP=cosOf;cosOf=function(cat){if(PREV.c&&PREV.c.cat===cat)return PREV.c;return _cosOfP(cat);};
+function prevStart(id){const c=COS_BY[id];if(!c||G.state!=='shop')return;sfx('ui');$('shop').hidden=true;G.state='cellar';clearInput();
+  Object.assign(PREV,{c,t:8,k:0});cosApplyLocal();
+  if(!prevBar){prevBar=document.createElement('div');prevBar.id='cosPrevBar';prevBar.setAttribute('role','status');document.body.appendChild(prevBar);
+    prevBar.addEventListener('click',e=>{const b=e.target.closest('[data-pv]');if(!b)return;const a=b.dataset.pv;
+      if(a==='buy'){const cc=PREV.c;prevEnd();if(cc&&!cosOwn(cc.id)&&cosToday().includes(cc)&&shPay(cc.p)){COS.own.push(cc.id);COS.sel[cc.cat]=cc.id;saveCos();cosApply();toast('Nuovo cosmetico!',cc.n+' · già in uso');renderShop();}}
+      else if(a==='again'){PREV.t=8;PREV.k=0;sfx('ui');}else prevEnd();});}
+  const own=cosOwn(c.id),can=!own&&cosToday().includes(c);
+  prevBar.innerHTML=`<div><small style="color:${COS_R[c.r].css}">Anteprima · ${COS_R[c.r].n}</small><b>${esc(c.n)}</b><span>${esc(c.d)}${c.cat==='trail'?' · guarda i fendenti':c.cat==='kill'?' · davanti all\'eroe':c.cat==='aura'?' · intorno all\'eroe':c.cat==='pet'?' · accanto all\'eroe':' · sopra la testa'}</span></div>
+    <button class="mini" data-pv="again">Rivedi</button>${can?`<button class="sh-buy" data-pv="buy" ${COINS.n<c.p?'disabled':''}>${coinI}<span>${fmtC(c.p)}</span></button>`:''}<button class="ghost" data-pv="back">Torna al negozio</button>`;
+  prevBar.hidden=false;}
+function prevEnd(){if(!PREV.c)return;PREV.c=null;if(prevBar)prevBar.hidden=true;if(PREV.tag){PREV.tag.remove();PREV.tag=null;}cosApplyLocal();
+  if(G.state==='cellar'&&G.scene==='cellar'){G.state='shop';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);shTab='cos';renderShop();$('shop').hidden=false;}}
+function prevTick(dt){if(!PREV.c)return;if(G.scene!=='cellar'||G.state!=='cellar'){if(G.state!=='cellar')prevEnd();return;}
+  PREV.t-=dt;PREV.k-=dt;const c=PREV.c;
+  if(PREV.k<=0){if(c.cat==='trail'){PREV.k=0.75;try{startAttack(true);}catch(e){}}
+    else if(c.cat==='kill'){PREV.k=1.4;try{killFx(c,P.x+(P.face||1)*1.8,1.1,false);}catch(e){}}else PREV.k=99;}
+  if(c.cat==='title'||c.cat==='frame'){if(!PREV.tag){PREV.tag=document.createElement('div');PREV.tag.className='mp-tag';PREV.tag.textContent=MP.name();document.body.appendChild(PREV.tag);
+      const R={tag:PREV.tag,ti:c.cat==='title'?c.id:(cosOf('title')||{}).id,fr:c.cat==='frame'?c.id:(cosOf('frame')||{}).id};cosTag(R);}
+    const [sx,sy]=toScreen(P.x,P.y+2.75,P.z||0);PREV.tag.style.transform=`translate3d(${Math.round(sx-PREV.tag.offsetWidth/2)}px,${Math.round(sy-PREV.tag.offsetHeight)}px,0)`;}
+  if(PREV.t<=0)prevEnd();}
+function cosApplyLocal(){const c=cosOf('pet');petSet(c?c.id:null);}
+$('shop').addEventListener('click',e=>{const b=e.target.closest('[data-cprev]');if(b){e.stopPropagation();prevStart(b.dataset.cprev);}},true);
+const _uhvPrev=updHeroVisual;updHeroVisual=function(dt){_uhvPrev(dt);try{prevTick(dt);}catch(e){}};
+
+/* ---------- Venom: non si vende più; è del giocatore «zero» ---------- */
+function venomZero(){if(nameKey(MP.name())!=='zero'||!store.get('nameok',false))return;const k=VENOM_K;if(!OWNS.includes(k)){OWNS.push(k);store.set('shopskins',OWNS);toast('Skin Venom','È tua: la trovi tra le skin dell\'eroe');}}
+setInterval(venomZero,15000);
+
 /* ---------- avvio ---------- */
-setTimeout(()=>{try{cosApply();}catch(e){}},1500);
-if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{COS,RI,cosApply,openShop,renderShop,killFx,CPET,crateRoll,weekItem,setShTab:t=>{shTab=t;renderShop();},coins:n=>{COINS.n=n;saveCoins();coinHud();}});
+setTimeout(()=>{try{cosApply();venomZero();}catch(e){}},1500);
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{COS,RI,cosApply,openShop,renderShop,killFx,CPET,crateRoll,setShTab:t=>{shTab=t;renderShop();},coins:n=>{COINS.n=n;saveCoins();coinHud();}});
