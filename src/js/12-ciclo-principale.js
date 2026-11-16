@@ -204,7 +204,13 @@ function frame(now){
   }
   if(G.scene==='tower'&&G.cleared&&!bossLocked()){if(!G.gateMsg&&G.state==='play'){G.gateMsg=true;if(!G.safe&&!G.tutorial&&G.floor<TOP_FLOOR){const gm=$('gateMsg');gm.classList.remove('show');void gm.offsetWidth;gm.classList.add('show');}}G.gateY=approach(G.gateY,5.4,dt*3.2);bars.position.y=G.gateY;G.gateOpen=G.gateY>2.4&&aliveCount()===0&&G.queue.length===0;}
   G.fade=approach(G.fade,G.fadeTarget,dt*(G.fadeSpd||2.6));if(G.fade===G.fadeTarget)G.fadeSpd=2.6;$('fade').style.opacity=G.fade;
-  if(G.fadeCb&&G.fade>=0.999){const cb=G.fadeCb;G.fadeCb=null;cb();}
+  if(G.fadeCb&&G.fade>=0.999){const cb=G.fadeCb;G.fadeCb=null;
+    try{cb();}
+    catch(err){console.error('Errore durante la transizione (avvio scalata?):',err);
+      try{showUpd('Errore: '+((err&&err.message)||err));}catch(_){}
+      try{toast('Qualcosa è andato storto','Torno al seminterrato — '+((err&&err.message)||err));}catch(_){}
+      try{G.pvp=false;G.horde=false;G.tutorial=false;enterCellar();}catch(_){}
+      G.fadeTarget=0;}}
   updCamera(rdt);
   if(G.scene==='tower'&&now-lastHud>50){updHud();lastHud=now;}
   pixRender();
