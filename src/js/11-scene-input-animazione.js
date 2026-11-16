@@ -94,7 +94,7 @@ function updCellar(dt){
   }else{pr.hidden=true;$('bUse').hidden=true;}
   if(input.usePressed&&nearInter){sfx('ui');nearInter.act();}
 }
-function renderClassChip(){const pr=prog(G.cls.id);$('clsChip').innerHTML=`<i>${svg(WTYPES[G.cls.weapon].icon)}</i><span>${G.cls.name} · Liv ${pr.lv}<small>${pr.pts?pr.pts+' punti da spendere al piedistallo':G.cls.ability.name}</small></span>`;}
+function renderClassChip(){const pr=prog(G.cls.id);$('clsChip').innerHTML=`<i>${svg(WTYPES[G.cls.weapon].icon)}</i><span>${G.cls.name} · Liv ${pr.lv}<small>${pr.pts?`<b class="pts-due">${pr.pts} ${pr.pts===1?'punto':'punti'}: potenzia la classe al piedistallo</b>`:G.cls.ability.name}</small></span>`;}
 
 /* ---------- Impostazioni (banco da lavoro) ---------- */
 function openSettings(from){

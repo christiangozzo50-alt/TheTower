@@ -110,7 +110,7 @@ function cosCard(c,offer){const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id,R
     <div class="sh-info"><b>${esc(c.n)}</b><span>${COS_CAT1[c.cat]} · ${esc(c.d)}</span></div>
     ${own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:offer?buyB(`data-cbuy="${c.id}"`,c.p):'<button class="sh-buy off" disabled>Non in vendita oggi</button>'}</article>`;}
 function renderCos(){const today=cosToday();let h=`<div class="sh-h"><b>Oggi dal Mercante</b><span>nuovi tra ${untilNew()} · tocca l'immagine per vederli in azione</span></div>`;
-  for(let r=4;r>=1;r--){const l=today.filter(c=>c.r===r);if(!l.length)continue;h+=`<div class="sh-h rr" style="--rc:${COS_R[r].css}"><b>${COS_R[r].n}${l.length>1&&r<3?'i':''}</b><span>${fmtC(COS_P[r])} rubini</span></div>`+l.map(c=>cosCard(c,true)).join('');}
+  for(let r=4;r>=1;r--){const l=today.filter(c=>c.r===r);if(!l.length)continue;h+=`<div class="sh-h rr" style="--rc:${COS_R[r].css}"><b>${l.length>1?['','Comuni','Rari','Epici','Leggendari'][r]:COS_R[r].n}</b><span>${fmtC(COS_P[r])} rubini</span></div>`+l.map(c=>cosCard(c,true)).join('');}
   const mine=COS_LIST.filter(c=>cosOwn(c.id));
   h+=`<div class="sh-h"><b>I tuoi cosmetici</b><span>${mine.length?'uno per tipo: tocca «Usa» per indossarlo':'non ne hai ancora'}</span></div>`;
   for(const [cat,tt] of COS_CATS){const l=mine.filter(c=>c.cat===cat);if(l.length)h+=`<div class="sh-h sub"><b>${tt}</b></div>`+l.map(c=>cosCard(c,false)).join('');}

@@ -1048,7 +1048,7 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @keyframes ptsGlow{0%,100%{box-shadow:0 0 0 rgba(255,179,71,0)}50%{box-shadow:0 0 14px rgba(255,179,71,.6)}}
 .ab-pow{display:flex;align-items:center;gap:8px;margin-top:6px}.ab-pow em{font-style:normal;font-size:12px;font-weight:700;color:#ffd27a}
 .ab-pow .mini{padding:2px 10px;font-size:15px;font-weight:800}
-small.pts-due{color:#ffb347;font-weight:700}
+.pts-due{color:#ffb347;font-weight:700}
 @media (max-width:600px),(max-height:500px){.pt-row{grid-template-columns:minmax(0,1fr) 54px 30px}.pt-row .pips{display:none}#cosPrevBar span{display:none}}
 @media (prefers-reduced-motion:reduce){.pts-cta{animation:none}}
 </style>
@@ -6994,7 +6994,7 @@ function updCellar(dt){
   }else{pr.hidden=true;$('bUse').hidden=true;}
   if(input.usePressed&&nearInter){sfx('ui');nearInter.act();}
 }
-function renderClassChip(){const pr=prog(G.cls.id);$('clsChip').innerHTML=`<i>${svg(WTYPES[G.cls.weapon].icon)}</i><span>${G.cls.name} · Liv ${pr.lv}<small>${pr.pts?pr.pts+' punti da spendere al piedistallo':G.cls.ability.name}</small></span>`;}
+function renderClassChip(){const pr=prog(G.cls.id);$('clsChip').innerHTML=`<i>${svg(WTYPES[G.cls.weapon].icon)}</i><span>${G.cls.name} · Liv ${pr.lv}<small>${pr.pts?`<b class="pts-due">${pr.pts} ${pr.pts===1?'punto':'punti'}: potenzia la classe al piedistallo</b>`:G.cls.ability.name}</small></span>`;}
 
 /* ---------- Impostazioni (banco da lavoro) ---------- */
 function openSettings(from){
@@ -10474,7 +10474,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794824531';
+const BUILD_ID='1794824786';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13009,7 +13009,7 @@ function cosCard(c,offer){const own=cosOwn(c.id),on=own&&COS.sel[c.cat]===c.id,R
     <div class="sh-info"><b>${esc(c.n)}</b><span>${COS_CAT1[c.cat]} · ${esc(c.d)}</span></div>
     ${own?`<button class="sh-buy ${on?'off':'wear'}" data-cwear="${c.id}">${on?'Togli':'Usa'}</button>`:offer?buyB(`data-cbuy="${c.id}"`,c.p):'<button class="sh-buy off" disabled>Non in vendita oggi</button>'}</article>`;}
 function renderCos(){const today=cosToday();let h=`<div class="sh-h"><b>Oggi dal Mercante</b><span>nuovi tra ${untilNew()} · tocca l'immagine per vederli in azione</span></div>`;
-  for(let r=4;r>=1;r--){const l=today.filter(c=>c.r===r);if(!l.length)continue;h+=`<div class="sh-h rr" style="--rc:${COS_R[r].css}"><b>${COS_R[r].n}${l.length>1&&r<3?'i':''}</b><span>${fmtC(COS_P[r])} rubini</span></div>`+l.map(c=>cosCard(c,true)).join('');}
+  for(let r=4;r>=1;r--){const l=today.filter(c=>c.r===r);if(!l.length)continue;h+=`<div class="sh-h rr" style="--rc:${COS_R[r].css}"><b>${l.length>1?['','Comuni','Rari','Epici','Leggendari'][r]:COS_R[r].n}</b><span>${fmtC(COS_P[r])} rubini</span></div>`+l.map(c=>cosCard(c,true)).join('');}
   const mine=COS_LIST.filter(c=>cosOwn(c.id));
   h+=`<div class="sh-h"><b>I tuoi cosmetici</b><span>${mine.length?'uno per tipo: tocca «Usa» per indossarlo':'non ne hai ancora'}</span></div>`;
   for(const [cat,tt] of COS_CATS){const l=mine.filter(c=>c.cat===cat);if(l.length)h+=`<div class="sh-h sub"><b>${tt}</b></div>`+l.map(c=>cosCard(c,false)).join('');}
@@ -13244,8 +13244,6 @@ const _rsPot=renderSelect;renderSelect=function(){_rsPot.apply(this,arguments);c
   if(G.selTab==='ab'){const rows=box.querySelectorAll('.cs-abil');AB_SLOTS.forEach(([n,k,id,need],i)=>{const el=rows[i];if(!el)return;const l=pr.alloc[id]||0,lock=pr.lv<need,full=l>=AB_MAX;
     el.querySelector('div').insertAdjacentHTML('beforeend',`<div class="ab-pow">${pips(l,AB_MAX)}<em>${lock?'Potenza —':'Potenza '+(full?'max':'liv. '+l+'/'+AB_MAX)}</em>${lock?'':`<button class="mini" data-pt="${id}" ${pr.pts>0&&!full?'':'disabled'} aria-label="Alza la potenza di ${c[k].name}">+</button>`}</div>`);});
     if(!pr.pts)box.insertAdjacentHTML('beforeend','<div class="cs-grow">Per potenziare le mosse servono punti: ne ottieni 1 a ogni livello della classe.</div>');}};
-const _rccPot=renderClassChip;renderClassChip=function(){_rccPot.apply(this,arguments);const pr=prog(G.cls.id),sm=$('clsChip')&&$('clsChip').querySelector('small');
-  if(sm&&pr.pts){sm.textContent=`${pr.pts} ${pr.pts===1?'punto':'punti'}: potenzia la classe al piedistallo`;sm.classList.add('pts-due');}};
 requestAnimationFrame(frame);
 })();
 </script>

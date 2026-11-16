@@ -1040,6 +1040,6 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @keyframes ptsGlow{0%,100%{box-shadow:0 0 0 rgba(255,179,71,0)}50%{box-shadow:0 0 14px rgba(255,179,71,.6)}}
 .ab-pow{display:flex;align-items:center;gap:8px;margin-top:6px}.ab-pow em{font-style:normal;font-size:12px;font-weight:700;color:#ffd27a}
 .ab-pow .mini{padding:2px 10px;font-size:15px;font-weight:800}
-small.pts-due{color:#ffb347;font-weight:700}
+.pts-due{color:#ffb347;font-weight:700}
 @media (max-width:600px),(max-height:500px){.pt-row{grid-template-columns:minmax(0,1fr) 54px 30px}.pt-row .pips{display:none}#cosPrevBar span{display:none}}
 @media (prefers-reduced-motion:reduce){.pts-cta{animation:none}}

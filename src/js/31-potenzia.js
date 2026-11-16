@@ -33,5 +33,3 @@ const _rsPot=renderSelect;renderSelect=function(){_rsPot.apply(this,arguments);c
   if(G.selTab==='ab'){const rows=box.querySelectorAll('.cs-abil');AB_SLOTS.forEach(([n,k,id,need],i)=>{const el=rows[i];if(!el)return;const l=pr.alloc[id]||0,lock=pr.lv<need,full=l>=AB_MAX;
     el.querySelector('div').insertAdjacentHTML('beforeend',`<div class="ab-pow">${pips(l,AB_MAX)}<em>${lock?'Potenza —':'Potenza '+(full?'max':'liv. '+l+'/'+AB_MAX)}</em>${lock?'':`<button class="mini" data-pt="${id}" ${pr.pts>0&&!full?'':'disabled'} aria-label="Alza la potenza di ${c[k].name}">+</button>`}</div>`);});
     if(!pr.pts)box.insertAdjacentHTML('beforeend','<div class="cs-grow">Per potenziare le mosse servono punti: ne ottieni 1 a ogni livello della classe.</div>');}};
-const _rccPot=renderClassChip;renderClassChip=function(){_rccPot.apply(this,arguments);const pr=prog(G.cls.id),sm=$('clsChip')&&$('clsChip').querySelector('small');
-  if(sm&&pr.pts){sm.textContent=`${pr.pts} ${pr.pts===1?'punto':'punti'}: potenzia la classe al piedistallo`;sm.classList.add('pts-due');}};
