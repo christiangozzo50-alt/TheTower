@@ -8177,14 +8177,14 @@ const AKEYS=['t','wind','act','rec','hand','anim','mv','fin','r0','rest','from',
 function mpMyState(){const A=P.atk,w=G.weapon||{};let a=null;if(A){a={};for(const k of AKEYS)if(A[k]!==undefined)a[k]=A[k];}
   return {t:'s',pid:MP.myPid,x:r2(P.x),y:r2(P.y),z:r2(P.z),vx:r2(P.vx),vy:r2(P.vy),f:P.face,g:P.onGround?1:0,d:P.dead?1:0,hp:Math.round(P.hp),mh:Math.round(S.maxHp||100),
     ft:r2(P.flipT),sr:r2(P.stretchT),lt:r2(P.landT),da:r2(P.dashT),ht:r2(P.hurtT),iv:r2(P.invul),sh:r2(P.shieldT),rg:r2(P.rageT),br:r2(P.bearT),dr:P.dragon||null,
-    ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),sk:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
+    ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),kd:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
     c:G.cls?G.cls.id:'',sk:G.cls?skinOf(G.cls.id):0,sv:G.cls&&typeof varOf==='function'?varOf(G.cls.id):'',w:[w.type||'spada',w.rarity||0,w.v||0,w.effect||''],ws:r2(G.weapon?weaponScale():1),atk:a};}
 function mpPlayer(pid){let R=MP.players.get(pid);if(!R){R={pid,name:'',x:0,y:0,z:0,tx:0,ty:0,tz:0,walkT:0,lastStep:0,atk:null,hero:null,hkey:'',ready:false,dead:false,sc:'',fl:0,st:''};MP.players.set(pid,R);}return R;}
 function mpRecvState(pid,m){mpRecvInto(mpPlayer(pid),m);}
 function mpRecvInto(R,m){
   const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
-    shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
+    shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.kd||0,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
   if(snap){R.x=m.x;R.y=m.y;R.z=m.z;R.buf=[];R.lastRt=null;}
   bufPush(R,{t:performance.now(),x:m.x,y:m.y,z:m.z,vx:m.vx,vy:m.vy});R.svx=m.vx;
   if(!m.atk)R.atk=null;
@@ -10501,7 +10501,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794832610';
+const BUILD_ID='1794856152';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -12630,6 +12630,8 @@ Object.assign(BOSS_KITS,{
    Nella sezione Amici, accanto a chi è in scalata, compare l'occhio.
    ========================================================= */
 const SPEC_PREFIX='thetower-spec-v1-',SPEC_MAX=6;
+// il nome del canale: PeerJS accetta solo lettere e numeri (con - _ singoli in mezzo), quindi accenti e simboli del nome vengono scritti in codice
+const specId=k=>SPEC_PREFIX+Array.from(String(k),c=>/[a-y0-9]/.test(c)?c:'z'+c.codePointAt(0).toString(16)+'z').join('');
 const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>';
 // chi trasmette (sta scalando)
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
@@ -12659,13 +12661,13 @@ function specSend(m){for(const c of SPB.conns)if(c.open){try{c.send(m);}catch(e)
 function specInfo(){return {t:'si',seed:SPB.lvSeed,fl:G.floor,n:MP.name(),sc:specInRun()?'tower':'cellar',st:G.state,lv:specInRun()?Object.assign({},G.lv):{}};}
 function specOpen(){if(SPB.peer||SPB.loading)return;SPB.loading=true;
   mpLib(()=>{SPB.loading=false;if(SPB.peer||!specInRun())return;
-    const p=new Peer(SPEC_PREFIX+nameKey(MP.name()));SPB.peer=p;
+    const p=new Peer(specId(nameKey(MP.name())));SPB.peer=p;
     p.on('connection',c=>{
       c.on('open',()=>{SPB.conns=SPB.conns.filter(x=>x.open);if(SPB.conns.length>=SPEC_MAX){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}
         SPB.conns.push(c);try{c.send(specInfo());}catch(e){}specCountUi();});
       c.on('data',m=>{if(m&&m.t==='hi'){c.who=String(m.n||'Un amico').slice(0,14);toast(`${c.who} ti sta guardando`,'Ti segue nella scalata');specCountUi();}});
       c.on('close',()=>{SPB.conns=SPB.conns.filter(x=>x!==c);specCountUi();});c.on('error',()=>{});});
-    p.on('error',e=>{if(e&&e.type==='unavailable-id'){try{p.destroy();}catch(x){}if(SPB.peer===p)SPB.peer=null;}});
+    p.on('error',e=>{if(e&&(e.type==='unavailable-id'||e.type==='invalid-id')){try{p.destroy();}catch(x){}if(SPB.peer===p)SPB.peer=null;}});
     p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});});}
 function specCloseB(){const p=SPB.peer,cs=SPB.conns;SPB.peer=null;SPB.conns=[];
   for(const c of cs){try{c.open&&c.send(specInfo());}catch(e){}}
@@ -12803,13 +12805,13 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
   SPEC.tm=setTimeout(()=>{if(SPEC.on&&!SPEC.built)specExit(`Non riesco a guardare ${SPEC.name}`,'Forse ha appena finito la scalata');},12000);
   mpLib(()=>{if(!SPEC.on)return;const p=new Peer();SPEC.peer=p;
-    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(SPEC_PREFIX+k,{reliable:true,serialization:'json'});SPEC.conn=c;
+    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(k),{reliable:true,serialization:'json'});SPEC.conn=c;
       c.on('open',()=>{try{c.send({t:'hi',n:MP.name()});}catch(e){}});
       c.on('data',m=>{if(SPEC.conn!==c)return;try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
       c.on('close',()=>{if(SPEC.on&&SPEC.conn===c)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
@@ -12874,11 +12876,11 @@ function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)retur
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
 function specKill(e){e.dead=true;
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
-function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
+function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
   specFxClear();SPEC.tipId=null;if($('spTip'))$('spTip').hidden=true;if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
   clearInput();G.state='menu';
-  fadeThen(()=>{SPEC.built=false;if(safeG){scene.remove(safeG);safeG=null;}G.safe=false;G.boss=null;G.floor=SPEC.prevFl;if(hero)hero.root.visible=true;enterCellar();G.fadeTarget=0;});}
+  fadeThen(()=>{SPEC.built=false;if(safeG){scene.remove(safeG);safeG=null;}G.safe=false;G.boss=null;G.floor=SPEC.prevFl;if(hero)hero.root.visible=true;enterCellar();SPEC.out=false;G.fadeTarget=0;});}
 // ogni fotogramma: la telecamera segue l'amico, i nemici si muovono, l'eroe dell'amico si anima
 const _uhvSp=updHeroVisual;
 updHeroVisual=function(dt){if(!SPEC.on)return _uhvSp(dt);
@@ -12907,7 +12909,7 @@ function specDraw(R,dt){
   if(!R.tagW){R.tagW=R.tag.offsetWidth;R.tagH=R.tag.offsetHeight;}
   const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
 // chi guarda non ha la barra delle abilità né la vita sua: niente HUD della scalata
-const _uhSp=updHud;updHud=function(){if(SPEC.on)return;return _uhSp.apply(this,arguments);};
+const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.apply(this,arguments);};
 // Esc o il tasto indietro del controller: esci
 addEventListener('keydown',e=>{if(SPEC.on&&(e.key==='Escape'||e.key==='Backspace')){e.preventDefault();e.stopPropagation();specExit();}},true);
 const _padBackSp=padBack;padBack=function(){if(SPEC.on){specExit();return true;}return _padBackSp();};

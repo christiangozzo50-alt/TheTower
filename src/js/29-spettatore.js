@@ -7,6 +7,8 @@
    Nella sezione Amici, accanto a chi è in scalata, compare l'occhio.
    ========================================================= */
 const SPEC_PREFIX='thetower-spec-v1-',SPEC_MAX=6;
+// il nome del canale: PeerJS accetta solo lettere e numeri (con - _ singoli in mezzo), quindi accenti e simboli del nome vengono scritti in codice
+const specId=k=>SPEC_PREFIX+Array.from(String(k),c=>/[a-y0-9]/.test(c)?c:'z'+c.codePointAt(0).toString(16)+'z').join('');
 const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>';
 // chi trasmette (sta scalando)
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
@@ -36,13 +38,13 @@ function specSend(m){for(const c of SPB.conns)if(c.open){try{c.send(m);}catch(e)
 function specInfo(){return {t:'si',seed:SPB.lvSeed,fl:G.floor,n:MP.name(),sc:specInRun()?'tower':'cellar',st:G.state,lv:specInRun()?Object.assign({},G.lv):{}};}
 function specOpen(){if(SPB.peer||SPB.loading)return;SPB.loading=true;
   mpLib(()=>{SPB.loading=false;if(SPB.peer||!specInRun())return;
-    const p=new Peer(SPEC_PREFIX+nameKey(MP.name()));SPB.peer=p;
+    const p=new Peer(specId(nameKey(MP.name())));SPB.peer=p;
     p.on('connection',c=>{
       c.on('open',()=>{SPB.conns=SPB.conns.filter(x=>x.open);if(SPB.conns.length>=SPEC_MAX){try{c.send({t:'full'});}catch(e){}setTimeout(()=>c.close(),300);return;}
         SPB.conns.push(c);try{c.send(specInfo());}catch(e){}specCountUi();});
       c.on('data',m=>{if(m&&m.t==='hi'){c.who=String(m.n||'Un amico').slice(0,14);toast(`${c.who} ti sta guardando`,'Ti segue nella scalata');specCountUi();}});
       c.on('close',()=>{SPB.conns=SPB.conns.filter(x=>x!==c);specCountUi();});c.on('error',()=>{});});
-    p.on('error',e=>{if(e&&e.type==='unavailable-id'){try{p.destroy();}catch(x){}if(SPB.peer===p)SPB.peer=null;}});
+    p.on('error',e=>{if(e&&(e.type==='unavailable-id'||e.type==='invalid-id')){try{p.destroy();}catch(x){}if(SPB.peer===p)SPB.peer=null;}});
     p.on('disconnected',()=>{try{p.reconnect();}catch(e){}});});}
 function specCloseB(){const p=SPB.peer,cs=SPB.conns;SPB.peer=null;SPB.conns=[];
   for(const c of cs){try{c.open&&c.send(specInfo());}catch(e){}}
@@ -180,13 +182,13 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
   SPEC.tm=setTimeout(()=>{if(SPEC.on&&!SPEC.built)specExit(`Non riesco a guardare ${SPEC.name}`,'Forse ha appena finito la scalata');},12000);
   mpLib(()=>{if(!SPEC.on)return;const p=new Peer();SPEC.peer=p;
-    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(SPEC_PREFIX+k,{reliable:true,serialization:'json'});SPEC.conn=c;
+    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(k),{reliable:true,serialization:'json'});SPEC.conn=c;
       c.on('open',()=>{try{c.send({t:'hi',n:MP.name()});}catch(e){}});
       c.on('data',m=>{if(SPEC.conn!==c)return;try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
       c.on('close',()=>{if(SPEC.on&&SPEC.conn===c)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
@@ -251,11 +253,11 @@ function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)retur
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
 function specKill(e){e.dead=true;
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
-function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
+function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
   specFxClear();SPEC.tipId=null;if($('spTip'))$('spTip').hidden=true;if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
   clearInput();G.state='menu';
-  fadeThen(()=>{SPEC.built=false;if(safeG){scene.remove(safeG);safeG=null;}G.safe=false;G.boss=null;G.floor=SPEC.prevFl;if(hero)hero.root.visible=true;enterCellar();G.fadeTarget=0;});}
+  fadeThen(()=>{SPEC.built=false;if(safeG){scene.remove(safeG);safeG=null;}G.safe=false;G.boss=null;G.floor=SPEC.prevFl;if(hero)hero.root.visible=true;enterCellar();SPEC.out=false;G.fadeTarget=0;});}
 // ogni fotogramma: la telecamera segue l'amico, i nemici si muovono, l'eroe dell'amico si anima
 const _uhvSp=updHeroVisual;
 updHeroVisual=function(dt){if(!SPEC.on)return _uhvSp(dt);
@@ -284,7 +286,7 @@ function specDraw(R,dt){
   if(!R.tagW){R.tagW=R.tag.offsetWidth;R.tagH=R.tag.offsetHeight;}
   const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
 // chi guarda non ha la barra delle abilità né la vita sua: niente HUD della scalata
-const _uhSp=updHud;updHud=function(){if(SPEC.on)return;return _uhSp.apply(this,arguments);};
+const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.apply(this,arguments);};
 // Esc o il tasto indietro del controller: esci
 addEventListener('keydown',e=>{if(SPEC.on&&(e.key==='Escape'||e.key==='Backspace')){e.preventDefault();e.stopPropagation();specExit();}},true);
 const _padBackSp=padBack;padBack=function(){if(SPEC.on){specExit();return true;}return _padBackSp();};

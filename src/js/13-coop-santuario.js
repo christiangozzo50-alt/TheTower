@@ -145,14 +145,14 @@ const AKEYS=['t','wind','act','rec','hand','anim','mv','fin','r0','rest','from',
 function mpMyState(){const A=P.atk,w=G.weapon||{};let a=null;if(A){a={};for(const k of AKEYS)if(A[k]!==undefined)a[k]=A[k];}
   return {t:'s',pid:MP.myPid,x:r2(P.x),y:r2(P.y),z:r2(P.z),vx:r2(P.vx),vy:r2(P.vy),f:P.face,g:P.onGround?1:0,d:P.dead?1:0,hp:Math.round(P.hp),mh:Math.round(S.maxHp||100),
     ft:r2(P.flipT),sr:r2(P.stretchT),lt:r2(P.landT),da:r2(P.dashT),ht:r2(P.hurtT),iv:r2(P.invul),sh:r2(P.shieldT),rg:r2(P.rageT),br:r2(P.bearT),dr:P.dragon||null,
-    ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),sk:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
+    ch:r2(P.chargeT),sp:r2(P.spinT),th:r2(P.throwT),kd:r2(P.skidT),sc:G.scene,st:G.state,et:r2(G.enterT),ct:r2(P.climbTurn),fl:G.floor,
     c:G.cls?G.cls.id:'',sk:G.cls?skinOf(G.cls.id):0,sv:G.cls&&typeof varOf==='function'?varOf(G.cls.id):'',w:[w.type||'spada',w.rarity||0,w.v||0,w.effect||''],ws:r2(G.weapon?weaponScale():1),atk:a};}
 function mpPlayer(pid){let R=MP.players.get(pid);if(!R){R={pid,name:'',x:0,y:0,z:0,tx:0,ty:0,tz:0,walkT:0,lastStep:0,atk:null,hero:null,hkey:'',ready:false,dead:false,sc:'',fl:0,st:''};MP.players.set(pid,R);}return R;}
 function mpRecvState(pid,m){mpRecvInto(mpPlayer(pid),m);}
 function mpRecvInto(R,m){
   const snap=R.sc!==m.sc||R.fl!==m.fl||Math.abs(R.x-m.x)>6||!R.seen;R.seen=true;
   Object.assign(R,{tx:m.x,ty:m.y,tz:m.z,vx:m.vx,vy:m.vy,face:m.f,onGround:!!m.g,dead:!!m.d,hp:m.hp,mh:m.mh,flipT:m.ft,stretchT:m.sr,landT:m.lt,dashT:m.da,hurtT:m.ht,invul:m.iv,
-    shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.sk,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
+    shieldT:m.sh,rageT:m.rg,bearT:m.br,dragon:m.dr,chargeT:m.ch,spinT:m.sp,throwT:m.th,skidT:m.kd||0,sc:m.sc,st:m.st,et:m.et,climbTurn:m.ct,fl:m.fl,c:m.c,w:m.w,ws:m.ws});
   if(snap){R.x=m.x;R.y=m.y;R.z=m.z;R.buf=[];R.lastRt=null;}
   bufPush(R,{t:performance.now(),x:m.x,y:m.y,z:m.z,vx:m.vx,vy:m.vy});R.svx=m.vx;
   if(!m.atk)R.atk=null;
