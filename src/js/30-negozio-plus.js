@@ -184,8 +184,12 @@ const _upRI=update;update=function(dt){_upRI(dt);
 
 /* ---------- scie dell'arma ---------- */
 function trailCol(){const c=cosOf('trail');if(!c)return null;return c.rain?null:c.col;}
-const _rbPlus=ribbonUpd;ribbonUpd=function(R){RIB_LIFE=(R===hero&&cosOf('trail'))?0.26:RIB_LIFE0;_rbPlus(R);RIB_LIFE=RIB_LIFE0;if(R!==hero)return;const c=cosOf('trail');if(!c)return;const u=ribOf(R).m.material.uniforms.uColor.value;
-  if(c.rain)u.setHSL((G.time*0.7)%1,0.9,0.62);else u.setHex(c.col);};
+const _rbPlus=ribbonUpd;ribbonUpd=function(R){const c=R===hero?cosOf('trail'):null;RIB_LIFE=c?0.26:RIB_LIFE0;_rbPlus(R);RIB_LIFE=RIB_LIFE0;
+  const rib=ribOf(R),mu=rib.m.material.uniforms;if(!c){if(mu.uOp)mu.uOp.value=1;rib.m.material.blending=THREE.NormalBlending;return;}
+  if(c.rain)mu.uColor.value.setHSL((G.time*0.7)%1,0.95,0.6);else mu.uColor.value.setHex(c.col);
+  // scia del negozio: nastro pieno e luminoso, con scintille del suo colore lungo la lama
+  if(mu.uOp)mu.uOp.value=2.2;if(rib.m.material.blending!==THREE.AdditiveBlending){rib.m.material.blending=THREE.AdditiveBlending;rib.m.material.needsUpdate=true;}
+  if(rib.m.visible&&P.atk&&rib.s.length){const s=rib.s[rib.s.length-1],col=mu.uColor.value.getHex();burst(s.p.x,s.p.y,col,2,1.6,0.6,0,s.p.z);if(Math.random()<0.5)burst((s.p.x+s.b.x)/2,(s.p.y+s.b.y)/2,0xffffff,1,1,0.4,0,s.p.z);}};
 const _utPlus=updTrail;updTrail=function(dt){const r=_utPlus(dt);const c=cosOf('trail');if(c&&trailMat&&streakMat){const col=c.rain?new THREE.Color().setHSL((G.time*0.7)%1,0.9,0.62).getHex():c.col;
   trailMat.uniforms.uColor.value.setHex(col);streakMat.uniforms.uColor.value.setHex(col);}return r;};
 
