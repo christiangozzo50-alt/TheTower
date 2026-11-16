@@ -207,7 +207,7 @@ kbd{font-family:var(--f-body);font-weight:700;font-size:11px;color:var(--ink);ba
 #abilFlash{position:fixed;inset:0;pointer-events:none;z-index:43;opacity:0;background:radial-gradient(circle,transparent 30%,var(--c,#7ff0e4) 140%)}
 #abilFlash.on{animation:af .5s ease-out forwards}@keyframes af{0%{opacity:.9}100%{opacity:0}}
 #interLabels{position:fixed;inset:0;pointer-events:none;z-index:4}
-#interLabels span{position:absolute;left:0;top:0;padding:2px 8px;font-family:var(--f-display);font-size:13px;color:#ffd27a;background:rgba(10,8,14,.65);border:1px solid rgba(255,210,122,.45);white-space:nowrap;transition:opacity .2s}
+#interLabels span{position:absolute;left:0;top:0;padding:1px 6px;font-family:var(--f-display);font-size:10px;color:#ffd27a;background:rgba(10,8,14,.65);border:1px solid rgba(255,210,122,.45);white-space:nowrap;transition:opacity .2s}
 #interLabels span.dim{opacity:0}
 #keysToggle{width:100%;justify-content:space-between}#keysBox[hidden]{display:none}
 #cine{position:fixed;inset:0;z-index:110;pointer-events:none}

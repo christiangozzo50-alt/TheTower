@@ -8,7 +8,8 @@
    ========================================================= */
 const SPEC_PREFIX='thetower-spec-v1-',SPEC_MAX=6;
 // il nome del canale: PeerJS accetta solo lettere e numeri (con - _ singoli in mezzo), quindi accenti e simboli del nome vengono scritti in codice
-const specId=k=>SPEC_PREFIX+Array.from(String(k),c=>/[a-y0-9]/.test(c)?c:'z'+c.codePointAt(0).toString(16)+'z').join('');
+const specId=k=>{k=String(k);return /^[a-z0-9]+(?:[ _-][a-z0-9]+)*$/.test(k)?SPEC_PREFIX+k:SPEC_PREFIX+'x9-'+Array.from(k,c=>/[a-y0-9]/.test(c)?c:'z'+c.codePointAt(0).toString(16)+'z').join('');};
+const SPEC_TRIES=4;
 const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3.2" fill="currentColor"/></svg>';
 // chi trasmette (sta scalando)
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
@@ -36,7 +37,7 @@ function specPresence(){if(!fbOn()||!store.get('nameok',false))return;const run=
 /* ---------- chi scala: canale per gli spettatori ---------- */
 function specSend(m){for(const c of SPB.conns)if(c.open){try{c.send(m);}catch(e){}}}
 function specInfo(){return {t:'si',seed:SPB.lvSeed,fl:G.floor,n:MP.name(),sc:specInRun()?'tower':'cellar',st:G.state,lv:specInRun()?Object.assign({},G.lv):{}};}
-function specOpen(){if(SPB.peer||SPB.loading)return;SPB.loading=true;
+function specOpen(){if(SPB.peer||SPB.loading)return;SPB.loading=true;setTimeout(()=>{SPB.loading=false;},8000);
   mpLib(()=>{SPB.loading=false;if(SPB.peer||!specInRun())return;
     const p=new Peer(specId(nameKey(MP.name())));SPB.peer=p;
     p.on('connection',c=>{
@@ -57,6 +58,8 @@ function specCountUi(){const n=SPB.conns.filter(c=>c.open).length;
   if(show){const names=SPB.conns.filter(c=>c.open&&c.who).map(c=>c.who);specCountEl.innerHTML=EYE_SVG+`<span>${n}</span>`;specCountEl.title=names.length?'Ti guardano: '+names.join(', '):'Spettatori';}}
 // ogni 2 s: apre o chiude il canale e aggiorna la presenza quando cambia qualcosa
 setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
+  if(run&&SPB.peer){const p=SPB.peer;   // il canale è caduto: lo si riapre (come fa la stanza della co-op)
+    if(p.destroyed)SPB.peer=null;else if(p.disconnected){try{p.reconnect();}catch(e){try{p.destroy();}catch(_){}SPB.peer=null;}}}
   if(run&&!SPB.peer)specOpen();else if(!run&&SPB.peer)specCloseB();
   const fl=run?G.floor:0,now=Date.now();
   if(run!==SPB.inRun||fl!==SPB.fl||(run&&now-SPB.presT>40000)){SPB.inRun=run;SPB.fl=fl;SPB.presT=now;specPresence();if(SPB.conns.length)specSend(specInfo());}
@@ -186,13 +189,20 @@ function specStart(k,n){
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
-  SPEC.tm=setTimeout(()=>{if(SPEC.on&&!SPEC.built)specExit(`Non riesco a guardare ${SPEC.name}`,'Forse ha appena finito la scalata');},12000);
-  mpLib(()=>{if(!SPEC.on)return;const p=new Peer();SPEC.peer=p;
-    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(k),{reliable:true,serialization:'json'});SPEC.conn=c;
+  SPEC.try=0;SPEC.unav=0;specConnect();}
+// il collegamento: fino a SPEC_TRIES tentativi, perché il primo a volte non va (rete lenta, canale appena aperto)
+function specConnect(){if(!SPEC.on||SPEC.built)return;const n=++SPEC.try;
+  {const oc=SPEC.conn,op=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{oc&&oc.close();}catch(e){}try{op&&op.destroy();}catch(e){}}
+  if(n>1)specSetInfo(`Riprovo a collegarmi (${n}/${SPEC_TRIES})…`);
+  clearTimeout(SPEC.tm);
+  SPEC.tm=setTimeout(()=>{if(!SPEC.on||SPEC.built)return;if(n<SPEC_TRIES)specConnect();else specExit(`Non riesco a collegarmi a ${SPEC.name}`,'Riprova tra poco: deve tenere il gioco aperto e in primo piano');},n===1?9000:8000);
+  mpLib(()=>{if(!SPEC.on||SPEC.try!==n)return;const p=new Peer();SPEC.peer=p;
+    p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(SPEC.key),{reliable:true,serialization:'json'});SPEC.conn=c;
       c.on('open',()=>{try{c.send({t:'hi',n:MP.name()});}catch(e){}});
       c.on('data',m=>{if(SPEC.conn!==c)return;try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
-      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
-    p.on('error',e=>{if(SPEC.peer!==p)return;if(e&&e.type==='peer-unavailable')specExit(`${SPEC.name} non è più in scalata`,'');});});}
+      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c&&SPEC.built)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
+    p.on('error',e=>{if(SPEC.peer!==p||SPEC.built)return;
+      if(e&&e.type==='peer-unavailable'){if(++SPEC.unav<2&&n<SPEC_TRIES){clearTimeout(SPEC.tm);SPEC.tm=setTimeout(specConnect,1500);}else specExit(`${SPEC.name} non è più in scalata`,'Il suo canale non risponde');}});});}
 function specMsg(m){
   if(m.t==='full'){specExit('Troppi spettatori',`${SPEC.name} ha già ${SPEC_MAX} persone che lo guardano`);return;}
   if(m.t==='si'){SPEC.seed=m.seed;if(m.n)SPEC.name=m.n;$('sbName').textContent=SPEC.name;

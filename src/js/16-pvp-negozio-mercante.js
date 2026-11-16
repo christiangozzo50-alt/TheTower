@@ -111,7 +111,7 @@ $('frClose').onclick=()=>{sfx('ui');closeFriends();};
 async function inviteFriend(k){
   if(!(MP.on&&MP.host)){mpHost();for(let i=0;i<40&&!(MP.on&&MP.code);i++)await new Promise(r=>setTimeout(r,250));}
   if(!MP.code){toast('Invito non riuscito','Non riesco a creare il gruppo');return;}
-  try{await fbPut(`invites/${encodeURIComponent(k)}/${encodeURIComponent(nameKey(MP.name()))}`,{n:MP.name(),code:MP.code,t:Date.now()});toast('Invito mandato','Quando accetta entra nel tuo gruppo');}
+  try{await fbPut(`invites/${encodeURIComponent(k)}/${encodeURIComponent(nameKey(MP.name()))}`,{n:MP.name(),code:MP.code,t:Date.now()});toast('Invito mandato','Vale 2 minuti: non serve restare nella schermata Amici');}
   catch(e){toast('Invito non riuscito','Controlla la connessione');}}
 /* ---------- richieste d'amicizia: diventate amici solo quando l'altro accetta ---------- */
 let FRPEND=store.get('frpend',[]);const saveFrPend=()=>store.set('frpend',FRPEND);const pend=k=>FRPEND.some(f=>f.k===k);
@@ -119,6 +119,9 @@ async function sendFriendReq(k,n){try{await fbPut(`invites/${encodeURIComponent(
   if(!pend(k)){FRPEND.push({k,n});saveFrPend();}sfx('pick');toast('Richiesta inviata',`Diventerete amici quando ${n} accetta`);return true;}catch(e){toast('Richiesta non inviata','Controlla la connessione');return false;}}
 /* ---------- inviti ricevuti ---------- */
 let invShown={};
+// invito accettato mentre non si è nel seminterrato: si entra nel gruppo appena ci si torna, finché l'invito è valido (2 minuti)
+let INV_WAIT=null;
+setInterval(()=>{const w=INV_WAIT;if(!w)return;if(Date.now()-w.t>120000){INV_WAIT=null;return;}if(G.state==='cellar'&&!MP.live()){INV_WAIT=null;w.go();}},1000);
 setInterval(async()=>{if(!fbOn()||!store.get('nameok',false)||!$('inviteBox').hidden)return;const me=nameKey(MP.name());
   try{const d=await fbGet('invites/'+encodeURIComponent(me));if(!d)return;
     for(const [from,v] of Object.entries(d)){if(from.endsWith('__r'))continue;const kind=from.endsWith('__f')?'f':from.endsWith('__a')?'a':'g',who=kind==='g'?from:from.slice(0,-3),del=()=>fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
@@ -134,8 +137,9 @@ setInterval(async()=>{if(!fbOn()||!store.get('nameok',false)||!$('inviteBox').hi
       $('invYes').textContent='Entra';$('invNo').textContent='No, grazie';
       $('invText').textContent=`${v.n} ti invita nel suo gruppo`;$('inviteBox').hidden=false;sfx('lvl');
       $('invYes').onclick=()=>{$('inviteBox').hidden=true;fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});
-        if(G.state!=='cellar'&&G.state!=='friends'&&G.state!=='coop'){toast('Torna al seminterrato','Poi riapri l\'invito dalla sezione Amici');return;}
-        if(G.state==='friends')closeFriends();if(G.state==='cellar')openCoop();$('coopCode').value=v.code;mpJoin();};
+        const go=()=>{if(G.state==='friends')closeFriends();if(G.state==='cellar')openCoop();$('coopCode').value=v.code;mpJoin();};
+        if(G.state!=='cellar'&&G.state!=='friends'&&G.state!=='coop'){INV_WAIT={t:v.t,go};toast('Torna al seminterrato',`Entri nel gruppo di ${v.n} appena ci arrivi: l'invito vale 2 minuti`);return;}
+        go();};
       $('invNo').onclick=()=>{$('inviteBox').hidden=true;fbDel(`invites/${encodeURIComponent(me)}/${encodeURIComponent(from)}`).catch(()=>{});};
       break;}}catch(e){}},8000);
 /* ---------- il pulsante in alto diventa «Amici» ---------- */
