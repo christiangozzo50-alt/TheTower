@@ -1043,3 +1043,9 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 .pts-due{color:#ffb347;font-weight:700}
 @media (max-width:600px),(max-height:500px){.pt-row{grid-template-columns:minmax(0,1fr) 54px 30px}.pt-row .pips{display:none}#cosPrevBar span{display:none}}
 @media (prefers-reduced-motion:reduce){.pts-cta{animation:none}}
+/* anteprima dei cosmetici nella finestra del negozio */
+.sv-stage{position:relative}
+#cvFx{position:absolute;left:50%;top:2px;transform:translateX(-50%);width:min(336px,62vw,calc((100dvh - 120px)*0.8));height:auto;aspect-ratio:112/140;image-rendering:pixelated;pointer-events:none}
+#cvFx[hidden],#cvTag[hidden]{display:none}
+#cvTag{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:1;pointer-events:none}
+@media (max-width:600px){#cvFx{width:min(260px,70vw,calc((100dvh - 330px)*0.8))}}
