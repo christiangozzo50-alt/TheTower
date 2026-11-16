@@ -10480,7 +10480,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794827153';
+const BUILD_ID='1794827554';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13202,8 +13202,8 @@ function cvKill(){const e=CV.e;if(!e)return;const x=e.x,y=e.y+(e.h||0.9)*0.5,col
   const k=cosOf('kill');if(k)try{killFx(k,x,y,false);}catch(err){}
   burst(x,y,col,18,6,5);sfx('die');for(let i=0;i<5;i++){const mm=new THREE.Mesh(chunkGeo,chunkMat(col));mm.scale.setScalar(rand(0.25,0.45));mm.position.set(x,y,0);scene.add(mm);G.chunks.push({m:mm,vx:rand(-4,4),vy:rand(4,8),vz:rand(-1,1.5),rx:rand(-10,10),rz:rand(-10,10),t:0});}
   CV.respawn=1.1;}
-function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar')return;closeView(true);
-  CV.bk={x:P.x,y:P.y,face:P.face};CV.base=P.x;CV.dir=P.x<0?1:-1;CV.ex=CV.base+CV.dir*3.4;
+function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar'||G.state!=='shop')return;closeView(true);
+  CV.bk={x:P.x,y:P.y,face:P.face};CV.base=P.x;CV.dir=P.x<0?1:-1;CV.ex=CV.base+CV.dir*2.5;
   Object.assign(CV,{c,on:true,t:0,ph:'atk',pt:0.25,hits:0,respawn:0});P.vx=0;P.atk=null;P.face=CV.dir;
   if(!CV.cam)CV.cam=new THREE.PerspectiveCamera(42,CVW/CVH,0.1,80);
   cvEnemy();const pc=cosOf('pet');petSet(pc?pc.id:null);
@@ -13216,14 +13216,14 @@ function cosView(id){const c=COS_BY[id];if(!c||G.scene!=='cellar')return;closeVi
   const fx=$('cvFx');if(fx)fx.hidden=true;
   cvAct();$('shView').hidden=false;sfx('ui');
   const loop=()=>{if(!CV.on||SV.k!=='cos:'+id)return;try{cvAim();$('svCan').getContext('2d').putImageData(cvShot(CV.cam),0,0);cvTagPos();}catch(err){}SV.raf=requestAnimationFrame(loop);};SV.raf=requestAnimationFrame(loop);}
-function cvAim(){const cx=CV.base+CV.dir*1.7,cam=CV.cam;cam.position.set(cx,1.55,6.6);cam.lookAt(cx,1.05,0);cam.updateMatrixWorld();}
+function cvAim(){const cx=CV.base+CV.dir*1.3,cam=CV.cam;cam.position.set(cx,1.45,5.6);cam.lookAt(cx,1.15,0);cam.updateMatrixWorld();}
 function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THREE.Vector3(P.x,P.y+2.6,P.z||0).project(CV.cam),cv=$('svCan'),r=cv.getBoundingClientRect(),pr=cv.parentNode.getBoundingClientRect();
   tg.style.left=(r.left-pr.left+(v.x+1)/2*r.width)+'px';tg.style.top=(r.top-pr.top+(1-v.y)/2*r.height)+'px';}
 // la coreografia: attacca tre volte, il nemico cade, corre indietro, corre avanti, ricomincia
 function cvTick(dt){if(!CV.on)return;if(G.scene!=='cellar'||G.state!=='shop'){cvStop();return;}CV.t+=dt;
   P.landT-=dt;if(P.atk){P.atk.t+=dt;if(P.atk.t>=P.atk.wind+P.atk.act+P.atk.rec)P.atk=null;}
   if(CV.respawn>0){CV.respawn-=dt;if(CV.respawn<=0)cvEnemy();}
-  CV.pt-=dt;const near=CV.base+CV.dir*1.6,sp=6;
+  CV.pt-=dt;const near=CV.base+CV.dir*1.0,sp=5;
   if(CV.ph==='atk'){P.vx=0;P.face=CV.dir;if(CV.pt<=0&&!P.atk){if(CV.hits<3&&CV.e){try{startAttack(true);}catch(err){}CV.hits++;CV.pt=0.12;
         const e=CV.e;if(e){setTimeout(()=>{if(CV.e===e){e.flash=0.12;e.flinch=0.2;burst(e.x,e.y+0.5,0xffffff,5,4,2);sfx('hit');if(CV.hits>=3)cvKill();}},180);}}
       else if(!CV.e&&CV.hits>=3&&CV.pt<=-0.5){CV.ph='back';CV.hits=0;}}}
