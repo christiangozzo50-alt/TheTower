@@ -29,10 +29,19 @@ function makeWeapon(type,rarity,floor,v){const T=WTYPES[type],R=RARITY[rarity],m
   if(rarity>=2)w.effect=pick(rarity>=3?['fuoco','gelo','fulmine','vampiro']:['fuoco','gelo']);
   if(rarity>=2){const pool=Object.keys(PERKS).filter(k=>floor>=PERKS[k].from&&rarity>=PERKS[k].minR);if(pool.length&&Math.random()<[0,0,0.15,0.35,0.8,0.9,1][rarity])w.perk=pick(pool);}
   return w;}
+// se il modello di un'arma non si costruisce (combinazione rara/mitica non prevista) non deve bloccare la scalata: ripiego
+function safeWeaponBuild(w){
+  try{return applyVariant(buildWeaponMesh(w.type,w.rarity,w.effect),w);}
+  catch(e){console.error('Modello arma non costruibile, ripiego:',w&&w.type,w&&w.rarity,e);
+    const g=new THREE.Group(),R=RARITY[(w&&w.rarity)||0]||RARITY[0];
+    mesh(rbox(0.09,1.3,0.09,0.02),toon(R.hex,{emissive:R.hex,emissiveIntensity:0.25}),0,0.65,0,g,true);
+    mesh(rbox(0.26,0.09,0.12,0.03),toon(0x4a4a54),0,0.02,0,g,true);
+    const tip=new THREE.Object3D();tip.position.set(0,1.32,0);g.add(tip);return {g,tip};}
+}
 function attachWeapon(){
   for(const a of hero.arms)for(const c of [...a.wr.children])if(!c.userData.skin){a.wr.remove(c);disposeObj(c);}
-  const w=G.weapon,a=applyVariant(buildWeaponMesh(w.type,w.rarity,w.effect),w);hero.arms[0].wr.add(a.g);hero.wpnF=a.g;hero.tipF=a.tip;hero.tipB=null;
-  hero.wpnB=null;if(w.type==='pugnali'){const b=applyVariant(buildWeaponMesh(w.type,w.rarity,w.effect),w);hero.arms[1].wr.add(b.g);hero.tipB=b.tip;hero.wpnB=b.g;}
+  const w=G.weapon,a=safeWeaponBuild(w);hero.arms[0].wr.add(a.g);hero.wpnF=a.g;hero.tipF=a.tip;hero.tipB=null;
+  hero.wpnB=null;if(w.type==='pugnali'){const b=safeWeaponBuild(w);hero.arms[1].wr.add(b.g);hero.tipB=b.tip;hero.wpnB=b.g;}
   const col=w.effect?EFFECTS[w.effect].color:(w.rarity?RARITY[w.rarity].hex:0xffe2b0);
   trailMat.uniforms.uColor.value.setHex(col);streakMat.uniforms.uColor.value.setHex(col);refreshWeaponScale();
 }
