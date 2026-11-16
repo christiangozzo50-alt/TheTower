@@ -10481,7 +10481,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794828255';
+const BUILD_ID='1794828381';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13233,6 +13233,8 @@ function cvTagPos(){const tg=$('cvTag');if(!tg||tg.hidden)return;const v=new THR
 function cvTick(dt){if(!CV.on)return;if(G.scene!=='cellar'||G.state!=='shop'){cvStop();return;}CV.t+=dt;
   P.landT-=dt;if(P.atk){P.atk.t+=dt;if(P.atk.t>=P.atk.wind+P.atk.act+P.atk.rec)P.atk=null;}
   if(CV.respawn>0){CV.respawn-=dt;if(CV.respawn<=0)cvEnemy();}
+  // il nemico: nel negozio il gioco non lo aggiorna, quindi comparsa, lampo e sobbalzo vanno avanti qui
+  {const e=CV.e;if(e){if(e.spawnT>0)e.spawnT=Math.max(0,e.spawnT-dt);if(e.flash>0)e.flash=Math.max(0,e.flash-dt);if(e.flinch>0)e.flinch=Math.max(0,e.flinch-dt);e.t=(e.t||0)+dt;}}
   CV.pt-=dt;const near=CV.base+CV.dir*1.2,sp=4;
   if(CV.ph==='atk'){P.vx=0;P.face=CV.dir;if(CV.pt<=0&&!P.atk){if(CV.hits<3&&CV.e){try{startAttack(true);}catch(err){}CV.hits++;CV.pt=0.38;
         const e=CV.e;if(e){setTimeout(()=>{if(CV.e===e){e.flash=0.12;e.flinch=0.2;burst(e.x,e.y+0.5,0xffffff,5,4,2);sfx('hit');if(CV.hits>=3)cvKill();}},180);}}
