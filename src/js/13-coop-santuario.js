@@ -133,7 +133,8 @@ function mpMsg(m,from){
     if(MP.host)mpTryAdvance();break;}
   case 'start':if(!MP.host){MP.seed=m.seed;MP.netStart=true;G.hordeNext=!!m.horde;G.warpTo=m.w||0;
     ['over','pause','upgrade','loot','settings','classes','win','coop','safePed'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});
-    $('deathFx').classList.remove('on');G.deathSlow=0;clearInput();G.state='menu';fadeThen(()=>{startRun();G.fadeTarget=0;});}break;
+    $('deathFx').classList.remove('on');G.deathSlow=0;clearInput();G.state='menu';
+    fadeThen(()=>{if(m.resume>1){coopResumeGuest(m);G.fadeTarget=0;return;}startRun();G.fadeTarget=0;});}break;
   case 'reqStart':if(MP.host){if(G.state==='cellar'){G.state='menu';$('prompt').hidden=true;$('bUse').hidden=true;fadeThen(()=>{startRun();G.fadeTarget=0;});}
     else toast(`${pName(from)} è pronto`,'Sali la scala della torre per partire tutti insieme');}break;
   }

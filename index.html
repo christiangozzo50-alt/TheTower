@@ -8161,7 +8161,8 @@ function mpMsg(m,from){
     if(MP.host)mpTryAdvance();break;}
   case 'start':if(!MP.host){MP.seed=m.seed;MP.netStart=true;G.hordeNext=!!m.horde;G.warpTo=m.w||0;
     ['over','pause','upgrade','loot','settings','classes','win','coop','safePed'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});
-    $('deathFx').classList.remove('on');G.deathSlow=0;clearInput();G.state='menu';fadeThen(()=>{startRun();G.fadeTarget=0;});}break;
+    $('deathFx').classList.remove('on');G.deathSlow=0;clearInput();G.state='menu';
+    fadeThen(()=>{if(m.resume>1){coopResumeGuest(m);G.fadeTarget=0;return;}startRun();G.fadeTarget=0;});}break;
   case 'reqStart':if(MP.host){if(G.state==='cellar'){G.state='menu';$('prompt').hidden=true;$('bUse').hidden=true;fadeThen(()=>{startRun();G.fadeTarget=0;});}
     else toast(`${pName(from)} è pronto`,'Sali la scala della torre per partire tutti insieme');}break;
   }
@@ -9096,7 +9097,8 @@ const PID=store.get('pid',null)||(()=>{const v=Math.random().toString(36).slice(
 const fbOn=()=>!!FB_URL;
 async function fbGet(path,q){const r=await fetch(`${FB_URL.replace(/\/$/,'')}/${path}.json${q?'?'+q:''}`);if(!r.ok)throw new Error(r.status);return r.json();}
 async function fbPost(path,body,method){const r=await fetch(`${FB_URL.replace(/\/$/,'')}/${path}.json`,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json();}
-function submitRun(){if(!fbOn()||G.tutorial||G.pvp)return;const mode=G.horde?'orda':MP.live()?'coop':'solo',f=G.horde?G.wave-1:G.floor;if(f<2)return;
+function submitRun(){if(!fbOn()||G.tutorial||G.pvp)return;const mode=G.horde?'orda':(MP.live()||G.runCoop)?'coop':'solo',   // una scalata nata in co-op resta co-op anche se i compagni escono
+  f=G.horde?G.wave-1:G.floor;if(f<2)return;
   const path='scores/'+mode,k=encodeURIComponent(nameKey(MP.name())),row={n:MP.name(),c:G.cls.name,f,t:Date.now()};
   fbGet(path+'/'+k).then(o=>{if(o&&o.f>=f)return;return fbPut(path+'/'+k,row);}).catch(()=>fbPost(path,row).catch(()=>{}));}
 function lbBest(list,val){const m=new Map();for(const x of list){if(!x||x.n==null)continue;const k=nameKey(x.n),b=m.get(k);if(!b||val(x)>val(b)||(val(x)===val(b)&&(x.t||0)<(b.t||0)))m.set(k,x);}return [...m.values()].sort((a,b)=>val(b)-val(a)||(a.t||0)-(b.t||0)).slice(0,25);}
@@ -10495,7 +10497,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794829612';
+const BUILD_ID='1794830117';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13317,6 +13319,54 @@ const _rsPot=renderSelect;renderSelect=function(){_rsPot.apply(this,arguments);c
   if(G.selTab==='ab'){const rows=box.querySelectorAll('.cs-abil');AB_SLOTS.forEach(([n,k,id,need],i)=>{const el=rows[i];if(!el)return;const l=pr.alloc[id]||0,lock=pr.lv<need,full=l>=AB_MAX,cost=abCost(l);
     el.querySelector('div').insertAdjacentHTML('beforeend',`<div class="ab-pow">${pips(l,AB_MAX)}<em>${lock?'Potenza —':'Potenza '+(full?'max':'liv. '+l+'/'+AB_MAX)}</em>${lock||full?'':`<button class="mini" data-pt="${id}" ${pr.pts>=cost?'':'disabled'} aria-label="Alza la potenza di ${c[k].name}: costa ${cost} punti">+ ${cost} punti</button>`}</div>`);});
     if(!pr.pts)box.insertAdjacentHTML('beforeend','<div class="cs-grow">Per potenziare le mosse servono punti: ne ottieni 1 a ogni livello della classe.</div>');}};
+
+/* =========================================================
+   SALVATAGGIO IN CO-OP
+   Una scalata salvata al letto del santuario in co-op si riprende solo in co-op, con gli stessi compagni:
+   da soli non si può (niente classifica «solo» con una scalata fatta in gruppo).
+   Una scalata nata in co-op finisce sempre nella classifica co-op, anche se i compagni escono.
+   ========================================================= */
+const crewNow=()=>{const s=[nameKey(MP.name())];if(MP.live())for(const R of MP.players.values())if(R&&R.name)s.push(nameKey(R.name));return [...new Set(s)].sort();};
+const crewNames=crew=>crew.filter(k=>k!==nameKey(MP.name()));
+G.runCoop=false;G.runCrew=null;
+// all'inizio della scalata: era in co-op? con chi?
+const _srCs=startRun;startRun=function(){const was=G.scene,r=_srCs.apply(this,arguments);
+  if(G.scene==='tower'&&was!=='tower'&&!RESUMING&&!G.pvp){G.runCoop=MP.live();G.runCrew=G.runCoop?crewNow():null;}return r;};
+// chi entra nel gruppo durante la scalata rende la scalata co-op
+setInterval(()=>{if(G.scene==='tower'&&!G.pvp&&MP.live()){G.runCoop=true;const c=crewNow();if(!G.runCrew||c.length>G.runCrew.length)G.runCrew=c;}},3000);
+const _ecCs=enterCellar;enterCellar=function(){G.runCoop=false;G.runCrew=null;return _ecCs.apply(this,arguments);};
+// il salvataggio ricorda la co-op e i compagni
+const _svCs=saveRun;saveRun=function(){_svCs.apply(this,arguments);const s=store.get('runsave',null);if(!s)return;
+  if(G.runCoop||MP.live()){s.coop=true;s.crew=G.runCrew||crewNow();}else{delete s.coop;delete s.crew;}store.set('runsave',s);};
+const saveKey=sv=>sv&&sv.coop?sv.f+':'+(sv.crew||[]).join(','):'';
+// riprendere: si torna co-op con gli stessi compagni
+const _rrCs=resumeRun;resumeRun=function(sv){const r=_rrCs.apply(this,arguments);G.runCoop=!!(sv&&sv.coop);G.runCrew=sv&&sv.crew||null;return r;};
+// ognuno dice al gruppo che salvataggio ha (piano e compagni), così chi crea la partita sa se si può riprendere
+const _msCs=mpMyState;mpMyState=function(){const s=_msCs.apply(this,arguments);const k=saveKey(getSave());if(k)s.sv=k;return s;};
+const _riCs=mpRecvInto;mpRecvInto=function(R,m){_riCs(R,m);R.sv=m.sv||'';};
+function coopCanResume(sv){if(!sv||!sv.coop||!MP.live()||!MP.host)return {ok:false};const crew=crewNow(),same=crew.join(',')===(sv.crew||[]).join(',');
+  if(!same)return {ok:false,why:'crew'};const k=saveKey(sv);for(const R of MP.players.values())if(R.sv!==k)return {ok:false,why:'save',who:R.name};return {ok:true};}
+// la scala: da soli niente «Riprendi» per una scalata salvata in co-op; in gruppo solo con gli stessi compagni
+const _ocaCs=openClimbAsk;openClimbAsk=function(){_ocaCs.apply(this,arguments);if(G.state!=='climbask')return;const sv=getSave();if(!sv||!sv.coop)return;
+  const mates=crewNames(sv.crew||[]).join(', ')||'i tuoi compagni';
+  if(!MP.live()){$('caResume').hidden=true;$('caNew').textContent='Nuova scalata';
+    $('caText').innerHTML=`Hai una scalata salvata <b>in co-op</b> al <b>piano ${sv.f}</b> con <b>${esc(mates)}</b>: si riprende solo insieme a loro, dalla porta online. Una nuova scalata da solo la cancella.`;return;}
+  if(!MP.host){$('caText').innerHTML+=`<br>Salvataggio in co-op al piano ${sv.f}: può riprenderlo chi ha creato la partita.`;return;}
+  const c=coopCanResume(sv);
+  if(c.ok){$('caResume').hidden=false;$('caResume').textContent=`Riprendete dal piano ${sv.f}`;$('caNew').textContent='Nuova scalata';$('caText').innerHTML=`Scalata salvata in co-op al <b>piano ${sv.f}</b>: potete riprenderla tutti insieme.`;}
+  else $('caText').innerHTML+=c.why==='crew'?`<br>La scalata salvata al piano ${sv.f} era con <b>${esc(mates)}</b>: per riprenderla servono gli stessi compagni.`
+    :`<br>Per riprendere dal piano ${sv.f} tutti devono avere salvato al letto del santuario${c.who?' (manca '+esc(c.who)+')':''}.`;};
+// «Riprendi»: in gruppo parte per tutti dal piano salvato
+$('caResume').onclick=()=>{const sv=getSave();if(!sv)return;
+  if(sv.coop&&!MP.live())return;
+  sfx('ui');$('climbAsk').hidden=true;G.state='menu';
+  if(sv.coop){if(!coopCanResume(sv).ok){toast('Non si può riprendere','Servono gli stessi compagni, tutti con il salvataggio');G.state='cellar';return;}
+    MP.seed=(Math.random()*1e9)|0;MP.bcast({t:'start',seed:MP.seed,horde:false,w:0,resume:sv.f,crew:sv.crew});}
+  fadeThen(()=>{MP.netStart=false;resumeRun(sv);G.fadeTarget=0;});};
+// i compagni: ognuno riparte con il suo salvataggio (se per qualche motivo non ce l'ha, entra comunque nel piano giusto)
+function coopResumeGuest(m){MP.netStart=false;const sv=getSave();
+  if(sv&&sv.coop&&sv.f===m.resume){resumeRun(sv);return;}
+  MP.netStart=true;RESUMING=true;try{startRun();}finally{RESUMING=false;}G.runCoop=true;G.runCrew=m.crew||crewNow();startFloor(m.resume);}
 requestAnimationFrame(frame);
 })();
 </script>

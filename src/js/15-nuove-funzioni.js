@@ -254,7 +254,8 @@ const PID=store.get('pid',null)||(()=>{const v=Math.random().toString(36).slice(
 const fbOn=()=>!!FB_URL;
 async function fbGet(path,q){const r=await fetch(`${FB_URL.replace(/\/$/,'')}/${path}.json${q?'?'+q:''}`);if(!r.ok)throw new Error(r.status);return r.json();}
 async function fbPost(path,body,method){const r=await fetch(`${FB_URL.replace(/\/$/,'')}/${path}.json`,{method:method||'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json();}
-function submitRun(){if(!fbOn()||G.tutorial||G.pvp)return;const mode=G.horde?'orda':MP.live()?'coop':'solo',f=G.horde?G.wave-1:G.floor;if(f<2)return;
+function submitRun(){if(!fbOn()||G.tutorial||G.pvp)return;const mode=G.horde?'orda':(MP.live()||G.runCoop)?'coop':'solo',   // una scalata nata in co-op resta co-op anche se i compagni escono
+  f=G.horde?G.wave-1:G.floor;if(f<2)return;
   const path='scores/'+mode,k=encodeURIComponent(nameKey(MP.name())),row={n:MP.name(),c:G.cls.name,f,t:Date.now()};
   fbGet(path+'/'+k).then(o=>{if(o&&o.f>=f)return;return fbPut(path+'/'+k,row);}).catch(()=>fbPost(path,row).catch(()=>{}));}
 function lbBest(list,val){const m=new Map();for(const x of list){if(!x||x.n==null)continue;const k=nameKey(x.n),b=m.get(k);if(!b||val(x)>val(b)||(val(x)===val(b)&&(x.t||0)<(b.t||0)))m.set(k,x);}return [...m.values()].sort((a,b)=>val(b)-val(a)||(a.t||0)-(b.t||0)).slice(0,25);}
