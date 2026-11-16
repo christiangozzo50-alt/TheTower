@@ -324,7 +324,9 @@
       <input id="acPass" type="password" maxlength="64" placeholder="Password (almeno 6 caratteri)" autocomplete="current-password" autocapitalize="off" autocorrect="off" enterkeyhint="done">
       <div class="row"><button class="big" id="acLog">Accedi</button><button class="ghost" id="acReg">Crea account</button></div>
     </div>
-    <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p><button class="ghost" id="acOut">Esci dall'account</button></div>
+    <div id="acIn" hidden><p class="ig-lead">Collegato come <b id="acWho"></b>. I progressi si salvano da soli.</p>
+      <div class="row"><input id="acNewPass" type="password" maxlength="64" placeholder="Nuova password (almeno 6 caratteri)" autocomplete="new-password" autocapitalize="off" autocorrect="off" enterkeyhint="done"><button class="ghost" id="acChg">Cambia password</button></div>
+      <button class="ghost" id="acOut">Esci dall'account</button></div>
     <div id="acChoice" hidden><p class="ig-lead">Su questo dispositivo ci sono già dei progressi. Quali vuoi tenere?</p>
       <div class="row"><button class="big" id="acUseCloud">Quelli dell'account</button><button class="ghost" id="acUseLocal">Quelli di questo dispositivo</button></div></div>
     <p class="note" id="acMsg" aria-live="polite"></p>

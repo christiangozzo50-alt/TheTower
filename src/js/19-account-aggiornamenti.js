@@ -2,7 +2,7 @@
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1794857206';
+const BUILD_ID='1794864138';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -10,7 +10,8 @@ const authOn=()=>!!(FB_KEY&&FB_URL);
 const logged=()=>!!(AUTH.uid&&AUTH.refreshToken);
 const emailOf=u=>Array.from(nameKey(u)).map(c=>/[a-z0-9_-]/.test(c)?c:'x'+c.charCodeAt(0).toString(16)).join('')+'@thetower-player.app';
 const AUTH_ERR={EMAIL_EXISTS:'Esiste già un account con questo nome.',EMAIL_NOT_FOUND:'Nessun account con questo nome.',INVALID_PASSWORD:'Password sbagliata.',INVALID_LOGIN_CREDENTIALS:'Nome o password sbagliati.',
-  WEAK_PASSWORD:'La password deve avere almeno 6 caratteri.',TOO_MANY_ATTEMPTS_TRY_LATER:'Troppi tentativi: riprova tra qualche minuto.',USER_DISABLED:'Account disattivato.'};
+  WEAK_PASSWORD:'La password deve avere almeno 6 caratteri.',TOO_MANY_ATTEMPTS_TRY_LATER:'Troppi tentativi: riprova tra qualche minuto.',USER_DISABLED:'Account disattivato.',
+  CREDENTIAL_TOO_OLD_LOGIN_AGAIN:'Per sicurezza esci e rientra, poi cambia la password.',TOKEN_EXPIRED:'Sessione scaduta: esci e rientra.',INVALID_ID_TOKEN:'Sessione scaduta: esci e rientra.'};
 async function authCall(ep,body){const r=await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:${ep}?key=${FB_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const d=await r.json();if(!r.ok){const c=((d.error&&d.error.message)||'ERRORE').split(' ')[0].split(':')[0];throw new Error(AUTH_ERR[c]||('Errore: '+c));}return d;}
 function setAuth(d,user){Object.assign(AUTH,{uid:d.localId||d.user_id||AUTH.uid,idToken:d.idToken||d.id_token,refreshToken:d.refreshToken||d.refresh_token,exp:Date.now()+(+(d.expiresIn||d.expires_in)||3600)*1000,user:user||AUTH.user});store.set('auth',AUTH);}
@@ -90,7 +91,7 @@ function openAccount(){const a=$('account');a.hidden=false;$('acMsg').textConten
 function closeAccount(){$('account').hidden=true;}
 function renderAccount(){const on=logged();$('acForm').hidden=on;$('acIn').hidden=!on;renderBak();
   if(!authOn()){$('acForm').hidden=true;$('acIn').hidden=true;$('acMsg').textContent='Gli account non sono ancora attivi.';return;}
-  if(on){$('acWho').textContent=AUTH.user||MP.name();}
+  if(on){$('acWho').textContent=AUTH.user||MP.name();$('acNewPass').value='';}
   else{if(!$('acUser').value)$('acUser').value=store.get('mpname','')||'';}}
 async function acRegister(){const u=$('acUser').value.trim(),p=$('acPass').value,msg=$('acMsg');
   if(u.length<3||u.length>14||!/^[A-Za-z0-9À-ÿ _-]+$/.test(u)){msg.textContent='Nome da 3 a 14 caratteri: lettere, numeri, spazi, - e _.';return;}
@@ -113,6 +114,16 @@ async function acLogin(){const u=$('acUser').value.trim(),p=$('acPass').value,ms
       msg.textContent='Carico i tuoi progressi…';applySave(sv);}
     else{store.set('mpname',u);store.set('nameok',true);await cloudSave('overwrite');msg.textContent='';$('nameGate').hidden=true;renderAccount();mpUi();toast('Accesso fatto','Bentornato, '+u);}}
   catch(e){msg.textContent=e.message;}}
+async function acChangePass(){const np=$('acNewPass').value,msg=$('acMsg');
+  if(!logged()){msg.textContent='Devi prima accedere.';return;}
+  if(np.length<6){msg.textContent='La nuova password deve avere almeno 6 caratteri.';return;}
+  msg.textContent='Cambio la password…';
+  try{const tk=await token();if(!tk)throw new Error('sessione scaduta');
+    const d=await authCall('update',{idToken:tk,password:np,returnSecureToken:true});setAuth(d);
+    $('acNewPass').value='';msg.textContent='';toast('Password cambiata','Usa la nuova password sugli altri dispositivi');}
+  catch(e){msg.textContent=e.message;}}
+$('acChg').onclick=acChangePass;
+$('acNewPass').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();acChangePass();}});
 $('acReg').onclick=acRegister;$('acLog').onclick=acLogin;
 $('acOut').onclick=()=>{cloudSave(true).finally(()=>{for(const k in AUTH)delete AUTH[k];store.set('auth',{});SY.t=0;SY.h='';SY.lt=0;syncPersist();renderAccount();toast('Sei uscito','I progressi restano anche su questo dispositivo');});};
 $('acClose').onclick=closeAccount;
