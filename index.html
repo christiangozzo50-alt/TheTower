@@ -2070,6 +2070,8 @@ const TYPES={
   eye:   {hp:100,dmg:17,speed:2.6,w:1.2,h:1.2, color:0xc23a7a,xp:15,from:54,fly:true},
   minotaur:{hp:320,dmg:30,speed:2.3,w:1.5,h:3.0,color:0x6a3f2a,xp:26,from:63},
 };
+// i nemici nuovi arrivano più lentamente (circa il 50% di piani in più); mai su un piano di guardiano o santuario
+for(const k in TYPES){let n=Math.round(1+(TYPES[k].from-1)*1.5);while(n>1&&(isBossFloor(n)||isSafeFloor(n)))n++;TYPES[k].from=n;}
 const TYPE_NAMES={archer:'Arciere scheletro',knight:'Cavaliere nero',imp:'Folletto esplosivo',wraith:'Spettro',brute:'Bruto',shaman:'Negromante',guard:'Guardia scheletro',mage:'Stregone',bat:'Pipistrello',spider:'Ragno delle cripte',fungus:'Fungo velenoso',gargoyle:'Gargoyle',shade:'Ombra',scorpion:'Scorpione gigante',salamander:'Salamandra',eye:'Occhio del Vuoto',minotaur:'Minotauro'};
 // Guardiani: tutti diversi, uno ogni 5 piani, con la sua stanza a tema
 const ARCH={golem:{hp:300,dmg:18,w:2.2,h:3.7,speed:3.2},slimeKing:{hp:280,dmg:16,w:3.0,h:2.6,speed:3},skelKing:{hp:330,dmg:20,w:1.5,h:3.8,speed:3},
@@ -5925,6 +5927,8 @@ function spawnEnemy(type,o){
     fly:!!A.fly,ghost:boss||!!A.fly||type==='brute'||type==='minotaur',isEnemy:true,onGround:false,hopT:rand(0.4,1),seed:Math.random()*10,dead:false,lastDir:1,
     elite,summon:!!o.summon,sc:elite?1.2:1,color:boss?def.color:A.color,eff:boss?def.eff:null,phase:1,blockN:0,adds:0};
   {const ck=(boss||G.horde||G.pvp)?1:crowdK(f);if(ck>1){e.hp*=ck;e.dmg*=1+(ck-1)*0.5;}e.crowd=ck;}   // meno nemici ma più forti
+  // primi piani (1-4) più morbidi: un eroe appena creato, senza equipaggiamento, deve arrivare almeno al primo guardiano
+  if(!boss&&!G.horde&&!G.pvp&&f<5){e.hp*=0.85;e.dmg*=0.7;}
   if(G.event==='giganti'&&!boss&&G.scene==='tower'){e.sc*=1.4;e.w*=1.25;e.h*=1.3;if(!o.summon){e.hp*=1.9;e.dmg*=1.2;e.speed*=0.85;}}   // piano dei giganti
   e.spawnMax=e.spawnT;e.maxHp=e.hp;
   e.parts=boss?bossParts(def):enemyParts(type);
@@ -6911,7 +6915,8 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(Math.random()<0.204)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(f===3||f===4||Math.random()<0.204)placeBandage();   // ai piani 3 e 4 una benda c'è sempre
+    if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -10762,7 +10767,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795040989';
+const BUILD_ID='1795041426';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));

@@ -85,6 +85,8 @@ function spawnEnemy(type,o){
     fly:!!A.fly,ghost:boss||!!A.fly||type==='brute'||type==='minotaur',isEnemy:true,onGround:false,hopT:rand(0.4,1),seed:Math.random()*10,dead:false,lastDir:1,
     elite,summon:!!o.summon,sc:elite?1.2:1,color:boss?def.color:A.color,eff:boss?def.eff:null,phase:1,blockN:0,adds:0};
   {const ck=(boss||G.horde||G.pvp)?1:crowdK(f);if(ck>1){e.hp*=ck;e.dmg*=1+(ck-1)*0.5;}e.crowd=ck;}   // meno nemici ma più forti
+  // primi piani (1-4) più morbidi: un eroe appena creato, senza equipaggiamento, deve arrivare almeno al primo guardiano
+  if(!boss&&!G.horde&&!G.pvp&&f<5){e.hp*=0.85;e.dmg*=0.7;}
   if(G.event==='giganti'&&!boss&&G.scene==='tower'){e.sc*=1.4;e.w*=1.25;e.h*=1.3;if(!o.summon){e.hp*=1.9;e.dmg*=1.2;e.speed*=0.85;}}   // piano dei giganti
   e.spawnMax=e.spawnT;e.maxHp=e.hp;
   e.parts=boss?bossParts(def):enemyParts(type);

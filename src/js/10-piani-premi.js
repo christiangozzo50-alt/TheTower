@@ -306,7 +306,8 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(Math.random()<0.204)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(f===3||f===4||Math.random()<0.204)placeBandage();   // ai piani 3 e 4 una benda c'è sempre
+    if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}

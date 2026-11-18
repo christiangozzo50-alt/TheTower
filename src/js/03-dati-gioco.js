@@ -49,6 +49,8 @@ const TYPES={
   eye:   {hp:100,dmg:17,speed:2.6,w:1.2,h:1.2, color:0xc23a7a,xp:15,from:54,fly:true},
   minotaur:{hp:320,dmg:30,speed:2.3,w:1.5,h:3.0,color:0x6a3f2a,xp:26,from:63},
 };
+// i nemici nuovi arrivano più lentamente (circa il 50% di piani in più); mai su un piano di guardiano o santuario
+for(const k in TYPES){let n=Math.round(1+(TYPES[k].from-1)*1.5);while(n>1&&(isBossFloor(n)||isSafeFloor(n)))n++;TYPES[k].from=n;}
 const TYPE_NAMES={archer:'Arciere scheletro',knight:'Cavaliere nero',imp:'Folletto esplosivo',wraith:'Spettro',brute:'Bruto',shaman:'Negromante',guard:'Guardia scheletro',mage:'Stregone',bat:'Pipistrello',spider:'Ragno delle cripte',fungus:'Fungo velenoso',gargoyle:'Gargoyle',shade:'Ombra',scorpion:'Scorpione gigante',salamander:'Salamandra',eye:'Occhio del Vuoto',minotaur:'Minotauro'};
 // Guardiani: tutti diversi, uno ogni 5 piani, con la sua stanza a tema
 const ARCH={golem:{hp:300,dmg:18,w:2.2,h:3.7,speed:3.2},slimeKing:{hp:280,dmg:16,w:3.0,h:2.6,speed:3},skelKing:{hp:330,dmg:20,w:1.5,h:3.8,speed:3},
