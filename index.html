@@ -10680,7 +10680,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795027600';
+const BUILD_ID='1795033870';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -12929,7 +12929,8 @@ setInterval(()=>{if((!SPB.conns.length&&!RL.on)||document.hidden)return;SPB.tk++
   const pt=Math.round(performance.now());
   try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);s.pt=pt;specSend(s);if(RL.on){RL.s.push(s);if(RL.s.length>6)RL.s.shift();}
       {const ml=specMates();if(ml.length){const sm={t:'sm',l:ml,pt};specSend(sm);if(RL.on){RL.ms.push(sm);if(RL.ms.length>6)RL.ms.shift();}}}
-      if(!G.pvp){const e=mpSnap(),pj=specProjMsg();e.pt=pt;pj.pt=pt;specSend(e);specSend(pj);if(RL.on){RL.pj=pj;if(SPB.tk%2===0){RL.es.push(e);if(RL.es.length>4)RL.es.shift();}}
+      if(!G.pvp&&SPB.tk%2===0){const e=mpSnap(),pj=specProjMsg();e.pt=pt;pj.pt=pt;specSend(e);specSend(pj);if(RL.on){RL.pj=pj;RL.es.push(e);if(RL.es.length>4)RL.es.shift();}}
+      if(!G.pvp){
         if(FXQ.length){const l=FXQ.splice(0);specSend({t:'fx',f:G.floor,l,pt});if(RL.on)RL.fx.push(...l);}
         if(SPB.tk%5===0){const cb=specPropsMsg();cb.pt=pt;specSend(cb);if(RL.on)RL.cb=cb;}}}
     {const k=specInRun()?JSON.stringify(G.lv||{}):'{}';if(k!==SPB.lvKey){SPB.lvKey=k;specSend({t:'lv',lv:JSON.parse(k),pt});}}
@@ -12982,8 +12983,8 @@ function specProjMsg(){const l=[];for(const p of G.projs){if(p.dead||p.sid==null
 
 /* ---------- chi guarda: rifà effetti e proiettili ---------- */
 const SPX={pj:new Map(),zones:[]};
-function specFxPlay(m){if(!SPEC.built||G.state!=='spec'||m.f!==G.floor)return;const R=SPEC.R;
-  for(const e of m.l){const c=e[0],a=e.slice(1);
+function specFxPlay(m){if(!SPEC.built||G.state!=='spec'||m.f!==G.floor)return;const R=SPEC.R;let k=0;
+  for(const e of m.l){const c=e[0];if(++k>90&&c!=='A')continue;const a=e.slice(1);   // con tanti nemici: al massimo 90 effetti per pacchetto (le mosse speciali sempre)
     try{switch(c){
       case 'A':specAbil(R,a[0],a[1],a[2],a[3],a[4]);break;
       case 'z':{const mm=new THREE.Mesh(bloodGeo,new THREE.MeshBasicMaterial({color:a[2],transparent:true,opacity:0.35,depthWrite:false,blending:THREE.AdditiveBlending}));
@@ -13095,12 +13096,14 @@ const SPQ=[];
 function specQueue(m){if(!SPEC.on||!m)return;
   if(typeof m.pt!=='number'){specMsg(m);return;}   // da una versione vecchia del gioco: subito
   const now=performance.now(),c=now-m.pt;
-  if(SPEC.off==null||c<SPEC.off)SPEC.off=c;else SPEC.off+=Math.min(0.5,c-SPEC.off);   // si segue la consegna più veloce; piccolo recupero se gli orologi si spostano
-  const ex=c-SPEC.off;SPEC.jit=SPEC.jit==null?ex:Math.max(ex,SPEC.jit*0.996);
+  if(SPEC.off==null)SPEC.off=c;else if(c<SPEC.off)SPEC.off-=Math.min(4,SPEC.off-c);else SPEC.off+=Math.min(0.5,c-SPEC.off);   // l'orologio si aggiusta piano: niente scatti all'inizio
+  const ex=Math.max(0,c-SPEC.off);SPEC.jit=SPEC.jit==null?ex:Math.max(ex,SPEC.jit*0.996);
   SPEC.pd=clamp(Math.round(220+SPEC.jit*1.2),450,1300);                                   // almeno mezzo secondo, di più se la rete è irregolare
   const at=Math.max(m.pt+SPEC.off+SPEC.pd,SPEC.lastAt||0);SPEC.lastAt=at;SPQ.push({at,m});}
-function specFlush(){if(!SPEC.on){SPQ.length=0;return;}const now=performance.now();
-  while(SPQ.length&&SPQ[0].at<=now){const {m}=SPQ.shift();try{specMsg(m);}catch(e){console.warn('spettatore',e);}if(!SPEC.on){SPQ.length=0;return;}}}
+function specFlush(){if(!SPEC.on){SPQ.length=0;return;}const now=performance.now();let n=0;while(n<SPQ.length&&SPQ[n].at<=now)n++;if(!n)return;
+  const due=SPQ.splice(0,n),last={};due.forEach((x,i)=>{const t=x.m.t;if(t==='e'||t==='pj'||t==='cb')last[t]=i;});
+  for(let i=0;i<due.length;i++){const m=due[i].m;if((m.t==='e'||m.t==='pj'||m.t==='cb')&&last[m.t]!==i)continue;   // nei picchi basta l'ultima foto
+    try{specMsg(m);}catch(e){console.warn('spettatore',e);}if(!SPEC.on){SPQ.length=0;return;}}}
 setInterval(specFlush,25);
 function specMsg(m){
   if(m.t==='full'){specExit('Troppi spettatori',`${SPEC.name} ha già ${SPEC_MAX} persone che lo guardano`);return;}
@@ -13120,7 +13123,7 @@ function specMsg(m){
   if(m.t==='pj'){specProjSnap(m);return;}
   if(m.t==='cb'){specProps(m);return;}}
 function specFloor(f){
-  G.floor=f;G.pvp=false;G.tutorial=false;specFxClear();clearActors();SPEC.doorFl=0;SPEC.endT=0;SPEC.emap=new Map();G.boss=null;G.bi=null;
+  G.floor=f;G.pvp=false;G.tutorial=false;specFxClear();clearActors();SPEC.doorFl=0;SPEC.endT=0;SPEC.emap=new Map();SPEC.dead=new Set();SPEC.dfl=f;G.boss=null;G.bi=null;
   try{buildLevel(f);}catch(e){console.warn('spettatore piano',e);}
   try{towerMood(f);}catch(e){}
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);if(G.safe){try{buildSafeRoom();}catch(e){}}
@@ -13155,15 +13158,17 @@ function specTip(id){SPEC.tipId=id||null;const tip=$('spTip');if(!tip)return;
   tip.classList.toggle('evo',!!u.evo);tip.hidden=false;}
 // i nemici arrivano da chi scala: qui sono solo "marionette", e non danno niente a chi guarda
 function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)return;
-  G.queue=s.q.slice();G.spawnT=1e9;const seen=new Set();
-  for(const a of s.l){const id=a[0];seen.add(id);let e=SPEC.emap.get(id);if(e&&e.dead)continue;
-    if(!e){try{e=_spawnEnemy(a[1],{x:a[2],summon:true});}catch(err){e=null;}if(!e)continue;e.net=true;e.id=id;e.summon=!!a[21];e.x=a[2];e.y=a[3];SPEC.emap.set(id,e);
+  G.queue=s.q.slice();G.spawnT=1e9;const seen=new Set();let budget=3;
+  if(SPEC.dfl!==G.floor){SPEC.dfl=G.floor;SPEC.dead=new Set();SPEC.emap.clear();}
+  for(const a of s.l){const id=a[0];seen.add(id);if(SPEC.dead.has(id))continue;let e=SPEC.emap.get(id);
+    if(!e){if(budget<=0)continue;budget--;try{e=_spawnEnemy(a[1],{x:a[2],summon:true});}catch(err){e=null;}if(!e)continue;e.net=true;e.id=id;e.summon=!!a[21];e.x=a[2];e.y=a[3];SPEC.emap.set(id,e);
       if(a[20]){e.elite=true;e.sc=1.2;for(const m of e.parts.mats){m.userData.baseE=ELITE_GOLD;m.userData.baseI=0.25;}}}
     e.nx=a[2];e.ny=a[3];e.vx=a[4];e.vy=a[5];bufPush(e,{t:performance.now(),x:a[2],y:a[3],z:0,vx:a[4],vy:a[5]});e.face=a[6];e.state=a[7];e.t=a[8];e.warn=a[9];e.hp=a[10];e.maxHp=a[11];e.stunT=a[12];e.slowT=a[13];e.onGround=!!a[14];e.phased=!!a[15];
     e.castT=a[16];e.spawnT=a[17];e.hitstun=a[18];e.lastDir=a[19];e.n=a[22];e.phase=a[23];e.landT=a[24];e.hopT=a[25];if(a[26])e.flash=Math.max(e.flash,0.06);e.mode=a[27];e.ename=a[28]||'';e.emod=a[29]||'';}
-  for(const e of G.enemies)if(e.net&&!e.dead&&!seen.has(e.id))specKill(e);
+  let gone=0;for(const e of G.enemies)if(e.net&&!e.dead&&!seen.has(e.id)&&SPEC.emap.has(e.id))specKill(e);
+  for(const e of G.enemies)if(e.dead)gone++;if(gone>8)G.enemies=G.enemies.filter(e=>!e.dead);
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
-function specKill(e){e.dead=true;
+function specKill(e){e.dead=true;if(e.id!=null){SPEC.emap.delete(e.id);if(SPEC.dead)SPEC.dead.add(e.id);}
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
 function specExit(t,s){if(!SPEC.on)return;specRelayStop();clearTimeout(SPEC.rlT);SPEC.mode=null;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
