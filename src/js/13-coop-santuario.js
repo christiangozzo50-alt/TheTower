@@ -349,7 +349,8 @@ updHeroVisual=function(dt){if(MP.players.size||HUB.players.size)mpDrawRemote(dt)
 /* ---------- invio periodico ---------- */
 setInterval(()=>{
   HUB.tick=(HUB.tick||0)+1;
-  if(HUB.on&&HUB.tick%2===0){const s=mpMyState();s.t='hs';s.sid=HUB.sid;s.n=MP.name();s.code=MP.live()?MP.code:'';
+  if(HUB.on&&HUB.floor!==0&&HUB.tick%2===0){const s=mpMyState();   // nel seminterrato (stanza 0) solo chat, niente posizioni
+    s.t='hs';s.sid=HUB.sid;s.n=MP.name();s.code=MP.live()?MP.code:'';
     if(HUB.lead)HUB.bcast(s);else if(HUB.conn&&HUB.conn.open){try{HUB.conn.send(s);}catch(e){}}}
   if(!MP.live())return;
   MP.send(mpMyState());
@@ -389,7 +390,7 @@ HUB.bcast=(m,except)=>{for(const c of HUB.members)if(c.open&&c!==except){try{c.s
 function hubJoin(f){if(HUB.want&&HUB.floor===f)return;hubLeave();HUB.floor=f;HUB.want=true;mpLib(()=>{if(HUB.want&&HUB.floor===f&&!HUB.peer)hubClaim(f);});}
 function hubClaim(f){let p;try{p=new Peer(hubId(f));}catch(e){return;}HUB.peer=p;
   p.on('open',()=>{if(HUB.peer!==p)return;HUB.on=true;HUB.lead=true;});
-  p.on('connection',c=>{c.on('open',()=>{if(HUB.members.length>=11){c.close();return;}HUB.members.push(c);});
+  p.on('connection',c=>{c.on('open',()=>{if(HUB.members.length>=(HUB.floor===0?40:11)){c.close();return;}HUB.members.push(c);});
     c.on('data',m=>{try{hubMsg(m,c);}catch(e){}});
     c.on('close',()=>{HUB.members=HUB.members.filter(x=>x!==c);if(c.sid){HUB.bcast({t:'hl',sid:c.sid});hubGone(c.sid);}});c.on('error',()=>{});});
   p.on('error',e=>{if(HUB.peer!==p)return;if(e&&e.type==='unavailable-id'){try{p.destroy();}catch(_){}HUB.peer=null;hubMember(f);}});}
@@ -408,7 +409,9 @@ function hubGone(sid){const R=HUB.players.get(sid);if(!R)return;mpRemoveHero(R);
 /* ---------- Chat del santuario: solo tra chi è su questo piano, viaggia sul collegamento del santuario, non viene salvata da nessuna parte ---------- */
 const SC={last:0,rate:new Map(),open:false,cnt:-1,on:false};
 const scClean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g,' ').replace(/\s+/g,' ').trim().slice(0,n);
-const scAvail=()=>G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play';
+// chat del seminterrato: stessa chat, nella stanza 0 del santuario, per tutti i giocatori che sono nel seminterrato
+const scCellar=()=>G.scene==='cellar'&&HUB.want&&HUB.floor===0;
+const scAvail=()=>(G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play')||(scCellar()&&G.state==='cellar');
 function scAdd(name,text,me){const box=$('scLog'),p=document.createElement('p'),b=document.createElement('b'),s=document.createElement('span');
   if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);box.appendChild(p);while(box.children.length>30)box.firstChild.remove();box.scrollTop=box.scrollHeight;
   setTimeout(()=>p.classList.add('old'),14000);}
@@ -422,12 +425,13 @@ function scSend(){const t=scClean($('scIn').value,100),now=performance.now();if(
 function scBubble(name,sid,text){const R=HUB.players.get(sid)||[...MP.players.values()].find(r=>r.name===name);if(!R||!R.tag)return;
   if(R.bub)R.bub.remove();const d=document.createElement('div');d.className='sc-bub';d.textContent=text;R.tag.appendChild(d);R.bub=d;clearTimeout(R.bubT);R.bubT=setTimeout(()=>{d.remove();if(R.bub===d)R.bub=null;},5500);}
 function scRecv(m,c){if(!m||typeof m.x!=='string'||typeof m.sid!=='string'||m.sid===HUB.sid)return;if(c&&c.sid&&c.sid!==m.sid)return;
-  if(!G.safe||m.fl!==G.floor||HUB.floor!==G.floor)return;
+  if(G.scene==='cellar'){if(m.fl!==0||!scCellar())return;}else if(!G.safe||m.fl!==G.floor||HUB.floor!==G.floor)return;
   const t=performance.now(),a=(SC.rate.get(m.sid)||[]).filter(x=>t-x<5000);if(a.length>=4)return;a.push(t);SC.rate.set(m.sid,a);
   const text=scClean(m.x,100),name=scClean(m.n,14)||'Avventuriero';if(!text)return;
   if(c)HUB.bcast({t:'hc',sid:m.sid,n:name,x:text,fl:m.fl},c);
   scAdd(name,text,false);scBubble(name,m.sid,text);sfx('ui');}
 function schatTick(){const av=scAvail(),el=$('sChat');if(!el)return;if(av!==SC.on){SC.on=av;el.hidden=!av;if(!av)scClose();}if(!av)return;
+  if(scCellar()){if(SC.cnt!==-2){SC.cnt=-2;$('scWho').textContent='seminterrato · tutti i giocatori';}return;}
   const n=HUB.players.size+[...MP.players.values()].filter(R=>R.sc==='tower'&&R.fl===G.floor).length;
   if(n!==SC.cnt){SC.cnt=n;$('scWho').textContent=n?`${n} qui con te`:'Solo tu, per ora';}}
 $('scBtn').addEventListener('click',()=>scOpen());
@@ -435,7 +439,8 @@ $('scForm').addEventListener('submit',e=>{e.preventDefault();scSend();});
 $('scIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();scClose();}});
 $('scIn').addEventListener('keyup',e=>e.stopPropagation());
 $('scIn').addEventListener('blur',()=>{setTimeout(()=>{if(SC.open&&document.activeElement!==$('scIn')&&!$('scSend').matches(':active'))scClose();},120);});
-addEventListener('keydown',e=>{if(e.code==='Enter'&&!e.repeat&&!SC.open&&scAvail()&&opDone&&document.activeElement.tagName!=='INPUT'){e.preventDefault();e.stopImmediatePropagation();scOpen();}},true);
+addEventListener('keydown',e=>{if(e.code==='Enter'&&!e.repeat&&!SC.open&&scAvail()&&opDone&&document.activeElement.tagName!=='INPUT'&&!(G.scene==='cellar'&&!$('prompt').hidden)){   // vicino a mercante, fabbro ecc. Invio resta "usa"
+e.preventDefault();e.stopImmediatePropagation();scOpen();}},true);
 function hubMsg(m,c){
   if(m&&m.t==='hc'){scRecv(m,c);return;}
   if(m.t==='hs'){if(m.sid===HUB.sid)return;if(c){c.sid=m.sid;HUB.bcast(m,c);}
@@ -449,6 +454,9 @@ function hubMsg(m,c){
 }
 const _enterCellar=enterCellar;
 enterCellar=function(){hubLeave();return _enterCellar();};
+// nel seminterrato si entra nella stanza 0 (solo chat); uscendo se ne esce
+setInterval(()=>{const want=G.scene==='cellar'&&!G.tutorial&&typeof fbOn==='function'&&fbOn()&&store.get('nameok',false);
+  if(want&&!(HUB.want&&HUB.floor===0))hubJoin(0);else if(!want&&HUB.want&&HUB.floor===0)hubLeave();},2000);
 
 /* ---------- letto del santuario ---------- */
 const BED_X=-1.6;
