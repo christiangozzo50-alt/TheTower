@@ -153,6 +153,16 @@ const saveInv=()=>store.set('inv',INV);
 // le armi già trovate col potere Vampiro che non sono mitiche ricevono un altro potere (ora cura solo la Mitica)
 function fixVamp(w){if(w&&!w.slot&&w.effect==='vampiro'&&w.rarity!==5){w.effect=pick(['fuoco','gelo','fulmine']);return true;}return false;}
 if(INV.items.map(i=>fixVamp(i.w)).some(Boolean))saveInv();
+// equipaggiamento con statistiche impossibili (es. +40.000 vita su un leggendario, da salvataggi vecchi): si riportano ai valori giusti per la sua rarità
+function fixGearStats(g){if(!g||!g.slot||!GEAR[g.slot]||!RARITY[g.rarity])return false;const mul=RARITY[g.rarity].mul,max=GEAR[g.slot].make(mul,1+0.04*99),
+    ok=GEAR[g.slot].make(mul,1+0.04*(clamp(UNL.best||1,1,100)-1));let ch=false;
+  for(const k of ['hp','armor','atkSpd','crit']){if(!(k in max)){if(k in g){delete g[k];ch=true;}continue;}
+    if(typeof g[k]!=='number'||!isFinite(g[k])||g[k]<0||g[k]>max[k]*1.1){g[k]=ok[k];ch=true;}}
+  return ch;}
+if(INV.items.map(i=>fixGearStats(i.g)).some(Boolean))saveInv();
+// armi migliorate al fabbro prima della correzione: ricevono il potere e la portata che spettano alla loro rarità
+if(INV.items.map(i=>{const w=i.w;if(!w)return false;let ch=false;if(w.rarity>=4&&!w.bonusReach){w.bonusReach=true;ch=true;}
+  if(w.rarity>=2&&!w.effect){w.effect=pick(w.rarity===5?['fuoco','gelo','fulmine','vampiro']:w.rarity>=3?['fuoco','gelo','fulmine']:['fuoco','gelo']);ch=true;}return ch;}).some(Boolean))saveInv();
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
 // un oggetto sta addosso a una sola classe alla volta

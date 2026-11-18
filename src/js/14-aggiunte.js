@@ -12,7 +12,7 @@ const clearSave=()=>store.set('runsave',null);
 function resumeRun(sv){
   const i=CLASSES.findIndex(c=>c.id===sv.cls);if(i>=0&&G.cls.id!==sv.cls)setClass(i);
   RESUMING=true;_startRun();RESUMING=false;
-  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;G.weapon=sv.weapon||G.weapon;fixVamp(G.weapon);resetStats();
+  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;for(const k in G.gear)fixGearStats(G.gear[k]);G.weapon=sv.weapon||G.weapon;fixVamp(G.weapon);resetStats();
   G.lv=sv.lv||{};for(const u of UPG){if(u.id==='heal')continue;const n=Math.min(u.max,G.lv[u.id]||0);G.lv[u.id]=n;for(let k=0;k<n;k++)u.apply();}
   attachWeapon();refreshGearVisual();
   Object.assign(G,{kills:sv.kills||0,runTime:sv.runTime||0,runXp:sv.runXp||0,upKills:sv.upKills||0,upNeed:sv.upNeed||14});

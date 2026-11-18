@@ -428,7 +428,10 @@ $('fgBulk').addEventListener('click',e=>{const b=e.target.closest('.fg-b');if(!b
     onYes(){G.state=st;bulkDo(r,true);},onNo(){G.state=st;bulkDo(r,false);}});});
 function upgradeItem(o){const r0=o.rarity,r1=r0+1,k=RARITY[r1].mul/RARITY[r0].mul;o.rarity=r1;
   if(o.slot){for(const key in o)if(typeof o[key]==='number'&&key!=='rarity')o[key]=key==='hp'?Math.round(o[key]*k):+(o[key]*k).toFixed(3);const nm=GEAR[o.slot].names[r1];o.name=nm+(o.set?' '+SETS[o.set].n:'');}
-  else{if(typeof o.dmg==='number')o.dmg=Math.round(o.dmg*k);const m=WMODELS[o.type]&&WMODELS[o.type][o.v||0];if(m&&m.n)o.name=`${m.n} ${pick(RSUF[r1])}`;}}
+  else{if(typeof o.dmg==='number')o.dmg=Math.round(o.dmg*k);
+    // migliorata al fabbro deve avere quello che ha un'arma trovata della stessa rarità: potere (da Rara), portata +15% (da Leggendaria); il Vampiro resta solo alle Mitiche
+    if(r1>=4)o.bonusReach=true;if(o.effect==='vampiro'&&r1!==5)o.effect=null;
+    if(r1>=2&&!o.effect)o.effect=pick(r1===5?['fuoco','gelo','fulmine','vampiro']:r1>=3?['fuoco','gelo','fulmine']:['fuoco','gelo']);const m=WMODELS[o.type]&&WMODELS[o.type][o.v||0];if(m&&m.n)o.name=`${m.n} ${pick(RSUF[r1])}`;}}
 $('fgList').addEventListener('click',e=>{const b=e.target.closest('.fg-it');if(!b)return;fgSel=b.dataset.id;sfx('ui');renderForge();});
 $('fgClose').onclick=()=>{sfx('ui');closeForge();};
 

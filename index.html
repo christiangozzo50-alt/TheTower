@@ -6624,6 +6624,16 @@ const saveInv=()=>store.set('inv',INV);
 // le armi già trovate col potere Vampiro che non sono mitiche ricevono un altro potere (ora cura solo la Mitica)
 function fixVamp(w){if(w&&!w.slot&&w.effect==='vampiro'&&w.rarity!==5){w.effect=pick(['fuoco','gelo','fulmine']);return true;}return false;}
 if(INV.items.map(i=>fixVamp(i.w)).some(Boolean))saveInv();
+// equipaggiamento con statistiche impossibili (es. +40.000 vita su un leggendario, da salvataggi vecchi): si riportano ai valori giusti per la sua rarità
+function fixGearStats(g){if(!g||!g.slot||!GEAR[g.slot]||!RARITY[g.rarity])return false;const mul=RARITY[g.rarity].mul,max=GEAR[g.slot].make(mul,1+0.04*99),
+    ok=GEAR[g.slot].make(mul,1+0.04*(clamp(UNL.best||1,1,100)-1));let ch=false;
+  for(const k of ['hp','armor','atkSpd','crit']){if(!(k in max)){if(k in g){delete g[k];ch=true;}continue;}
+    if(typeof g[k]!=='number'||!isFinite(g[k])||g[k]<0||g[k]>max[k]*1.1){g[k]=ok[k];ch=true;}}
+  return ch;}
+if(INV.items.map(i=>fixGearStats(i.g)).some(Boolean))saveInv();
+// armi migliorate al fabbro prima della correzione: ricevono il potere e la portata che spettano alla loro rarità
+if(INV.items.map(i=>{const w=i.w;if(!w)return false;let ch=false;if(w.rarity>=4&&!w.bonusReach){w.bonusReach=true;ch=true;}
+  if(w.rarity>=2&&!w.effect){w.effect=pick(w.rarity===5?['fuoco','gelo','fulmine','vampiro']:w.rarity>=3?['fuoco','gelo','fulmine']:['fuoco','gelo']);ch=true;}return ch;}).some(Boolean))saveInv();
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
 // un oggetto sta addosso a una sola classe alla volta
@@ -8580,7 +8590,7 @@ const clearSave=()=>store.set('runsave',null);
 function resumeRun(sv){
   const i=CLASSES.findIndex(c=>c.id===sv.cls);if(i>=0&&G.cls.id!==sv.cls)setClass(i);
   RESUMING=true;_startRun();RESUMING=false;
-  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;G.weapon=sv.weapon||G.weapon;fixVamp(G.weapon);resetStats();
+  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;for(const k in G.gear)fixGearStats(G.gear[k]);G.weapon=sv.weapon||G.weapon;fixVamp(G.weapon);resetStats();
   G.lv=sv.lv||{};for(const u of UPG){if(u.id==='heal')continue;const n=Math.min(u.max,G.lv[u.id]||0);G.lv[u.id]=n;for(let k=0;k<n;k++)u.apply();}
   attachWeapon();refreshGearVisual();
   Object.assign(G,{kills:sv.kills||0,runTime:sv.runTime||0,runXp:sv.runXp||0,upKills:sv.upKills||0,upNeed:sv.upNeed||14});
@@ -9302,7 +9312,10 @@ $('fgBulk').addEventListener('click',e=>{const b=e.target.closest('.fg-b');if(!b
     onYes(){G.state=st;bulkDo(r,true);},onNo(){G.state=st;bulkDo(r,false);}});});
 function upgradeItem(o){const r0=o.rarity,r1=r0+1,k=RARITY[r1].mul/RARITY[r0].mul;o.rarity=r1;
   if(o.slot){for(const key in o)if(typeof o[key]==='number'&&key!=='rarity')o[key]=key==='hp'?Math.round(o[key]*k):+(o[key]*k).toFixed(3);const nm=GEAR[o.slot].names[r1];o.name=nm+(o.set?' '+SETS[o.set].n:'');}
-  else{if(typeof o.dmg==='number')o.dmg=Math.round(o.dmg*k);const m=WMODELS[o.type]&&WMODELS[o.type][o.v||0];if(m&&m.n)o.name=`${m.n} ${pick(RSUF[r1])}`;}}
+  else{if(typeof o.dmg==='number')o.dmg=Math.round(o.dmg*k);
+    // migliorata al fabbro deve avere quello che ha un'arma trovata della stessa rarità: potere (da Rara), portata +15% (da Leggendaria); il Vampiro resta solo alle Mitiche
+    if(r1>=4)o.bonusReach=true;if(o.effect==='vampiro'&&r1!==5)o.effect=null;
+    if(r1>=2&&!o.effect)o.effect=pick(r1===5?['fuoco','gelo','fulmine','vampiro']:r1>=3?['fuoco','gelo','fulmine']:['fuoco','gelo']);const m=WMODELS[o.type]&&WMODELS[o.type][o.v||0];if(m&&m.n)o.name=`${m.n} ${pick(RSUF[r1])}`;}}
 $('fgList').addEventListener('click',e=>{const b=e.target.closest('.fg-it');if(!b)return;fgSel=b.dataset.id;sfx('ui');renderForge();});
 $('fgClose').onclick=()=>{sfx('ui');closeForge();};
 
@@ -10583,7 +10596,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795019944';
+const BUILD_ID='1795020320';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
