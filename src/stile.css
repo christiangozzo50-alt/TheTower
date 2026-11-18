@@ -1122,3 +1122,24 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @media (hover:none),(pointer:coarse){
   #sChat.cellar.open{top:6px;bottom:auto;display:flex;flex-direction:column-reverse}
   #sChat.cellar.open #scLog{max-height:44vh;margin:6px 0 0;font-size:14px}}
+
+/* ---------- apertura casse più epica in base alla rarità (data-tier: 1 Epica · 2 Leggendaria · 3 Mitica) ---------- */
+#crateFx[data-tier="1"] .cf-rays{animation-duration:10s}
+#crateFx[data-tier="2"] .cf-rays{animation-duration:7s;filter:brightness(1.35)}
+#crateFx[data-tier="3"] .cf-rays{animation-duration:4.5s;filter:brightness(1.6) saturate(1.3)}
+#crateFx[data-tier="2"] .cf-glow,#crateFx[data-tier="3"] .cf-glow{inset:-30%}
+#crateFx.charge{background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--rc) 30%,rgba(10,6,16,.9)),rgba(2,1,4,.99));transition:background .5s}
+#crateFx.charge .cf-stage{animation:cf-charge .12s linear infinite}
+@keyframes cf-charge{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-2px)}}
+#crateFx.shake .cf-stage{animation:cf-shake .5s cubic-bezier(.36,.07,.19,.97)}
+#crateFx[data-tier="2"].shake .cf-stage{animation:cf-shake .7s cubic-bezier(.36,.07,.19,.97)}
+#crateFx[data-tier="3"].shake .cf-stage{animation:cf-shake 1s cubic-bezier(.36,.07,.19,.97)}
+@keyframes cf-shake{0%,100%{transform:translate(0,0) rotate(0)}10%{transform:translate(-9px,4px) rotate(-1.5deg)}20%{transform:translate(8px,-5px) rotate(1.5deg)}30%{transform:translate(-7px,3px) rotate(-1deg)}45%{transform:translate(5px,-2px) rotate(.6deg)}60%{transform:translate(-3px,1px)}80%{transform:translate(1px,0)}}
+.cf-ban{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;white-space:nowrap;font-family:var(--f-display);font-size:clamp(34px,8vw,78px);color:#fff;letter-spacing:.06em;
+  text-shadow:0 0 0 #000,4px 4px 0 #000,0 0 26px var(--rc),0 0 60px var(--rc);-webkit-text-stroke:2px var(--rc)}
+#crateFx.ban .cf-ban{animation:cf-ban 2.2s cubic-bezier(.2,1.5,.4,1) .15s forwards}
+#crateFx[data-tier="3"] .cf-ban{background:linear-gradient(90deg,#ff5470,#ffd27a,#7ff0e4,#c27bff,#ff5470);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;animation:none}
+#crateFx[data-tier="3"].ban .cf-ban{animation:cf-ban 2.4s cubic-bezier(.2,1.5,.4,1) .15s forwards,cf-shimmer 1.2s linear infinite}
+@keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
+@keyframes cf-shimmer{to{background-position:300% 0}}
+@media (prefers-reduced-motion:reduce){#crateFx.shake .cf-stage,#crateFx.charge .cf-stage{animation:none}}

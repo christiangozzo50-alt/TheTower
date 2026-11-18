@@ -1130,6 +1130,27 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @media (hover:none),(pointer:coarse){
   #sChat.cellar.open{top:6px;bottom:auto;display:flex;flex-direction:column-reverse}
   #sChat.cellar.open #scLog{max-height:44vh;margin:6px 0 0;font-size:14px}}
+
+/* ---------- apertura casse più epica in base alla rarità (data-tier: 1 Epica · 2 Leggendaria · 3 Mitica) ---------- */
+#crateFx[data-tier="1"] .cf-rays{animation-duration:10s}
+#crateFx[data-tier="2"] .cf-rays{animation-duration:7s;filter:brightness(1.35)}
+#crateFx[data-tier="3"] .cf-rays{animation-duration:4.5s;filter:brightness(1.6) saturate(1.3)}
+#crateFx[data-tier="2"] .cf-glow,#crateFx[data-tier="3"] .cf-glow{inset:-30%}
+#crateFx.charge{background:radial-gradient(ellipse at 50% 55%,color-mix(in srgb,var(--rc) 30%,rgba(10,6,16,.9)),rgba(2,1,4,.99));transition:background .5s}
+#crateFx.charge .cf-stage{animation:cf-charge .12s linear infinite}
+@keyframes cf-charge{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,1px)}50%{transform:translate(2px,-1px)}75%{transform:translate(-1px,-2px)}}
+#crateFx.shake .cf-stage{animation:cf-shake .5s cubic-bezier(.36,.07,.19,.97)}
+#crateFx[data-tier="2"].shake .cf-stage{animation:cf-shake .7s cubic-bezier(.36,.07,.19,.97)}
+#crateFx[data-tier="3"].shake .cf-stage{animation:cf-shake 1s cubic-bezier(.36,.07,.19,.97)}
+@keyframes cf-shake{0%,100%{transform:translate(0,0) rotate(0)}10%{transform:translate(-9px,4px) rotate(-1.5deg)}20%{transform:translate(8px,-5px) rotate(1.5deg)}30%{transform:translate(-7px,3px) rotate(-1deg)}45%{transform:translate(5px,-2px) rotate(.6deg)}60%{transform:translate(-3px,1px)}80%{transform:translate(1px,0)}}
+.cf-ban{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;white-space:nowrap;font-family:var(--f-display);font-size:clamp(34px,8vw,78px);color:#fff;letter-spacing:.06em;
+  text-shadow:0 0 0 #000,4px 4px 0 #000,0 0 26px var(--rc),0 0 60px var(--rc);-webkit-text-stroke:2px var(--rc)}
+#crateFx.ban .cf-ban{animation:cf-ban 2.2s cubic-bezier(.2,1.5,.4,1) .15s forwards}
+#crateFx[data-tier="3"] .cf-ban{background:linear-gradient(90deg,#ff5470,#ffd27a,#7ff0e4,#c27bff,#ff5470);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;animation:none}
+#crateFx[data-tier="3"].ban .cf-ban{animation:cf-ban 2.4s cubic-bezier(.2,1.5,.4,1) .15s forwards,cf-shimmer 1.2s linear infinite}
+@keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
+@keyframes cf-shimmer{to{background-position:300% 0}}
+@media (prefers-reduced-motion:reduce){#crateFx.shake .cf-stage,#crateFx.charge .cf-stage{animation:none}}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -10681,7 +10702,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795037247';
+const BUILD_ID='1795037884';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -11042,30 +11063,41 @@ $('wardrobe').addEventListener('click',e=>{const b=e.target.closest('[data-skinw
   if(x.k)SSEL[id]=x.k;else{delete SSEL[id];SKINSEL[id]=x.sk;store.set('skinsel',SKINSEL);}store.set('shopskinsel',SSEL);setHero(G.cls);sfx('equip');burst(P.x,1.2,0xc7a8ff,16,3,2,0.3);renderWardrobe();},true);
 
 /* ---------- casse del negozio: cade, trema, esplode di luce del colore della rarità e mostra l'oggetto ---------- */
-const CF={m:null,raf:0,o:null,cr:null,sparks:[]};
+const CF={m:null,raf:0,o:null,cr:null,sparks:[],rings:[]};
 (function(){const d=document.createElement('section');d.className='screen';d.id='crateFx';d.hidden=true;d.innerHTML='<div class="cf-rays"></div><div class="cf-stage"><div class="cf-glow" id="cfGlow"></div><canvas id="cfCan" width="168" height="168"></canvas><div class="cf-card" id="cfCard"></div></div><canvas id="cfFx"></canvas><div id="cfFlash"></div><button class="ghost" id="cfSkip">Salta</button><button class="big" id="cfOk" hidden>Continua</button>';document.body.appendChild(d);})();
 const cfDrop=0.38;
-function crateShow(cr,o){cfClose(true);const R=RARITY[o.rarity],m=crateModel(cr.id),P_=m.userData.parts,box=$('crateFx');CF.m=m;CF.o=o;CF.cr=cr;CF.sparks=[];
-  const W=cfDrop+(1.0+Math.max(0,o.rarity-2)*0.3),fr={cx:0,cy:0.72,h:2.9,dist:9,oy:1.7},cv=$('cfCan'),gx=cv.getContext('2d'),fx=$('cfFx'),fg=fx.getContext('2d');
+function crateShow(cr,o){cfClose(true);const R=RARITY[o.rarity],m=crateModel(cr.id),P_=m.userData.parts,box=$('crateFx');CF.m=m;CF.o=o;CF.cr=cr;CF.sparks=[];CF.rings=[];
+  // più rara è, più è epica: 0 normale · 1 Epica · 2 Leggendaria · 3 Mitica e oltre
+  const tier=o.rarity>=5?3:o.rarity>=4?2:o.rarity>=3?1:0;box.dataset.tier=tier;box.classList.remove('shake','ban','charge');
+  if(!$('cfBan')){const b=document.createElement('div');b.id='cfBan';b.className='cf-ban';box.appendChild(b);}$('cfBan').textContent=R.name.toUpperCase()+'!';
+  const W=cfDrop+(1.0+Math.max(0,o.rarity-2)*0.35+(o.rarity>=5?0.5:0)),fr={cx:0,cy:0.72,h:2.9,dist:9,oy:1.7},cv=$('cfCan'),gx=cv.getContext('2d'),fx=$('cfFx'),fg=fx.getContext('2d');
   m.rotation.y=-0.5;box.style.setProperty('--rc',R.css);box.classList.remove('open','show');box.hidden=false;$('cfOk').hidden=true;$('cfSkip').hidden=false;
   $('cfCard').innerHTML=`<span class="thumb" style="--rc:${R.css};--rcg:${R.glow}">${itemPic(o,o.slot?GEAR[o.slot].icon:WTYPES[o.type].icon)}</span><span><small>${R.name}</small><b>${esc(o.name)}</b><em>Lo trovi nell'armadio</em></span>`;
   const inner=mesh(new THREE.PlaneGeometry(1.18,0.74),new THREE.MeshBasicMaterial({color:R.hex}),0,0.725,0,m,true);inner.rotation.x=-Math.PI/2;inner.visible=false;
-  const st={t:0,rat:0,burst:false,ang:0,vel:0,show:false,bt:0};CF.st=st;CF.W=W;let last=performance.now(),land=false;
+  const st={t:0,rat:0,burst:false,ang:0,vel:0,show:false,bt:0,ch:0,conf:0};CF.st=st;CF.W=W;let last=performance.now(),land=false;
   const spark=(n,sp)=>{const w=fx.width/2,h=fx.height*0.56;for(let i=0;i<n;i++){const a=Math.random()*TAU,s=(0.3+Math.random())*sp;CF.sparks.push({x:w,y:h,vx:Math.cos(a)*s,vy:Math.sin(a)*s-sp*0.55,l:0.5+Math.random()*0.8,c:Math.random()<0.6?R.css:'#ffd27a',z:2+Math.random()*3});}};
   fx.width=Math.ceil(innerWidth/2);fx.height=Math.ceil(innerHeight/2);
   const boom=()=>{st.burst=true;st.bt=0;st.ang=-0.15;st.vel=-24;P_.lock.forEach(x=>x.visible=false);inner.visible=true;box.classList.add('open');const f=$('cfFlash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');
-    spark(70+o.rarity*40,fx.height*(0.9+o.rarity*0.12));sfx('chestBurst');sfx('chest');if(o.rarity>=3)sfx('chestEpic');padRumble(0.5+o.rarity*0.12);$('cfSkip').hidden=true;};
+    spark(70+o.rarity*40,fx.height*(0.9+o.rarity*0.12));sfx('chestBurst');sfx('chest');if(o.rarity>=3)sfx('chestEpic');padRumble(0.5+o.rarity*0.12);$('cfSkip').hidden=true;
+    box.classList.remove('charge');if(tier>=1){box.classList.add('shake');CF.rings.push({t:0,d:0.8});}
+    if(tier>=2){box.classList.add('ban');setTimeout(()=>{if(CF.m!==m)return;spark(90,fx.height*1.25);CF.rings.push({t:0,d:1.1});sfx('chestBurst');padRumble(0.8);},280);}
+    if(tier>=3){st.conf=2.6;setTimeout(()=>{if(CF.m!==m)return;spark(160,fx.height*1.6);CF.rings.push({t:0,d:1.4},{t:-0.15,d:1.4});sfx('chestEpic');padRumble(1);const f=$('cfFlash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on');},640);}};
   CF.boom=()=>{if(!st.burst){st.t=Math.max(st.t,W);boom();}};
   const loop=n=>{if(!CF.m)return;CF.raf=requestAnimationFrame(loop);const dt=Math.min(0.05,(n-last)/1000);last=n;st.t+=dt;const t=st.t,sc=1;
     if(t<cfDrop){const u=t/cfDrop;m.position.y=3.2*(1-u*u);}else{if(!land){land=true;sfx('slam');spark(16,fx.height*0.35);padRumble(0.3);}m.position.y=0;}
     if(!st.burst){if(t>=cfDrop){const k=Math.min(1,(t-cfDrop)/(W-cfDrop)),q=k*k;m.position.x=Math.sin(t*63)*0.05*q;m.rotation.z=Math.sin(t*43)*0.09*q;m.scale.set(sc*(1+0.07*q),sc*(1-0.12*q),sc*(1+0.07*q));P_.lid.rotation.x=-0.16*q-Math.abs(Math.sin(t*31))*0.08*q;P_.gem.emissiveIntensity=0.5+q*4;$('cfGlow').style.opacity=0.12+q*0.5;
-        st.rat-=dt;if(st.rat<=0){st.rat=lerp(0.18,0.06,k);sfx('chestRattle');spark(1+Math.round(q*5),fx.height*0.3);}}if(t>=W){m.position.x=0;m.rotation.z=0;m.scale.setScalar(sc);boom();}}
+        if(tier>=2&&k>0.55&&!st.ch){st.ch=1;box.classList.add('charge');}
+         st.rat-=dt;if(st.rat<=0){st.rat=lerp(0.18,0.06,k);sfx('chestRattle');spark(1+Math.round(q*5),fx.height*0.3);}}if(t>=W){m.position.x=0;m.rotation.z=0;m.scale.setScalar(sc);boom();}}
     else{st.bt+=dt;const T=st.bt,b=Math.exp(-T*7),s=Math.cos(T*18)*b;st.vel+=(-2.0-st.ang)*190*dt;st.vel*=Math.exp(-11*dt);st.ang+=st.vel*dt;P_.lid.rotation.x=st.ang;m.scale.set(sc*(1-0.1*s),sc*(1+0.18*s),sc*(1-0.1*s));m.position.x=0;m.rotation.z=0;$('cfGlow').style.opacity=Math.max(0.3,0.95*Math.exp(-T*1.8));
       if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>0.32){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
     try{gx.putImageData(psShot(m,168,168,fr,false),0,0);}catch(e){}
-    fg.clearRect(0,0,fx.width,fx.height);for(const p of CF.sparks){p.l-=dt;if(p.l<=0)continue;p.vy+=fx.height*1.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;fg.globalAlpha=Math.min(1,p.l*2);fg.fillStyle=p.c;fg.fillRect(p.x|0,p.y|0,p.z|0,p.z|0);}fg.globalAlpha=1;if(CF.sparks.length>400||st.bt>3)CF.sparks=CF.sparks.filter(p=>p.l>0);};
+    fg.clearRect(0,0,fx.width,fx.height);for(const p of CF.sparks){p.l-=dt;if(p.l<=0)continue;p.vy+=fx.height*1.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;fg.globalAlpha=Math.min(1,p.l*2);fg.fillStyle=p.c;fg.fillRect(p.x|0,p.y|0,p.z|0,p.z|0);}fg.globalAlpha=1;
+     for(const g of CF.rings){g.t+=dt;if(g.t<0)continue;const u=g.t/g.d;if(u>=1)continue;fg.globalAlpha=(1-u)*0.9;fg.strokeStyle=u<0.25?'#fff':R.css;fg.lineWidth=Math.max(1,(1-u)*(6+tier*3));
+       fg.beginPath();fg.arc(fx.width/2,fx.height*0.56,u*Math.max(fx.width,fx.height)*0.8,0,TAU);fg.stroke();}fg.globalAlpha=1;
+     if(st.conf>0){st.conf-=dt;const cols=[R.css,'#ffd27a','#fff','#7ff0e4','#ff7ad9'];for(let i=0;i<4;i++)CF.sparks.push({x:Math.random()*fx.width,y:-6,vx:(Math.random()-0.5)*60,vy:Math.random()*40,l:1.8+Math.random(),c:cols[(Math.random()*cols.length)|0],z:2+Math.random()*3});}
+     if(CF.sparks.length>400||st.bt>3)CF.sparks=CF.sparks.filter(p=>p.l>0);};
   CF.raf=requestAnimationFrame(loop);}
-function cfClose(quiet){cancelAnimationFrame(CF.raf);if(CF.m){disposeObj(CF.m);CF.m=null;}const b=$('crateFx');if(b&&!b.hidden){b.hidden=true;b.classList.remove('open','show');if(!quiet)sfx('ui');}}
+function cfClose(quiet){cancelAnimationFrame(CF.raf);if(CF.m){disposeObj(CF.m);CF.m=null;}const b=$('crateFx');if(b&&!b.hidden){b.hidden=true;b.classList.remove('shake','ban','charge');b.classList.remove('open','show');if(!quiet)sfx('ui');}}
 $('cfSkip').onclick=()=>{if(CF.boom)CF.boom();};$('cfOk').onclick=()=>{cfClose();renderShop();};
 const _pbCF=padBack;padBack=function(){if(!$('crateFx').hidden){if(!$('cfOk').hidden)$('cfOk').click();else $('cfSkip').click();return true;}return _pbCF();};
 
@@ -13720,16 +13752,50 @@ const _rbM=renderBoard;
 renderBoard=function(){_rbM.apply(this,arguments);if(bdTab!=='tro')return;const box=$('bdBody');
   // la scheda mostra solo le missioni: niente più riga delle skin
   {const row=box.querySelector('.sk-row'),h=row&&row.previousElementSibling;if(row)row.remove();if(h&&h.classList.contains('bd-h'))h.remove();}
-  const tl=trophyList(),c=G.cls,done=tl.filter(t=>t.ok).length,todo=troToClaim().length;
-  const hs=box.querySelectorAll('.bd-h');if(hs[0])hs[0].innerHTML=`Missioni · ${done} di ${tl.length}${todo?` · <button class="mini" data-claimall>Riscuoti tutte (${todo})</button>`:''}`;
-  const list=box.querySelector('.tro-list');if(!list)return;
-  list.innerHTML=tl.filter(t=>!t.cls||t.cls===c.id).concat(tl.filter(t=>t.cls&&t.cls!==c.id)).map(t=>{const got=!!TRO_CLAIM[t.n];
-    return `<div class="tro${t.ok?' ok':''}"><b>${t.ok?'🏆':'🔒'} ${esc(t.n)}</b><span>${esc(t.d)}</span>`+
-      (t.ok&&!got?`<button class="mini tro-claim" data-claim="${esc(t.n)}">Riscuoti ${t.prize} ◆</button>`:`<small>${got?'Riscossa · ':''}${t.prize} rubini</small>`)+
-      `<i style="--p:${Math.round(t.p*100)}%"></i></div>`;}).join('');};
+  const tl=trophyList(),c=G.cls,todo=troToClaim(),got=tl.filter(t=>t.ok&&TRO_CLAIM[t.n]);
+  const byP=(a,b)=>b.p-a.p;
+  const run=tl.filter(t=>!t.ok&&(!t.cls||t.cls===c.id)).sort(byP),other=tl.filter(t=>!t.ok&&t.cls&&t.cls!==c.id).sort(byP);
+  const hs=box.querySelectorAll('.bd-h');if(hs[0])hs[0].innerHTML=`Missioni <small class="ms-cnt">${got.length+todo.length} di ${tl.length} completate</small>`;
+  const list=box.querySelector('.tro-list');if(!list)return;list.className='ms-wrap';
+  const card=(t,k)=>{const pc=Math.round(t.p*100);
+    return `<div class="ms ms-${k}"><i class="ms-ic">${k==='claim'?'🏆':k==='done'?'✓':(t.cls?'⚔':'★')}</i>
+      <div class="ms-tx"><b>${esc(t.n)}</b><span>${esc(t.d)}</span>${k==='run'?`<div class="ms-pg"><i class="ms-bar"><u style="width:${pc}%"></u></i><small>${pc}%</small></div>`:''}</div>
+      <div class="ms-rw">${k==='claim'?`<button class="mini ms-get" data-claim="${esc(t.n)}">Riscuoti<br><b>${t.prize} ◆</b></button>`:`<em>${t.prize} ◆</em>`}</div></div>`;};
+  const sec=(title,l,k,extra)=>l.length?`<h4 class="ms-h ms-h-${k}">${title} <small>${l.length}</small>${extra||''}</h4><div class="ms-list">${l.map(t=>card(t,k)).join('')}</div>`:'';
+  const fold=(id,title,l,k)=>l.length?`<details class="ms-fold" data-fold="${id}"${MS_OPEN[id]?' open':''}><summary>${title} <small>${l.length}</small></summary><div class="ms-list">${l.map(t=>card(t,k)).join('')}</div></details>`:'';
+  list.innerHTML=
+    sec('Da riscuotere',todo,'claim',todo.length>1?`<button class="mini ms-all" data-claimall>Riscuoti tutte</button>`:'')+
+    sec(`In corso · ${esc(c.name)}`,run,'run')+
+    fold('other','Missioni degli altri eroi',other,'run')+
+    fold('done','Completate',got,'done')+
+    (!todo.length&&!run.length&&!other.length?'<p class="note">Hai completato tutte le missioni!</p>':'');
+  for(const d of list.querySelectorAll('details[data-fold]'))d.addEventListener('toggle',()=>{MS_OPEN[d.dataset.fold]=d.open;});};
+const MS_OPEN={};
 $('board').addEventListener('click',e=>{const a=e.target.closest('[data-claimall]');if(a){troClaimAll();renderBoard();return;}
   const b=e.target.closest('[data-claim]');if(b){troClaim(b.dataset.claim);renderBoard();}});
 {const tb=document.querySelector('#board .tab[data-tab="tro"]');if(tb)tb.textContent='Missioni';}
+{const st=document.createElement('style');st.textContent=`
+.ms-cnt{margin-left:8px;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0;text-transform:none}
+.ms-wrap{display:grid;gap:6px;text-align:left}
+.ms-h{display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.ms-h small{padding:0 7px;border-radius:9px;background:rgba(255,255,255,.08);color:var(--ink-2);font-size:11px;letter-spacing:0}
+.ms-h-claim{color:#ffd27a}.ms-h .ms-all{margin-left:auto}
+.ms-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.ms{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;padding:8px 10px;background:rgba(22,25,32,.85);border:1px solid var(--edge);font-size:12px;color:var(--ink-2)}
+.ms-ic{display:grid;place-items:center;width:30px;height:30px;font-style:normal;font-size:15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.ms-tx{display:grid;gap:2px;min-width:0}.ms-tx b{color:var(--ink);font-size:13px}.ms-tx span{line-height:1.3}
+.ms-pg{display:flex;align-items:center;gap:6px;margin-top:3px}.ms-pg small{min-width:30px;text-align:right;font-weight:700;color:var(--ink)}
+.ms-bar{flex:1;height:5px;background:rgba(255,255,255,.08);overflow:hidden}.ms-bar u{display:block;height:100%;background:linear-gradient(90deg,#4fb6a8,#7fe08a)}
+.ms-rw em{font-style:normal;font-weight:700;color:#ff8aa0;white-space:nowrap}
+.ms-claim{border-color:#ffd27a;background:linear-gradient(90deg,rgba(255,210,122,.14),rgba(22,25,32,.9));box-shadow:0 0 14px rgba(255,210,122,.15)}
+.ms-claim .ms-ic{background:rgba(255,210,122,.18);border-color:rgba(255,210,122,.5)}.ms-claim .ms-tx b{color:#ffd27a}
+.ms-get{line-height:1.15;padding:5px 10px}.ms-get b{font-size:13px}
+.ms-done{opacity:.55;padding:5px 10px}.ms-done .ms-ic{width:22px;height:22px;font-size:12px;color:var(--xp)}.ms-done .ms-tx span{display:none}
+.ms-fold{margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:4px}
+.ms-fold summary{cursor:pointer;padding:6px 2px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);list-style:none}
+.ms-fold summary::-webkit-details-marker{display:none}.ms-fold summary::before{content:'▸ ';}.ms-fold[open] summary::before{content:'▾ ';}
+.ms-fold summary small{margin-left:6px;padding:0 7px;border-radius:9px;background:rgba(255,255,255,.08);font-size:11px;letter-spacing:0}
+@media (max-width:600px),(max-height:500px){.ms-list{grid-template-columns:1fr}.ms{padding:6px 8px;gap:8px}}`;document.head.appendChild(st);}
 
 /* ---------- bonus d'accesso giornaliero ---------- */
 const DAILY_PRIZE=[50,75,100,150,200,250,500];

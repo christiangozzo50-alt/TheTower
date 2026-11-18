@@ -28,16 +28,50 @@ const _rbM=renderBoard;
 renderBoard=function(){_rbM.apply(this,arguments);if(bdTab!=='tro')return;const box=$('bdBody');
   // la scheda mostra solo le missioni: niente più riga delle skin
   {const row=box.querySelector('.sk-row'),h=row&&row.previousElementSibling;if(row)row.remove();if(h&&h.classList.contains('bd-h'))h.remove();}
-  const tl=trophyList(),c=G.cls,done=tl.filter(t=>t.ok).length,todo=troToClaim().length;
-  const hs=box.querySelectorAll('.bd-h');if(hs[0])hs[0].innerHTML=`Missioni · ${done} di ${tl.length}${todo?` · <button class="mini" data-claimall>Riscuoti tutte (${todo})</button>`:''}`;
-  const list=box.querySelector('.tro-list');if(!list)return;
-  list.innerHTML=tl.filter(t=>!t.cls||t.cls===c.id).concat(tl.filter(t=>t.cls&&t.cls!==c.id)).map(t=>{const got=!!TRO_CLAIM[t.n];
-    return `<div class="tro${t.ok?' ok':''}"><b>${t.ok?'🏆':'🔒'} ${esc(t.n)}</b><span>${esc(t.d)}</span>`+
-      (t.ok&&!got?`<button class="mini tro-claim" data-claim="${esc(t.n)}">Riscuoti ${t.prize} ◆</button>`:`<small>${got?'Riscossa · ':''}${t.prize} rubini</small>`)+
-      `<i style="--p:${Math.round(t.p*100)}%"></i></div>`;}).join('');};
+  const tl=trophyList(),c=G.cls,todo=troToClaim(),got=tl.filter(t=>t.ok&&TRO_CLAIM[t.n]);
+  const byP=(a,b)=>b.p-a.p;
+  const run=tl.filter(t=>!t.ok&&(!t.cls||t.cls===c.id)).sort(byP),other=tl.filter(t=>!t.ok&&t.cls&&t.cls!==c.id).sort(byP);
+  const hs=box.querySelectorAll('.bd-h');if(hs[0])hs[0].innerHTML=`Missioni <small class="ms-cnt">${got.length+todo.length} di ${tl.length} completate</small>`;
+  const list=box.querySelector('.tro-list');if(!list)return;list.className='ms-wrap';
+  const card=(t,k)=>{const pc=Math.round(t.p*100);
+    return `<div class="ms ms-${k}"><i class="ms-ic">${k==='claim'?'🏆':k==='done'?'✓':(t.cls?'⚔':'★')}</i>
+      <div class="ms-tx"><b>${esc(t.n)}</b><span>${esc(t.d)}</span>${k==='run'?`<div class="ms-pg"><i class="ms-bar"><u style="width:${pc}%"></u></i><small>${pc}%</small></div>`:''}</div>
+      <div class="ms-rw">${k==='claim'?`<button class="mini ms-get" data-claim="${esc(t.n)}">Riscuoti<br><b>${t.prize} ◆</b></button>`:`<em>${t.prize} ◆</em>`}</div></div>`;};
+  const sec=(title,l,k,extra)=>l.length?`<h4 class="ms-h ms-h-${k}">${title} <small>${l.length}</small>${extra||''}</h4><div class="ms-list">${l.map(t=>card(t,k)).join('')}</div>`:'';
+  const fold=(id,title,l,k)=>l.length?`<details class="ms-fold" data-fold="${id}"${MS_OPEN[id]?' open':''}><summary>${title} <small>${l.length}</small></summary><div class="ms-list">${l.map(t=>card(t,k)).join('')}</div></details>`:'';
+  list.innerHTML=
+    sec('Da riscuotere',todo,'claim',todo.length>1?`<button class="mini ms-all" data-claimall>Riscuoti tutte</button>`:'')+
+    sec(`In corso · ${esc(c.name)}`,run,'run')+
+    fold('other','Missioni degli altri eroi',other,'run')+
+    fold('done','Completate',got,'done')+
+    (!todo.length&&!run.length&&!other.length?'<p class="note">Hai completato tutte le missioni!</p>':'');
+  for(const d of list.querySelectorAll('details[data-fold]'))d.addEventListener('toggle',()=>{MS_OPEN[d.dataset.fold]=d.open;});};
+const MS_OPEN={};
 $('board').addEventListener('click',e=>{const a=e.target.closest('[data-claimall]');if(a){troClaimAll();renderBoard();return;}
   const b=e.target.closest('[data-claim]');if(b){troClaim(b.dataset.claim);renderBoard();}});
 {const tb=document.querySelector('#board .tab[data-tab="tro"]');if(tb)tb.textContent='Missioni';}
+{const st=document.createElement('style');st.textContent=`
+.ms-cnt{margin-left:8px;font-size:12px;font-weight:600;color:var(--ink-2);letter-spacing:0;text-transform:none}
+.ms-wrap{display:grid;gap:6px;text-align:left}
+.ms-h{display:flex;align-items:center;gap:8px;margin:8px 0 2px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink)}
+.ms-h small{padding:0 7px;border-radius:9px;background:rgba(255,255,255,.08);color:var(--ink-2);font-size:11px;letter-spacing:0}
+.ms-h-claim{color:#ffd27a}.ms-h .ms-all{margin-left:auto}
+.ms-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:6px}
+.ms{display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:10px;padding:8px 10px;background:rgba(22,25,32,.85);border:1px solid var(--edge);font-size:12px;color:var(--ink-2)}
+.ms-ic{display:grid;place-items:center;width:30px;height:30px;font-style:normal;font-size:15px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08)}
+.ms-tx{display:grid;gap:2px;min-width:0}.ms-tx b{color:var(--ink);font-size:13px}.ms-tx span{line-height:1.3}
+.ms-pg{display:flex;align-items:center;gap:6px;margin-top:3px}.ms-pg small{min-width:30px;text-align:right;font-weight:700;color:var(--ink)}
+.ms-bar{flex:1;height:5px;background:rgba(255,255,255,.08);overflow:hidden}.ms-bar u{display:block;height:100%;background:linear-gradient(90deg,#4fb6a8,#7fe08a)}
+.ms-rw em{font-style:normal;font-weight:700;color:#ff8aa0;white-space:nowrap}
+.ms-claim{border-color:#ffd27a;background:linear-gradient(90deg,rgba(255,210,122,.14),rgba(22,25,32,.9));box-shadow:0 0 14px rgba(255,210,122,.15)}
+.ms-claim .ms-ic{background:rgba(255,210,122,.18);border-color:rgba(255,210,122,.5)}.ms-claim .ms-tx b{color:#ffd27a}
+.ms-get{line-height:1.15;padding:5px 10px}.ms-get b{font-size:13px}
+.ms-done{opacity:.55;padding:5px 10px}.ms-done .ms-ic{width:22px;height:22px;font-size:12px;color:var(--xp)}.ms-done .ms-tx span{display:none}
+.ms-fold{margin-top:6px;border-top:1px solid rgba(255,255,255,.08);padding-top:4px}
+.ms-fold summary{cursor:pointer;padding:6px 2px;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);list-style:none}
+.ms-fold summary::-webkit-details-marker{display:none}.ms-fold summary::before{content:'▸ ';}.ms-fold[open] summary::before{content:'▾ ';}
+.ms-fold summary small{margin-left:6px;padding:0 7px;border-radius:9px;background:rgba(255,255,255,.08);font-size:11px;letter-spacing:0}
+@media (max-width:600px),(max-height:500px){.ms-list{grid-template-columns:1fr}.ms{padding:6px 8px;gap:8px}}`;document.head.appendChild(st);}
 
 /* ---------- bonus d'accesso giornaliero ---------- */
 const DAILY_PRIZE=[50,75,100,150,200,250,500];
