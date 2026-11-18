@@ -296,7 +296,7 @@ function specDraw(R,dt){
   if(!R.tag){R.tag=document.createElement('div');R.tag.className='mp-tag';document.body.appendChild(R.tag);R.tagW=0;}
   if(R.tag.textContent!==R.name){R.tag.textContent=R.name;R.tagW=0;}R.tag.hidden=false;R.tag.style.setProperty('--mc','#7ff0e4');R.tag.classList.toggle('down',!!R.dead);
   if(!R.tagW){R.tagW=R.tag.offsetWidth;R.tagH=R.tag.offsetHeight;}
-  const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
+  const [sx,sy]=toScreen(R.x,R.y+3.25,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
 // chi guarda non ha la barra delle abilità né la vita sua: niente HUD della scalata
 const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.apply(this,arguments);};
 // Esc o il tasto indietro del controller: esci

@@ -589,7 +589,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #mpWait b,#restMsg b{font-family:var(--f-display);font-weight:400;font-size:clamp(22px,4vw,36px);color:var(--ember);animation:pulse 1.6s ease-in-out infinite}
 #restMsg b{color:#7fe08a}
 #mpWait span,#restMsg span{font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink-2)}
-.mp-tag{position:fixed;left:0;top:0;z-index:4;pointer-events:none;padding:2px 9px;font-weight:700;font-size:13px;line-height:1.25;color:var(--mc,#7ff0e4);background:rgba(10,8,14,.88);border:1px solid var(--mc,#7ff0e4);white-space:nowrap;will-change:transform;backface-visibility:hidden}
+.mp-tag{position:fixed;left:0;top:0;z-index:4;pointer-events:none;padding:1px 6px;font-weight:700;font-size:10.5px;line-height:1.2;color:var(--mc,#7ff0e4);background:rgba(10,8,14,.88);border:1px solid var(--mc,#7ff0e4);white-space:nowrap;will-change:transform;backface-visibility:hidden}
 .mp-tag.down{color:#ff8a8a;border-color:rgba(255,138,138,.5)}
 #mpMate{display:flex;flex-direction:column;gap:4px;margin-top:2px}
 .mate-row{display:flex;flex-direction:column;gap:2px}
@@ -10582,7 +10582,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795016166';
+const BUILD_ID='1795017256';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -11078,7 +11078,7 @@ function bKit(e,dt,dir,dist,rage,sp){const K=BOSS_KITS[e.def.floor],fl=e.arch===
 /* ---------- nomi sopra i giocatori: fermi e leggibili ---------- */
 function mpPlaceTags(){for(const R of [...MP.players.values(),...HUB.players.values()]){const el=R.tag;if(!el||el.hidden)continue;
   if(!R.tagW){R.tagW=el.offsetWidth;R.tagH=el.offsetHeight;}
-  const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0),x=Math.round(sx-R.tagW/2),y=Math.round(sy-R.tagH);
+  const [sx,sy]=toScreen(R.x,R.y+3.25,R.z||0),x=Math.round(sx-R.tagW/2),y=Math.round(sy-R.tagH);
   if(x!==R.tagX||y!==R.tagY){R.tagX=x;R.tagY=y;el.style.transform=`translate3d(${x}px,${y}px,0)`;}}}
 const _ucTag=updCamera;updCamera=function(dt){_ucTag(dt);if(MP.players.size||HUB.players.size){camera.updateMatrixWorld();mpPlaceTags();}};
 
@@ -13045,7 +13045,7 @@ function specDraw(R,dt){
   if(!R.tag){R.tag=document.createElement('div');R.tag.className='mp-tag';document.body.appendChild(R.tag);R.tagW=0;}
   if(R.tag.textContent!==R.name){R.tag.textContent=R.name;R.tagW=0;}R.tag.hidden=false;R.tag.style.setProperty('--mc','#7ff0e4');R.tag.classList.toggle('down',!!R.dead);
   if(!R.tagW){R.tagW=R.tag.offsetWidth;R.tagH=R.tag.offsetHeight;}
-  const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
+  const [sx,sy]=toScreen(R.x,R.y+3.25,R.z||0);R.tag.style.transform=`translate3d(${Math.round(sx-R.tagW/2)}px,${Math.round(sy-R.tagH)}px,0)`;}
 // chi guarda non ha la barra delle abilità né la vita sua: niente HUD della scalata
 const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.apply(this,arguments);};
 // Esc o il tasto indietro del controller: esci
@@ -13589,6 +13589,68 @@ const _padBackD=padBack;padBack=function(){if(G.state==='daily'){dlyClaim();retu
 .tro .tro-claim{justify-self:start;margin-top:3px}
 @media (max-width:520px){.dly-row{grid-template-columns:repeat(4,minmax(0,1fr))}}`;document.head.appendChild(st);}
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{DLY:()=>DLY,dlyOpen,dlyClaim,troToClaim,TRO_CLAIM:()=>TRO_CLAIM,SKKEEP:()=>SKKEEP});
+
+/* =========================================================
+   RUOLI DEGLI EROI (utili in co-op)
+   Ogni eroe ha un ruolo. In co-op il ruolo aiuta la squadra:
+   - Difensore:   i compagni vicini (entro 7 m) subiscono il 10% di danni in meno
+   - Assaltatore: i compagni vicini fanno l'8% di danni in più
+   - Tiratore:    fa il 15% di danni in più ai nemici che un compagno sta tenendo occupati (compagno a meno di 3,5 m dal nemico)
+   - Supporto:    i compagni vicini recuperano il 2% della vita ogni 3 secondi
+   - Controllo:   i nemici rallentati o storditi subiscono il 10% di danni in più da tutta la squadra
+   Ogni giocatore calcola da sé gli effetti che riceve: niente messaggi in più sulla rete.
+   ========================================================= */
+const ROLES={
+  difensore:  {name:'Difensore',  col:'#5aa9ff',desc:'In co-op i compagni vicini subiscono il 10% di danni in meno.'},
+  assaltatore:{name:'Assaltatore',col:'#ff7a5a',desc:'In co-op i compagni vicini fanno l\'8% di danni in più.'},
+  tiratore:   {name:'Tiratore',   col:'#ffd27a',desc:'In co-op fa il 15% di danni in più ai nemici vicini a un compagno.'},
+  supporto:   {name:'Supporto',   col:'#7fe08a',desc:'In co-op i compagni vicini recuperano il 2% della vita ogni 3 secondi.'},
+  controllo:  {name:'Controllo',  col:'#8fdcff',desc:'In co-op i nemici rallentati o storditi subiscono il 10% di danni in più da tutta la squadra.'},
+};
+const CLASS_ROLE={cavaliere:'difensore',paladino:'difensore',
+  berserker:'assaltatore',samurai:'assaltatore',lanciere:'assaltatore',assassino:'assaltatore',
+  mago:'tiratore',tempesta:'tiratore',astromante:'tiratore',
+  arciere:'supporto',druido:'supporto',negromante:'supporto',
+  criomante:'controllo',monaco:'controllo'};
+for(const c of CLASSES)c.role=CLASS_ROLE[c.id]||'assaltatore';
+const roleOf=c=>(c&&(c.role||CLASS_ROLE[c.id]))||null;
+const ROLE_R=7;
+
+// i compagni nella stessa stanza, vivi
+function roleMates(){if(!MP.live()||G.scene!=='tower'||G.pvp)return [];const out=[];
+  for(const R of MP.players.values())if(R&&R.cls&&!R.dead&&R.sc==='tower'&&R.fl===G.floor)out.push(R);return out;}
+const mateNear=(role,x,r)=>roleMates().some(R=>roleOf(R.cls)===role&&Math.abs(R.x-x)<r);
+const teamHas=role=>roleOf(G.cls)===role||roleMates().some(R=>roleOf(R.cls)===role);
+
+// Difensore: meno danni a chi gli sta vicino
+const _hurtRole=hurtPlayer;
+hurtPlayer=function(d,fx,eff){if(!(MP.redir>=0)&&typeof d==='number'&&d>0&&mateNear('difensore',P.x,ROLE_R))d*=0.9;return _hurtRole(d,fx,eff);};
+
+// Assaltatore, Tiratore, Controllo: più danni
+const _hitRole=hitEnemy;
+hitEnemy=function(e,base,dir,o){
+  if(typeof base==='number'&&base>0&&e&&!e.dead&&e.pvp==null&&!MP.ghost){const mates=roleMates();
+    if(mates.length){
+      if(mates.some(R=>roleOf(R.cls)==='assaltatore'&&Math.abs(R.x-P.x)<ROLE_R))base*=1.08;
+      if(roleOf(G.cls)==='tiratore'&&mates.some(R=>Math.abs(R.x-e.x)<3.5))base*=1.15;
+      if((e.slowT>0||e.stunT>0)&&teamHas('controllo'))base*=1.1;}}
+  return _hitRole(e,base,dir,o);};
+
+// Supporto: cura i compagni vicini
+setInterval(()=>{if(G.state!=='play'||P.dead||G.scene!=='tower'||G.pvp||document.hidden)return;
+  if(mateNear('supporto',P.x,ROLE_R)&&P.hp<S.maxHp){heal(Math.max(1,Math.round(S.maxHp*0.02)),true);burst(P.x,P.y+1.2,0x7fe08a,6,2,2,0.3);}},3000);
+
+// il ruolo nella scelta dell'eroe
+const _rsRole=renderSelect;
+renderSelect=function(){_rsRole.apply(this,arguments);const c=G.cls,ro=ROLES[roleOf(c)],box=$('cstats');if(!ro||!box)return;
+  const sub=box.querySelector('.cs-sub');if(sub&&!sub.querySelector('.role-chip'))sub.insertAdjacentHTML('beforeend',` · <span class="role-chip" style="--rc:${ro.col}" title="${esc(ro.desc)}">${ro.name}</span><div class="role-desc">${esc(ro.desc)}</div>`);};
+// il ruolo accanto al nome dei compagni
+setInterval(()=>{if(!MP.live())return;for(const R of MP.players.values()){const ro=R&&R.cls&&ROLES[roleOf(R.cls)];if(!ro||!R.tag)continue;
+  const t=`${R.name} · ${ro.name}`;if(R.tag.textContent!==t&&R.tag.textContent===R.name){R.tag.textContent=t;R.tagW=0;}}},500);
+{const st=document.createElement('style');st.textContent=`
+.role-chip{display:inline-block;padding:1px 7px;border:1px solid var(--rc);color:var(--rc);border-radius:9px;font-size:11px;letter-spacing:.04em}
+.role-desc{margin-top:4px;font-weight:500;letter-spacing:0;color:var(--ink-2);font-size:11px}`;document.head.appendChild(st);}
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{ROLES,CLASS_ROLE,roleMates});
 requestAnimationFrame(frame);
 })();
 </script>

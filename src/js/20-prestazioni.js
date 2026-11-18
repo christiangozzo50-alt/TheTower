@@ -220,7 +220,7 @@ function bKit(e,dt,dir,dist,rage,sp){const K=BOSS_KITS[e.def.floor],fl=e.arch===
 /* ---------- nomi sopra i giocatori: fermi e leggibili ---------- */
 function mpPlaceTags(){for(const R of [...MP.players.values(),...HUB.players.values()]){const el=R.tag;if(!el||el.hidden)continue;
   if(!R.tagW){R.tagW=el.offsetWidth;R.tagH=el.offsetHeight;}
-  const [sx,sy]=toScreen(R.x,R.y+2.75,R.z||0),x=Math.round(sx-R.tagW/2),y=Math.round(sy-R.tagH);
+  const [sx,sy]=toScreen(R.x,R.y+3.25,R.z||0),x=Math.round(sx-R.tagW/2),y=Math.round(sy-R.tagH);
   if(x!==R.tagX||y!==R.tagY){R.tagX=x;R.tagY=y;el.style.transform=`translate3d(${x}px,${y}px,0)`;}}}
 const _ucTag=updCamera;updCamera=function(dt){_ucTag(dt);if(MP.players.size||HUB.players.size){camera.updateMatrixWorld();mpPlaceTags();}};
 
