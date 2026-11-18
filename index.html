@@ -1143,12 +1143,12 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 #crateFx[data-tier="2"].shake .cf-stage{animation:cf-shake .7s cubic-bezier(.36,.07,.19,.97)}
 #crateFx[data-tier="3"].shake .cf-stage{animation:cf-shake 1s cubic-bezier(.36,.07,.19,.97)}
 @keyframes cf-shake{0%,100%{transform:translate(0,0) rotate(0)}10%{transform:translate(-9px,4px) rotate(-1.5deg)}20%{transform:translate(8px,-5px) rotate(1.5deg)}30%{transform:translate(-7px,3px) rotate(-1deg)}45%{transform:translate(5px,-2px) rotate(.6deg)}60%{transform:translate(-3px,1px)}80%{transform:translate(1px,0)}}
-.cf-ban{position:absolute;left:50%;top:30%;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;white-space:nowrap;font-family:var(--f-display);font-size:clamp(34px,8vw,78px);color:#fff;letter-spacing:.06em;
+.cf-ban{position:absolute;left:50%;top:42%;z-index:3;transform:translate(-50%,-50%) scale(.2);opacity:0;pointer-events:none;white-space:nowrap;font-family:var(--f-display);font-size:clamp(34px,8vw,78px);color:#fff;letter-spacing:.06em;
   text-shadow:0 0 0 #000,4px 4px 0 #000,0 0 26px var(--rc),0 0 60px var(--rc);-webkit-text-stroke:2px var(--rc)}
-#crateFx.ban .cf-ban{animation:cf-ban 2.2s cubic-bezier(.2,1.5,.4,1) .15s forwards}
+#crateFx.ban .cf-ban{animation:cf-ban 1.15s cubic-bezier(.2,1.5,.4,1) .1s forwards}
 #crateFx[data-tier="3"] .cf-ban{background:linear-gradient(90deg,#ff5470,#ffd27a,#7ff0e4,#c27bff,#ff5470);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;animation:none}
-#crateFx[data-tier="3"].ban .cf-ban{animation:cf-ban 2.4s cubic-bezier(.2,1.5,.4,1) .15s forwards,cf-shimmer 1.2s linear infinite}
-@keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}30%{transform:translate(-50%,-50%) scale(1)}80%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-90%) scale(.9)}}
+#crateFx[data-tier="3"].ban .cf-ban{animation:cf-ban 1.15s cubic-bezier(.2,1.5,.4,1) .1s forwards,cf-shimmer 1.2s linear infinite}
+@keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}35%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(.95)}}
 @keyframes cf-shimmer{to{background-position:300% 0}}
 @media (prefers-reduced-motion:reduce){#crateFx.shake .cf-stage,#crateFx.charge .cf-stage{animation:none}}
 </style>
@@ -10703,7 +10703,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795038705';
+const BUILD_ID='1795038963';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -11090,7 +11090,7 @@ function crateShow(cr,o){cfClose(true);const R=RARITY[o.rarity],m=crateModel(cr.
         if(tier>=2&&k>0.55&&!st.ch){st.ch=1;box.classList.add('charge');}
          st.rat-=dt;if(st.rat<=0){st.rat=lerp(0.18,0.06,k);sfx('chestRattle');spark(1+Math.round(q*5),fx.height*0.3);}}if(t>=W){m.position.x=0;m.rotation.z=0;m.scale.setScalar(sc);boom();}}
     else{st.bt+=dt;const T=st.bt,b=Math.exp(-T*7),s=Math.cos(T*18)*b;st.vel+=(-2.0-st.ang)*190*dt;st.vel*=Math.exp(-11*dt);st.ang+=st.vel*dt;P_.lid.rotation.x=st.ang;m.scale.set(sc*(1-0.1*s),sc*(1+0.18*s),sc*(1-0.1*s));m.position.x=0;m.rotation.z=0;$('cfGlow').style.opacity=Math.max(0.3,0.95*Math.exp(-T*1.8));
-      if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>0.32){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
+      if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>(tier>=2?1.3:0.32)){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
     try{gx.putImageData(psShot(m,168,168,fr,false),0,0);}catch(e){}
     fg.clearRect(0,0,fx.width,fx.height);for(const p of CF.sparks){p.l-=dt;if(p.l<=0)continue;p.vy+=fx.height*1.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;fg.globalAlpha=Math.min(1,p.l*2);fg.fillStyle=p.c;fg.fillRect(p.x|0,p.y|0,p.z|0,p.z|0);}fg.globalAlpha=1;
      for(const g of CF.rings){g.t+=dt;if(g.t<0)continue;const u=g.t/g.d;if(u>=1)continue;fg.globalAlpha=(1-u)*0.9;fg.strokeStyle=u<0.25?'#fff':R.css;fg.lineWidth=Math.max(1,(1-u)*(6+tier*3));

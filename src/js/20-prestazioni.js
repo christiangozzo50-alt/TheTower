@@ -111,7 +111,7 @@ function crateShow(cr,o){cfClose(true);const R=RARITY[o.rarity],m=crateModel(cr.
         if(tier>=2&&k>0.55&&!st.ch){st.ch=1;box.classList.add('charge');}
          st.rat-=dt;if(st.rat<=0){st.rat=lerp(0.18,0.06,k);sfx('chestRattle');spark(1+Math.round(q*5),fx.height*0.3);}}if(t>=W){m.position.x=0;m.rotation.z=0;m.scale.setScalar(sc);boom();}}
     else{st.bt+=dt;const T=st.bt,b=Math.exp(-T*7),s=Math.cos(T*18)*b;st.vel+=(-2.0-st.ang)*190*dt;st.vel*=Math.exp(-11*dt);st.ang+=st.vel*dt;P_.lid.rotation.x=st.ang;m.scale.set(sc*(1-0.1*s),sc*(1+0.18*s),sc*(1-0.1*s));m.position.x=0;m.rotation.z=0;$('cfGlow').style.opacity=Math.max(0.3,0.95*Math.exp(-T*1.8));
-      if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>0.32){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
+      if(T<0.7&&Math.random()<0.8)spark(1+o.rarity,fx.height*0.55);if(!st.show&&T>(tier>=2?1.3:0.32)){st.show=true;box.classList.add('show');$('cfOk').hidden=false;}}
     try{gx.putImageData(psShot(m,168,168,fr,false),0,0);}catch(e){}
     fg.clearRect(0,0,fx.width,fx.height);for(const p of CF.sparks){p.l-=dt;if(p.l<=0)continue;p.vy+=fx.height*1.6*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;fg.globalAlpha=Math.min(1,p.l*2);fg.fillStyle=p.c;fg.fillRect(p.x|0,p.y|0,p.z|0,p.z|0);}fg.globalAlpha=1;
      for(const g of CF.rings){g.t+=dt;if(g.t<0)continue;const u=g.t/g.d;if(u>=1)continue;fg.globalAlpha=(1-u)*0.9;fg.strokeStyle=u<0.25?'#fff':R.css;fg.lineWidth=Math.max(1,(1-u)*(6+tier*3));
