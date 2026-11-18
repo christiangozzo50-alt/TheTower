@@ -63,7 +63,7 @@ function dlyClaim(){const d=dayNo();if(DLY.last!==d){const s=dlyNext();DLY.last=
   if(dlyEl)dlyEl.hidden=true;if(G.state==='daily'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}
   const n=troToClaim().length;if(n)setTimeout(()=>toast('Missioni completate',`${n} da riscuotere nella Bacheca`),900);}
 // si apre appena sei nel seminterrato senza altre finestre aperte
-setInterval(()=>{if(DLY.last===dayNo()||G.state!=='cellar'||G.fadeTarget>0||document.querySelector('.screen:not([hidden])'))return;dlyOpen();},1500);
+setInterval(()=>{if(DLY.last===dayNo()||G.state!=='cellar'||G.fadeTarget>0||document.querySelector('.screen:not([hidden])')||!$('nameGate').hidden)return;dlyOpen();},1500);
 addEventListener('keydown',e=>{if(G.state==='daily'&&(e.key==='Escape'||e.key==='Enter')){e.preventDefault();e.stopPropagation();dlyClaim();}},true);
 const _padBackD=padBack;padBack=function(){if(G.state==='daily'){dlyClaim();return true;}return _padBackD();};
 

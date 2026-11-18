@@ -685,8 +685,8 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 #nameGate .ig-box{width:min(420px,100%);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
 #nameGate .ig-ico{width:72px;height:72px;image-rendering:pixelated;border-radius:18px;box-shadow:0 0 0 3px #000}
 #nameGate .ig-lead{margin:0;font-size:14px;line-height:1.45;color:var(--ink)}
-#ngIn,#frQ{font:inherit;font-size:18px;padding:12px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(280px,80vw);text-align:center;-webkit-user-select:text;user-select:text}
-#ngIn:focus,#frQ:focus{border-color:var(--ember);outline:none}
+#ngIn,#ngPass,#frQ{font:inherit;font-size:18px;padding:12px 14px;background:var(--panel-2);border:2px solid var(--edge);color:var(--ink);width:min(280px,80vw);text-align:center;-webkit-user-select:text;user-select:text}
+#ngIn:focus,#ngPass:focus,#frQ:focus{border-color:var(--ember);outline:none}
 .fr-search{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}#frQ{text-align:left;font-size:16px}
 .fr-r{display:grid;grid-template-columns:12px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 10px;background:rgba(22,25,32,.85);border:1px solid var(--edge)}
 .fr-r b{display:block;font-size:14px;color:var(--ink)}.fr-r small{font-size:11px;color:var(--ink-2)}

@@ -2,7 +2,7 @@
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795015595';
+const BUILD_ID='1795016166';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -242,3 +242,37 @@ async function wakeSync(){if(!('wakeLock' in navigator))return;const want=!docum
   else if(!want&&WL.s){try{WL.s.release();}catch(e){}WL.s=null;}}
 setInterval(wakeSync,2500);document.addEventListener('visibilitychange',wakeSync);
 
+
+/* ---------- ACCOUNT SUBITO: al primo accesso il nome si sceglie insieme alla password ----------
+   'first'   = primo accesso: nome + password, l'account si crea subito
+   'account' = hai già un nome ma non l'account: all'apertura del gioco te lo chiede (puoi rimandare)
+   'change' / 'name' = come prima (cambio nome, oppure account non attivi) */
+const NG={mode:'name'},NG_LEAD=document.querySelector('#nameGate .ig-lead').innerHTML;
+function ngModeUi(){const pw=NG.mode==='first'||NG.mode==='account';$('ngPass').hidden=!pw;$('ngPass').value='';$('ngIn').readOnly=NG.mode==='account';
+  $('ngOk').textContent=pw?'Crea account':'Conferma';$('ngCancel').textContent=NG.mode==='account'?'Più tardi':'Annulla';
+  document.querySelector('#nameGate .ig-lead').innerHTML=NG.mode==='first'?'Scegli nome e password: crei subito il tuo account e ritrovi i progressi su tutti i tuoi dispositivi. Ogni giocatore ha un nome diverso.'
+    :NG.mode==='account'?'Non hai ancora un account: scegli una password per salvare i tuoi progressi e ritrovarli su tutti i tuoi dispositivi. Ci vuole un attimo.':NG_LEAD;}
+const _openNG=openNameGate;
+openNameGate=function(change){_openNG(change);NG.mode=change?'change':(authOn()&&!logged()&&fbOn()?'first':'name');ngModeUi();};
+function openAccountAsk(){const g=$('nameGate');g.hidden=false;NG.mode='account';$('ngIn').value=MP.name();$('ngMsg').textContent='';$('ngSug').hidden=true;
+  $('ngTitle').textContent='Crea il tuo account';$('ngCancel').hidden=false;ngModeUi();setTimeout(()=>$('ngPass').focus(),80);}
+const _confirmNG=confirmName;
+confirmName=async function(n){if(NG.mode!=='first'&&NG.mode!=='account')return _confirmNG(n);
+  n=(n||'').trim().replace(/\s+/g,' ');const p=$('ngPass').value,msg=$('ngMsg'),ok=$('ngOk');
+  if(n.length<3||n.length>14){msg.textContent='Il nome deve avere da 3 a 14 caratteri.';return;}
+  if(!/^[A-Za-z0-9À-ÿ _-]+$/.test(n)){msg.textContent='Usa solo lettere, numeri, spazi, - e _.';return;}
+  if(p.length<6){msg.textContent='La password deve avere almeno 6 caratteri.';$('ngPass').focus();return;}
+  ok.disabled=true;msg.textContent='Creo l\'account…';$('ngSug').hidden=true;
+  try{if(!(await nameFree(n))){msg.textContent=`«${n}» è già usato da un altro giocatore.`;const s=NG.mode==='first'?await suggestName(n):null;
+      if(s){$('ngSug').hidden=false;$('ngSug').textContent=`Usa «${s}»`;$('ngSug').onclick=()=>{$('ngIn').value=s;confirmName(s);};}return;}
+    const d=await authCall('signUp',{email:emailOf(n),password:p,returnSecureToken:true});setAuth(d,n);
+    await fbPut('names/'+encodeURIComponent(nameKey(n)),PID);store.set('mpname',n);store.set('nameok',true);
+    await cloudSave('overwrite');$('ngPass').value='';msg.textContent='';$('nameGate').hidden=true;NG.mode='name';renderAccount();mpUi();heartbeat();
+    toast(`Benvenuto, ${n}`,'Account creato: accedi con questo nome e password sugli altri dispositivi');}
+  catch(e){msg.textContent=/Esiste già/.test(e.message)?'Esiste già un account con questo nome: se è tuo tocca «Accedi» qui sotto.':e.message;}
+  finally{ok.disabled=false;}};
+$('ngPass').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();confirmName($('ngIn').value);}});
+$('ngIn').addEventListener('keydown',e=>{if(e.key==='Enter'&&(NG.mode==='first')&&!$('ngPass').value){e.preventDefault();e.stopImmediatePropagation();$('ngPass').focus();}},true);
+$('ngCancel').addEventListener('click',()=>{if(NG.mode==='account')toast('Va bene','Puoi crearlo quando vuoi dal menu Account');NG.mode='name';});
+// chi ha già un nome ma non l'account: glielo chiede ogni volta che apre il gioco
+setTimeout(()=>{if(authOn()&&!logged()&&fbOn()&&store.get('mpname','')&&store.get('nameok',false)&&$('nameGate').hidden)openAccountAsk();},3000);
