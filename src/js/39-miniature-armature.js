@@ -22,3 +22,4 @@ function gearThumbReal(o){const c=G.cls;if(!c||!o||!o.slot)return '';
   return GTH[key]=url;}
 const _thumbGear=thumb;
 thumb=function(o){if(o&&o.slot){const u=gearThumbReal(o);if(u)return u;}return _thumbGear(o);};
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{openWardrobe,gearThumbReal});
