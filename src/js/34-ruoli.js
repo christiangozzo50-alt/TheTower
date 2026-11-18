@@ -53,9 +53,7 @@ setInterval(()=>{if(G.state!=='play'||P.dead||G.scene!=='tower'||G.pvp||document
 const _rsRole=renderSelect;
 renderSelect=function(){_rsRole.apply(this,arguments);const c=G.cls,ro=ROLES[roleOf(c)],box=$('cstats');if(!ro||!box)return;
   const sub=box.querySelector('.cs-sub');if(sub&&!sub.querySelector('.role-chip'))sub.insertAdjacentHTML('beforeend',` · <span class="role-chip" style="--rc:${ro.col}" title="${esc(ro.desc)}">${ro.name}</span><div class="role-desc">${esc(ro.desc)}</div>`);};
-// il ruolo accanto al nome dei compagni
-setInterval(()=>{if(!MP.live())return;for(const R of MP.players.values()){const ro=R&&R.cls&&ROLES[roleOf(R.cls)];if(!ro||!R.tag)continue;
-  const t=`${R.name} · ${ro.name}`;if(R.tag.textContent!==t&&R.tag.textContent===R.name){R.tag.textContent=t;R.tagW=0;}}},500);
+// il ruolo accanto al nome dei compagni: lo scrive direttamente il disegno dei compagni (13-coop-santuario), così il nome non cambia due volte
 {const st=document.createElement('style');st.textContent=`
 .role-chip{display:inline-block;padding:1px 7px;border:1px solid var(--rc);color:var(--rc);border-radius:9px;font-size:11px;letter-spacing:.04em}
 .role-desc{margin-top:4px;font-weight:500;letter-spacing:0;color:var(--ink-2);font-size:11px}`;document.head.appendChild(st);}

@@ -8394,7 +8394,8 @@ function mpDrawRemote(dt){
     if(showMate){anyMate=true;if(!R.mate){R.mate=document.createElement('div');R.mate.className='mate-row';R.mate.innerHTML='<small></small><div class="bar mate"><i class="fill"></i></div>';box.appendChild(R.mate);}
       R.mate.style.setProperty('--mc',col);{const tx=(R.name||'Compagno')+(R.dead?' · a terra':'');if(R.mate.firstChild.textContent!==tx)R.mate.firstChild.textContent=tx;}R.mate.querySelector('.fill').style.transform=`scaleX(${R.dead?0:Math.max(0,R.hp/(R.mh||100))})`;}
     else if(R.mate){R.mate.remove();R.mate=null;}
-    if(!vis){if(R.tag)R.tag.hidden=true;continue;}
+    // il nome si nasconde/mostra solo se la cosa dura più di un attimo (all'avvio i dati arrivano a pezzi e il nome sfarfallava)
+    if(!vis){R.tagVis=0;if(R.tag&&!R.tag.hidden&&(R.tagHid=(R.tagHid||0)+dt)>0.35)R.tag.hidden=true;continue;}R.tagHid=0;
     {const px=R.x;const s=sampleAt(R.buf,renderT(R));if(s){R.x=s.x;R.y=s.y;R.z=s.z;}else{const k=damp(dt,16);R.x+=(R.tx-R.x)*k;R.y+=(R.ty-R.y)*k;R.z+=(R.tz-R.z)*k;}
       const v=dt>0?(R.x-px)/dt:0;R.dvx=R.dvx==null?v:R.dvx+(v-R.dvx)*Math.min(1,dt*12);R.vx=Math.abs(R.dvx)<0.3?0:R.dvx;}
     if(R.atk){R.atk.t+=dt;if(R.atk.t>=R.atk.wind+R.atk.act+R.atk.rec+0.05&&!R.atk.hold)R.atk=null;}
@@ -8405,7 +8406,7 @@ function mpDrawRemote(dt){
     hero=R.hero;G.weapon=R.wobj;G.cls=R.cls;G.state=(R.st==='climb'||R.st==='enter')?R.st:'play';G.enterT=R.et||0;updTrail=()=>{};updBear=()=>{};
     try{_updHeroVisual(dt);}catch(e){MP.lastErr=String(e&&e.stack||e).slice(0,400);}finally{for(const k2 of RKEYS){R[k2]=P[k2];P[k2]=bk[k2];}hero=gH;G.weapon=gW;G.cls=gC;G.state=gS;G.enterT=gE;updTrail=uT;updBear=uB;}
     if(!R.tag){R.tag=document.createElement('div');R.tag.className='mp-tag';document.body.appendChild(R.tag);R.tagT=R.tagC=R.tagX=R.tagY=null;}
-    {const tx=R.name||'Compagno';if(R.tagT!==tx){R.tagT=tx;R.tag.textContent=tx;R.tagW=0;}if(R.tag.hidden)R.tag.hidden=false;if(R.tagC!==col){R.tagC=col;R.tag.style.setProperty('--mc',col);}
+    {const ro=!G.pvp&&!R.hub&&R.cls&&typeof ROLES!=='undefined'&&ROLES[roleOf(R.cls)],tx=(R.name||'Compagno')+(ro?' · '+ro.name:'');   // nome e ruolo insieme, in un colpo soloif(R.tagT!==tx){R.tagT=tx;R.tag.textContent=tx;R.tagW=0;}R.tagVis=(R.tagVis||0)+dt;if(R.tag.hidden&&R.tagVis>0.35)R.tag.hidden=false;if(R.tagC!==col){R.tagC=col;R.tag.style.setProperty('--mc',col);}
       if(R.tagD!==!!R.dead){R.tagD=!!R.dead;R.tag.classList.toggle('down',R.tagD);R.tagW=0;}}
   }
   if(box)box.hidden=!anyMate;
@@ -10767,7 +10768,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795041637';
+const BUILD_ID='1795041797';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13966,9 +13967,7 @@ setInterval(()=>{if(G.state!=='play'||P.dead||G.scene!=='tower'||G.pvp||document
 const _rsRole=renderSelect;
 renderSelect=function(){_rsRole.apply(this,arguments);const c=G.cls,ro=ROLES[roleOf(c)],box=$('cstats');if(!ro||!box)return;
   const sub=box.querySelector('.cs-sub');if(sub&&!sub.querySelector('.role-chip'))sub.insertAdjacentHTML('beforeend',` · <span class="role-chip" style="--rc:${ro.col}" title="${esc(ro.desc)}">${ro.name}</span><div class="role-desc">${esc(ro.desc)}</div>`);};
-// il ruolo accanto al nome dei compagni
-setInterval(()=>{if(!MP.live())return;for(const R of MP.players.values()){const ro=R&&R.cls&&ROLES[roleOf(R.cls)];if(!ro||!R.tag)continue;
-  const t=`${R.name} · ${ro.name}`;if(R.tag.textContent!==t&&R.tag.textContent===R.name){R.tag.textContent=t;R.tagW=0;}}},500);
+// il ruolo accanto al nome dei compagni: lo scrive direttamente il disegno dei compagni (13-coop-santuario), così il nome non cambia due volte
 {const st=document.createElement('style');st.textContent=`
 .role-chip{display:inline-block;padding:1px 7px;border:1px solid var(--rc);color:var(--rc);border-radius:9px;font-size:11px;letter-spacing:.04em}
 .role-desc{margin-top:4px;font-weight:500;letter-spacing:0;color:var(--ink-2);font-size:11px}`;document.head.appendChild(st);}
