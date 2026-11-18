@@ -354,7 +354,7 @@ function thumbOf(k){if(THUMB[k]!=null)return THUMB[k];try{const m=skinModel(k);m
 
 /* ---------- casse del negozio ---------- */
 const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o un pezzo d\'armatura, almeno Non comune'},
-  {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
+  {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Un oggetto Raro, con il 3% di trovarlo Epico'},
   {id:'leggenda',n:'Cassa epica',p:1700,min:3,d:'Un oggetto Epico, con il 3% di trovarlo Leggendario'},
   {id:'mitica',n:'Cassa mitica',p:2400,min:4,d:'Un oggetto Leggendario o Mitico'}];
 // sconto del 30% a rotazione ogni giorno, ma mai sulla Cassa mitica

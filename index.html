@@ -9816,7 +9816,7 @@ function thumbOf(k){if(THUMB[k]!=null)return THUMB[k];try{const m=skinModel(k);m
 
 /* ---------- casse del negozio ---------- */
 const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o un pezzo d\'armatura, almeno Non comune'},
-  {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
+  {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Un oggetto Raro, con il 3% di trovarlo Epico'},
   {id:'leggenda',n:'Cassa epica',p:1700,min:3,d:'Un oggetto Epico, con il 3% di trovarlo Leggendario'},
   {id:'mitica',n:'Cassa mitica',p:2400,min:4,d:'Un oggetto Leggendario o Mitico'}];
 // sconto del 30% a rotazione ogni giorno, ma mai sulla Cassa mitica
@@ -10680,7 +10680,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795026711';
+const BUILD_ID='1795027600';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13861,6 +13861,7 @@ renderForge=function(){_rfFuse.apply(this,arguments);renderFuse();
 const CRATE_MYTH=0.03;   // Cassa mitica: 3% di oggetto Mitico, altrimenti Leggendario
 // Cassa epica (id 'leggenda'): 97% Epica, 3% Leggendaria · Cassa mitica: 97% Leggendaria, 3% Mitica · le altre come l'estrazione nella torre, sul tuo piano migliore
 function crateOdds(cr){
+  if(cr.id==='eroe')return [0,0,0.97,0.03,0,0,0];      // Cassa dell'eroe: 97% Rara, 3% Epica
   if(cr.id==='leggenda')return [0,0,0,0.97,0.03,0,0];
   if(cr.id==='mitica')return [0,0,0,0,1-CRATE_MYTH,CRATE_MYTH,0];
   const f=Math.max(5,STATS.best||1),mx=lootMaxR(f),nv=novice();

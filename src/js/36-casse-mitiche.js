@@ -7,6 +7,7 @@
 const CRATE_MYTH=0.03;   // Cassa mitica: 3% di oggetto Mitico, altrimenti Leggendario
 // Cassa epica (id 'leggenda'): 97% Epica, 3% Leggendaria · Cassa mitica: 97% Leggendaria, 3% Mitica · le altre come l'estrazione nella torre, sul tuo piano migliore
 function crateOdds(cr){
+  if(cr.id==='eroe')return [0,0,0.97,0.03,0,0,0];      // Cassa dell'eroe: 97% Rara, 3% Epica
   if(cr.id==='leggenda')return [0,0,0,0.97,0.03,0,0];
   if(cr.id==='mitica')return [0,0,0,0,1-CRATE_MYTH,CRATE_MYTH,0];
   const f=Math.max(5,STATS.best||1),mx=lootMaxR(f),nv=novice();
