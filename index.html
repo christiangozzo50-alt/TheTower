@@ -2409,6 +2409,22 @@ const P={x:-1.6,y:0,z:0,vx:0,vy:0,w:0.8,h:2.05,face:1,onGround:false,hp:100,stam
 const input={left:false,right:false,up:false,down:false,jumpHeld:false,jumpPressed:false,atkHeld:false,atkPressed:false,dashPressed:false,abilPressed:false,abil2Pressed:false,abil3Pressed:false,usePressed:false};
 function clearInput(){for(const k in input)input[k]=false;document.querySelectorAll('.on').forEach(e=>e.classList.remove('on'));}
 
+
+/* =========================================================
+   EROI NUOVI (dati). Ogni eroe nuovo ha una "base": un eroe esistente da cui prende
+   pose, stile delle armature e animazioni di presentazione. Mosse, aspetto e colori sono suoi.
+   ========================================================= */
+// finché non sono approvati si vedono solo in prova (indirizzo con #coop-debug o #eroi-nuovi)
+const NEW_HEROES_ON=/coop-debug|eroi-nuovi/.test(location.hash);
+if(NEW_HEROES_ON)CLASSES.push(
+  {id:'ninja',base:'assassino',name:'Ninja',weapon:'pugnali',wname:'Kunai',hp:88,speed:9.8,armor:0,crit:0.15,jumps:1,fx:0xff4a4a,
+   colors:{limb:0x1a1a22,trim:0x8a1a1f,accent:0xff4a4a,cape:0x15151c,main:0x22222c},
+   ability:{id:'shuriken',name:'Pioggia di shuriken',short:'Shuriken',icon:'star',cd:5,desc:'Lanci tre shuriken che trapassano tutti i nemici sulla loro strada.'},
+   ability2:{id:'fumogeno',name:'Bomba fumogena',short:'Fumo',icon:'ghost',cd:9,desc:'Una nube di fumo ti rende intoccabile per un attimo e stordisce i nemici vicini. Per 3 secondi i tuoi colpi sono tutti critici.'},
+   ability3:{id:'sostituzione',name:'Tecnica della sostituzione',short:'Sostituzione',icon:'daggers',cd:15,desc:'Lasci al tuo posto un tronco che esplode e attraversi la fila di nemici davanti a te, colpendoli tutti con un critico.'}}
+);
+for(const c of CLASSES)if(c.base&&c.tier==null)c.tier=2;
+Object.assign(UNLOCK,{ninja:{t:'floor',n:40}});
 /* =========================================================
    GRAFICA: renderer, scena, luci
    ========================================================= */
@@ -4054,6 +4070,29 @@ function buildSkin(cls,v){
   if(!R.mats.length)R.mats.push(R.skinM);return R;
 }
 
+
+/* =========================================================
+   ASPETTO DEGLI EROI NUOVI
+   ========================================================= */
+// ninja: cappuccio stretto e maschera, fascia con piastra, sciarpa e nastri al vento
+function ninjaMake(R,K,c){const wrap=K.ds(c.wrap),band=K.m(c.band),bandD=K.ds(c.bandD),steel=K.m(0xb8bec8);
+  SP.hood(R,wrap,{r:0.198,depth:0.7,open:1.44,brow:0.34,peak:false,cy:0.025,cz:-0.008,rimT:0.012,cowlR:0.2,cowlY:0.06});SP.lowMask(R,K.m(c.mask));
+  M(R.head,G3.hring(0.2,0.022,1.0),band,[0,0.1,-0.005]);M(R.head,G3.rb(0.12,0.05,0.02,0.01),steel,[0,0.1,0.198],{ol:0.008});
+  flow2(R,R.head,[0.02,0.1,-0.19],3,0.14,0.05,0.04,bandD,0.4,1.3,0);flow2(R,R.head,[-0.03,0.09,-0.19],3,0.12,0.045,0.035,bandD,0.6,1.1,0);
+  SP.strap(R,K.m(c.strap),[[-0.07,0.69],[0.02,0.5],[0.11,0.3]],{w:0.045,th:0.008});
+  SP.belt(R,band,null,{t:0.04});flow2(R,R.pelvis,[-0.1,0.03,0.1],2,0.15,0.06,0.05,bandD,0.1,0.8,0);
+  SP.bracer(R,K.m(c.bracer),{r0:0.066,r1:0.054,ring:steel});}
+SKINS.ninja=[
+  {name:'Ninja del clan rosso',desc:'Nero da capo a piedi, fascia e sciarpa rosso sangue: si muove senza far rumore.',
+   body:{skin:0xd8b090,shirt:0x16161e,sleeve:0x16161e,fore:0x1e1e28,pants:0x16161e,boot:0x22222c,glove:0x16161e},
+   make(R,K){ninjaMake(R,K,{wrap:0x16161e,mask:0x1a1a24,band:0xc0201e,bandD:0x9a1414,strap:0x2a2a36,bracer:0x2e2e3a});}},
+  {name:'Ombra della neve',desc:'Bianco e grigio per sparire nelle tormente, nastri azzurri come il ghiaccio.',
+   body:{skin:0xe0bc9c,shirt:0xe6e8ee,sleeve:0xe6e8ee,fore:0xcfd3dc,pants:0xd8dbe2,boot:0x9aa0ac,glove:0xcfd3dc},
+   make(R,K){ninjaMake(R,K,{wrap:0xe6e8ee,mask:0xcfd3dc,band:0x4a8ad8,bandD:0x3a6ab0,strap:0x9aa0ac,bracer:0xb8bec8});}},
+  {name:'Lama del tramonto',desc:'Viola e oro: l\'assassino della corte, che colpisce quando il sole cala.',
+   body:{skin:0xc89a78,shirt:0x2a1a3a,sleeve:0x2a1a3a,fore:0x3a2450,pants:0x2a1a3a,boot:0x1a1224,glove:0x3a2450},
+   make(R,K){ninjaMake(R,K,{wrap:0x2a1a3a,mask:0x22142e,band:0xe0a830,bandD:0xb07a18,strap:0x3a2450,bracer:0x4a3060});}}
+];
 // ===== NUOVE ARMI: 3 versioni per ogni arma (i catalizzatori dei maghi restano quelli del gioco) =====
 // Stesso formato del gioco: buildWeapon2(tipo, versione, rarità, effetto) → {g, tip}. L'impugnatura è all'origine, l'arma scende lungo -y,
 // la lama sta nel piano y-z (come buildWeaponMesh), le lunghezze restano quelle del gioco così colpi e pose non cambiano.
@@ -10723,7 +10762,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795040636';
+const BUILD_ID='1795040989';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -14226,6 +14265,44 @@ function ncTick(dt){if(!cardOn()||G.state!=='play'||P.dead)return;
   else if(BLADES.g)BLADES.g.visible=false;}
 const _ufNC=updFloor;updFloor=function(dt){_ufNC(dt);try{ncTick(dt);}catch(err){console.warn('nuove carte',err);}};
 setInterval(()=>{if(BLADES.g&&(G.scene!=='tower'||!lvC('lame')||P.dead||G.state!=='play'))BLADES.g.visible=false;},300);
+
+/* =========================================================
+   EROI NUOVI (comportamento): tabelle prese dall'eroe "base", mosse speciali proprie
+   ========================================================= */
+for(const c of CLASSES){if(!c.base)continue;const b=c.base,id=c.id;
+  if(SKINPICK[id]==null)SKINPICK[id]=0;
+  for(const T of [ABTHEME,BREST,GEAR_STYLE,SHOP_POSE,SHOWS])if(T&&T[id]==null&&T[b]!=null)T[id]=T[b];
+  if(CLS_COL[id]==null)CLS_COL[id]=c.fx||CLS_COL[b]||0x7ff0e4;
+  if(typeof CINE_INFO!=='undefined'&&CINE_INFO[id]==null)CINE_INFO[id]=c.wname;}
+Object.assign(GEAR_PAL,{ninja:{a:0x1e1e28,b:0x2a2a36,t:0xc0201e}});
+// le armature hanno forme diverse per ogni eroe: gli eroi nuovi usano quelle della loro base
+const _gbNew=gearBuild;
+gearBuild=function(R,cls,gear){if(cls&&cls.base){const base=Object.assign({},cls,{id:cls.base});const P0=GEAR_PAL[cls.base];if(GEAR_PAL[cls.id])GEAR_PAL[cls.base]=GEAR_PAL[cls.id];
+    try{return _gbNew(R,base,gear);}finally{GEAR_PAL[cls.base]=P0;}}return _gbNew(R,cls,gear);};
+
+/* ---------- mosse speciali ---------- */
+const NEWAB={
+  // NINJA
+  shuriken(){const f=P.face;P.throwT=0.25;sfx('stab');
+    for(let i=0;i<3;i++)later(i*0.06,()=>pProj({x:P.x+f*0.6,y:P.y+1.05+i*0.3,vx:f*25,vy:(i-1)*1.2,w:0.55,h:0.5,dmg:weaponDamage()*0.85,life:0.85,kind:'knife',kb:3,pierce:true,col:0xff4a4a}));},
+  fumogeno(){const x=P.x,y=P.y;sfx('dash');P.invul=Math.max(P.invul,1.2);G.ninjaCrit=G.time+3;
+    for(let i=0;i<5;i++)burst(x+rand(-1.5,1.5),y+rand(0.3,2),0x8a8a96,14,3,0.6,-0.4);burst(x,y+1,0x3a3a44,30,5,0.5,-0.2);fxRing(x,y+0.06,0,0xb8b8c4,3.4,0.6);
+    aoe(x,y+1,3.3,0.3,{stun:1.3,kb:2});spawnGhost(0xff4a4a);},
+  sostituzione(){const f=P.face,x0=P.x,y0=P.y;sfx('dash');
+    // il tronco lasciato al tuo posto
+    const log=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.25,1.3,10),toon(0x7a5432));log.position.set(x0,y0+0.65,0);scene.add(log);burst(x0,y0+1,0xb8b8c4,20,4,1,-0.2);
+    setTimeout(()=>{scene.remove(log);disposeObj(log);if(G.scene==='tower')boomAt(x0,y0+1,2.4,weaponDamage()*1.4,null,0xff7a2e);},650);
+    const t=foes().filter(e=>(e.x-x0)*f>0&&Math.abs(e.x-x0)<13).sort((a,b)=>Math.abs(a.x-x0)-Math.abs(b.x-x0)).slice(0,6);
+    P.invul=Math.max(P.invul,0.4+t.length*0.12);
+    t.forEach((e,i)=>later(0.1*i,()=>{if(e.dead)return;spawnGhost(0xff4a4a);P.x=clamp(e.x+f*1.3,G.bounds.left+0.6,rightBound(P)-0.6);P.vx=0;
+      hitEnemy(e,weaponDamage()*1.5,f,{crit:true,kb:6,unblockable:true});fxSlash(e.x,e.y+e.h*0.55,0,0xff4a4a,1.5,0,f*0.6,0.25);sfx('stab');}));
+    if(!t.length){P.x=clamp(x0+f*6,G.bounds.left+0.6,rightBound(P)-0.6);spawnGhost(0xff4a4a);}}
+};
+const _doAbNew=doAbility;
+doAbility=function(id){if(NEWAB[id])return NEWAB[id]();return _doAbNew(id);};
+// fumogeno: per 3 secondi i colpi del ninja sono critici
+const _hitNew=hitEnemy;
+hitEnemy=function(e,base,dir,o){if(G.cls&&G.cls.id==='ninja'&&(G.ninjaCrit||0)>G.time&&o&&o.melee&&!o.crit)o=Object.assign({},o,{crit:true});return _hitNew(e,base,dir,o);};
 requestAnimationFrame(frame);
 })();
 </script>
