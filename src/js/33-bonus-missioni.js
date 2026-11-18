@@ -109,3 +109,12 @@ const _padBackD=padBack;padBack=function(){if(G.state==='daily'){dlyClaim();retu
 .tro .tro-claim{justify-self:start;margin-top:3px}
 @media (max-width:520px){.dly-row{grid-template-columns:repeat(4,minmax(0,1fr))}}`;document.head.appendChild(st);}
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{DLY:()=>DLY,dlyOpen,dlyClaim,troToClaim,TRO_CLAIM:()=>TRO_CLAIM,SKKEEP:()=>SKKEEP});
+
+/* ---------- regalo di benvenuto: una Cassa dell'eroe ai giocatori nuovi, la prima volta che arrivano nel seminterrato ----------
+   "nuovo" = al primo avvio non aveva ancora scelto il nome e non ha mai fatto una scalata (chi rientra col suo account non lo riceve) */
+{const was=store.get('nameok',false);if(!was&&!store.get('welcome',null)&&!(STATS.runs>0))store.set('welcome','attesa');
+  const iv=setInterval(()=>{const w=store.get('welcome',null);if(w!=='attesa'){clearInterval(iv);return;}
+    if(!store.get('nameok',false)||G.state!=='cellar'||G.fadeTarget>0||!$('nameGate').hidden||document.querySelector('.screen:not([hidden])'))return;
+    if(STATS.runs>0||(STATS.best||0)>1){store.set('welcome','no');clearInterval(iv);return;}   // ha già giocato (es. ha appena ritrovato il suo account)
+    const cr=CRATES.find(c=>c.id==='eroe');if(!cr)return;store.set('welcome','dato');clearInterval(iv);
+    toast('Regalo di benvenuto!','Una Cassa dell\'eroe per iniziare la scalata');try{openCrate(cr);}catch(e){console.warn('regalo',e);}},1500);}

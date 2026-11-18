@@ -1143,3 +1143,14 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}35%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(.95)}}
 @keyframes cf-shimmer{to{background-position:300% 0}}
 @media (prefers-reduced-motion:reduce){#crateFx.shake .cf-stage,#crateFx.charge .cf-stage{animation:none}}
+
+/* spettatore: potenziamenti compatti (solo icone su una riga), tutti con il nome se apri */
+#specPerks{max-width:min(620px,calc(100vw - 24px));padding:6px 8px}
+#specPerks .sp-h{display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:5px;user-select:none}
+#specPerks .sp-h small{margin-left:0;padding:0 6px;border-radius:8px;background:rgba(180,140,255,.18);color:#e6d8ff;font-size:10px;font-weight:700}
+#specPerks .sp-tg{margin-left:auto;font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:none;color:#c7a8ff}
+#specPerks:not(.open) .sp-list{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;scrollbar-width:none;gap:4px}
+#specPerks:not(.open) .sp-list::-webkit-scrollbar{display:none}
+#specPerks:not(.open) .sp-chip{padding:3px 5px;gap:3px;flex:none}
+#specPerks:not(.open) .sp-chip b{display:none}
+#specPerks.open .sp-list{max-height:38vh}

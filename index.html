@@ -1151,6 +1151,17 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 @keyframes cf-ban{0%{opacity:0;transform:translate(-50%,-50%) scale(.2)}22%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}35%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-70%) scale(.95)}}
 @keyframes cf-shimmer{to{background-position:300% 0}}
 @media (prefers-reduced-motion:reduce){#crateFx.shake .cf-stage,#crateFx.charge .cf-stage{animation:none}}
+
+/* spettatore: potenziamenti compatti (solo icone su una riga), tutti con il nome se apri */
+#specPerks{max-width:min(620px,calc(100vw - 24px));padding:6px 8px}
+#specPerks .sp-h{display:flex;align-items:center;gap:6px;cursor:pointer;margin-bottom:5px;user-select:none}
+#specPerks .sp-h small{margin-left:0;padding:0 6px;border-radius:8px;background:rgba(180,140,255,.18);color:#e6d8ff;font-size:10px;font-weight:700}
+#specPerks .sp-tg{margin-left:auto;font-style:normal;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:none;color:#c7a8ff}
+#specPerks:not(.open) .sp-list{flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;max-height:none;scrollbar-width:none;gap:4px}
+#specPerks:not(.open) .sp-list::-webkit-scrollbar{display:none}
+#specPerks:not(.open) .sp-chip{padding:3px 5px;gap:3px;flex:none}
+#specPerks:not(.open) .sp-chip b{display:none}
+#specPerks.open .sp-list{max-height:38vh}
 </style>
 
 <canvas id="game" tabindex="0" aria-label="Area di gioco"></canvas>
@@ -10703,7 +10714,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795038963';
+const BUILD_ID='1795039233';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13180,6 +13191,10 @@ function specPerks(nuovi){specBarUi();const box=$('specPerks'),list=$('spList'),
   const ids=Object.keys(lv).filter(id=>lv[id]>0&&specUp(id));box.hidden=!SPEC.on||!ids.length;
   list.innerHTML=ids.map(id=>{const u=specUp(id),n=lv[id];
     return `<button type="button" class="sp-chip${u.evo?' evo':''}${(nuovi||[]).includes(id)?' new':''}${SPEC.tipId===id?' sel':''}" data-up="${esc(id)}" aria-expanded="${SPEC.tipId===id}">${svg(u.icon)}<b>${esc(u.name)}</b>${n>1||u.max>1&&u.max<99?`<i>${u.max<99?n+'/'+u.max:'×'+n}</i>`:''}</button>`;}).join('');
+  // compatti: di base solo le icone su una riga; tocchi il titolo e si vedono tutti con il nome
+  box.classList.toggle('open',!!SPEC.pkOpen);const h=box.querySelector('.sp-h');
+  if(h)h.innerHTML=`Potenziamenti <small>${ids.length}</small><em class="sp-tg">${SPEC.pkOpen?'Nascondi ▾':'Mostra tutti ▸'}</em>`;
+  if(h&&!h.dataset.tg){h.dataset.tg=1;h.addEventListener('click',()=>{SPEC.pkOpen=!SPEC.pkOpen;specPerks();});}
   if(SPEC.tipId)specTip(lv[SPEC.tipId]?SPEC.tipId:null);}
 // effetti di un potenziamento al livello che ha l'amico (le descrizioni leggono il livello da G.lv: lo si cambia per un attimo)
 function specUpDesc(u,n){const gl=G.lv;G.lv=Object.assign({},SPEC.lv,{[u.id]:Math.max(0,n-1)});try{return typeof u.desc==='function'?u.desc():(u.desc||'');}catch(e){return '';}finally{G.lv=gl;}}
@@ -13834,6 +13849,15 @@ const _padBackD=padBack;padBack=function(){if(G.state==='daily'){dlyClaim();retu
 .tro .tro-claim{justify-self:start;margin-top:3px}
 @media (max-width:520px){.dly-row{grid-template-columns:repeat(4,minmax(0,1fr))}}`;document.head.appendChild(st);}
 if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{DLY:()=>DLY,dlyOpen,dlyClaim,troToClaim,TRO_CLAIM:()=>TRO_CLAIM,SKKEEP:()=>SKKEEP});
+
+/* ---------- regalo di benvenuto: una Cassa dell'eroe ai giocatori nuovi, la prima volta che arrivano nel seminterrato ----------
+   "nuovo" = al primo avvio non aveva ancora scelto il nome e non ha mai fatto una scalata (chi rientra col suo account non lo riceve) */
+{const was=store.get('nameok',false);if(!was&&!store.get('welcome',null)&&!(STATS.runs>0))store.set('welcome','attesa');
+  const iv=setInterval(()=>{const w=store.get('welcome',null);if(w!=='attesa'){clearInterval(iv);return;}
+    if(!store.get('nameok',false)||G.state!=='cellar'||G.fadeTarget>0||!$('nameGate').hidden||document.querySelector('.screen:not([hidden])'))return;
+    if(STATS.runs>0||(STATS.best||0)>1){store.set('welcome','no');clearInterval(iv);return;}   // ha già giocato (es. ha appena ritrovato il suo account)
+    const cr=CRATES.find(c=>c.id==='eroe');if(!cr)return;store.set('welcome','dato');clearInterval(iv);
+    toast('Regalo di benvenuto!','Una Cassa dell\'eroe per iniziare la scalata');try{openCrate(cr);}catch(e){console.warn('regalo',e);}},1500);}
 
 /* =========================================================
    RUOLI DEGLI EROI (utili in co-op)

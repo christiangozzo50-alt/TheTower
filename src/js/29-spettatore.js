@@ -299,6 +299,10 @@ function specPerks(nuovi){specBarUi();const box=$('specPerks'),list=$('spList'),
   const ids=Object.keys(lv).filter(id=>lv[id]>0&&specUp(id));box.hidden=!SPEC.on||!ids.length;
   list.innerHTML=ids.map(id=>{const u=specUp(id),n=lv[id];
     return `<button type="button" class="sp-chip${u.evo?' evo':''}${(nuovi||[]).includes(id)?' new':''}${SPEC.tipId===id?' sel':''}" data-up="${esc(id)}" aria-expanded="${SPEC.tipId===id}">${svg(u.icon)}<b>${esc(u.name)}</b>${n>1||u.max>1&&u.max<99?`<i>${u.max<99?n+'/'+u.max:'×'+n}</i>`:''}</button>`;}).join('');
+  // compatti: di base solo le icone su una riga; tocchi il titolo e si vedono tutti con il nome
+  box.classList.toggle('open',!!SPEC.pkOpen);const h=box.querySelector('.sp-h');
+  if(h)h.innerHTML=`Potenziamenti <small>${ids.length}</small><em class="sp-tg">${SPEC.pkOpen?'Nascondi ▾':'Mostra tutti ▸'}</em>`;
+  if(h&&!h.dataset.tg){h.dataset.tg=1;h.addEventListener('click',()=>{SPEC.pkOpen=!SPEC.pkOpen;specPerks();});}
   if(SPEC.tipId)specTip(lv[SPEC.tipId]?SPEC.tipId:null);}
 // effetti di un potenziamento al livello che ha l'amico (le descrizioni leggono il livello da G.lv: lo si cambia per un attimo)
 function specUpDesc(u,n){const gl=G.lv;G.lv=Object.assign({},SPEC.lv,{[u.id]:Math.max(0,n-1)});try{return typeof u.desc==='function'?u.desc():(u.desc||'');}catch(e){return '';}finally{G.lv=gl;}}
