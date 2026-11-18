@@ -8836,13 +8836,14 @@ function mmTry(){if(!MM.on||MP.on)return;
       if(m.t==='full'){clearTimeout(to);MM.slot++;fail(mmTry);return;}
       if(m.t==='welcome'&&!done){clearTimeout(to);done=true;MP.host=false;MP.peer=p;MP.conn=c;MP.on=true;MP.code=mmId();
         c.on('close',()=>{if(MP.conn===c)mpDrop();});try{c.send({t:'hi',n:MP.name()});}catch(_){}
-        mmSay('Partita trovata! Aspetto gli altri giocatori…');}
+        mmSay('Partita trovata! Aspetto gli altri giocatori…');
+        const myC=c;clearTimeout(MM.zt);MM.zt=setTimeout(()=>{if(!MM.on||PV.on||MP.conn!==myC)return;mmSay('La stanza non risponde, ne cerco un\'altra…');mpLeave(true);MM.slot++;setTimeout(mmTry,300);},MM.mode==='1v1'?7000:45000);}
       if(MP.conn===c){try{mpMsg(m,0);}catch(e){console.warn(e);}}});});
   p.on('error',e=>{if(e&&e.type==='peer-unavailable')fail(mmClaim);else if(!done&&e&&e.type!=='peer-unavailable')fail(()=>{MM.slot++;mmTry();});});}
 function mmClaim(){if(!MM.on||MP.on)return;let p;try{p=new Peer(mmId());}catch(e){return;}
   p.on('open',()=>{if(!MM.on){try{p.destroy();}catch(_){}return;}MP.host=true;MP.peer=p;MP.on=true;MP.myPid=0;MP.code=mmId();MP.seed=(Math.random()*1e9)|0;MM.hosting=true;
     mmSay(`In attesa di avversari (${MM.region==='all'?'tutti i paesi':'vicino a te'})…`);
-    p.on('connection',c=>{const open=MP.conns.filter(x=>x.c.open).length;if(MM.started||open>=MM_NEED[MM.mode]-1){c.on('open',()=>{try{c.send({t:'full'});}catch(_){}setTimeout(()=>c.close(),300);});return;}mpHostWire(c);});
+    p.on('connection',c=>{const open=MP.conns.filter(x=>x.c.open).length;if(!MM.on||!MM.hosting||MM.started||open>=MM_NEED[MM.mode]-1){/* stanza chiusa: partita già iniziata o ricerca finita */c.on('open',()=>{try{c.send({t:'full'});}catch(_){}setTimeout(()=>c.close(),300);});return;}mpHostWire(c);});
     clearTimeout(MM.tm);MM.tm=setTimeout(function chk(){if(!MM.on||MM.started)return;
       if(MP.count()===1&&MM.region!=='all'){mpLeave(true);MM.region='all';MM.slot=0;mmSay('Allargo la ricerca a tutti i paesi…');mmTry();}else MM.tm=setTimeout(chk,15000);},20000);});
   p.on('error',e=>{if(e&&e.type==='unavailable-id'){try{p.destroy();}catch(_){}setTimeout(mmTry,200+Math.random()*400);}});}
@@ -10768,7 +10769,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795041797';
+const BUILD_ID='1795042162';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
