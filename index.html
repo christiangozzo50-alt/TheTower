@@ -8284,7 +8284,7 @@ function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.
 // riproduzione fluida: si mostra il movimento con un piccolo ritardo, interpolando tra i dati ricevuti
 const INTERP_MS=110;
 function bufPush(o,s){const b=o.buf||(o.buf=[]),l=b[b.length-1];if(l){const d=Math.min(400,s.t-l.t);o.iv=o.iv==null?d:o.iv*0.9+d*0.1;o.jit=o.jit==null?0:o.jit*0.9+Math.abs(d-o.iv)*0.1;}
-  b.push(s);if(b.length>12)b.shift();const tg=Math.max(40,Math.min(130,(o.iv||50)+2*(o.jit||0)+8));o.delay=o.delay==null?tg:o.delay+Math.max(-3,Math.min(3,tg-o.delay));}
+  b.push(s);if(b.length>32)b.shift();const tg=Math.max(40,Math.min(130,(o.iv||50)+2*(o.jit||0)+8));o.delay=o.delay==null?tg:o.delay+Math.max(-3,Math.min(3,tg-o.delay));}
 // il tempo mostrato non torna mai indietro: niente passi all'indietro quando il ritardo si regola
 function renderT(o){let t=performance.now()-(o.delay||INTERP_MS);if(o.lastRt!=null&&t<o.lastRt)t=o.lastRt;o.lastRt=t;return t;}
 function sampleAt(buf,t){if(!buf||!buf.length)return null;const n=buf.length;
@@ -10644,7 +10644,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795020959';
+const BUILD_ID='1795021123';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -12826,8 +12826,8 @@ const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
 // chi guarda
 // ponte via Firebase (quando il collegamento diretto non passa): chi scala scrive la partita in players/<nome>/sr, chi guarda la riceve in diretta
-const RL={on:false,busy:false,s:[],e:null,pj:null,cb:null,fx:[],q:0,who:new Set(),n:0};
-const RL_MS=250,RL_DELAY=380;
+const RL={on:false,busy:false,s:[],es:[],pj:null,pjt:0,cb:null,fx:[],q:0,who:new Set(),n:0};
+const RL_MS=250,RL_DELAY=330;
 const fbBase=()=>FB_URL.replace(/\/$/,'');
 const SPEC={on:false,mode:null,key:'',name:'',peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),tm:0,endT:0,prevFl:1};
 
@@ -12883,8 +12883,8 @@ setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
   specCountUi();},2000);
 // invio a chi guarda: eroe, nemici, proiettili ed effetti 20 volte al secondo (come in co-op); forzieri e barili 4 volte al secondo
 setInterval(()=>{if((!SPB.conns.length&&!RL.on)||document.hidden)return;SPB.tk++;
-  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);if(RL.on){RL.s.push(s);if(RL.s.length>6)RL.s.shift();}
-      if(!G.pvp){const e=mpSnap(),pj=specProjMsg();specSend(e);specSend(pj);if(RL.on){RL.e=e;RL.pj=pj;}
+  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);if(RL.on){s.rt=Math.round(performance.now());RL.s.push(s);if(RL.s.length>6)RL.s.shift();}
+      if(!G.pvp){const e=mpSnap(),pj=specProjMsg();specSend(e);specSend(pj);if(RL.on){const t=Math.round(performance.now());RL.pj=pj;RL.pjt=t;if(SPB.tk%2===0){RL.es.push([t,e]);if(RL.es.length>4)RL.es.shift();}}
         if(FXQ.length){const l=FXQ.splice(0);specSend({t:'fx',f:G.floor,l});if(RL.on)RL.fx.push(...l);}
         if(SPB.tk%5===0){const cb=specPropsMsg();specSend(cb);if(RL.on)RL.cb=cb;}}}
     {const k=specInRun()?JSON.stringify(G.lv||{}):'{}';if(k!==SPB.lvKey){SPB.lvKey=k;specSend({t:'lv',lv:JSON.parse(k)});}}
@@ -13004,7 +13004,7 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  clearTimeout(SPEC.outT);Object.assign(SPEC,{mode:null,rlQ:0,outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{mode:null,rlQ:0,off:null,jit:null,outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
@@ -13039,13 +13039,22 @@ function specRelayStop(){clearInterval(SPEC.rlPing);clearInterval(SPEC.rlWd);con
 function specRelayMsg(b){if(!SPEC.on||SPEC.mode==='p2p'||!b)return;
   if(!SPEC.mode){SPEC.mode='relay';specP2pStop();}
   SPEC.rlLast=Date.now();if(b.q&&b.q===SPEC.rlQ)return;SPEC.rlQ=b.q;
+  // orologio di chi scala → orologio di chi guarda: ogni dato si mette nel momento giusto (non quando arriva il pacchetto)
+  const arr=performance.now();
+  if(typeof b.bt==='number'){const c=arr-b.bt;if(SPEC.off==null||c<SPEC.off)SPEC.off=c;else SPEC.off+=Math.min(2,c-SPEC.off);
+    const ex=c-SPEC.off;SPEC.jit=SPEC.jit==null?ex:Math.max(ex,SPEC.jit*0.93);}
+  const toL=t=>typeof t==='number'&&SPEC.off!=null?t+SPEC.off:arr;
+  const fixLast=(o,t)=>{const bf=o&&o.buf;if(bf&&bf.length&&bf[bf.length-1].t>=arr-1)bf[bf.length-1].t=t;};
   if(b.si)specMsg(b.si);if(!SPEC.on)return;
   if(b.lv)specSetLv(b.lv);
-  const now=performance.now(),l=b.s||[];
-  l.forEach((s,i)=>{specMsg(s);const R=SPEC.R;if(R&&R.buf&&R.buf.length)R.buf[R.buf.length-1].t=now-(l.length-1-i)*50;});
-  if(b.e)specMsg(b.e);if(b.pj)specMsg(b.pj);if(b.cb)specMsg(b.cb);if(b.fx)specMsg(b.fx);
-  // i dati arrivano a pacchetti: un po' più di ritardo, così i movimenti restano fluidi
-  if(SPEC.R)SPEC.R.delay=RL_DELAY;for(const e of SPEC.emap.values())e.delay=RL_DELAY;for(const p of SPX.pj.values())p.delay=RL_DELAY;}
+  const l=b.s||[];
+  l.forEach((m,i)=>{specMsg(m);fixLast(SPEC.R,m.rt!=null?toL(m.rt):arr-(l.length-1-i)*50);});
+  for(const [t,e] of (b.es||(b.e?[[null,b.e]]:[]))){specMsg(e);const tl=t!=null?toL(t):arr;for(const en of SPEC.emap.values())fixLast(en,tl);}
+  if(b.pj){specMsg(b.pj);const tl=b.pjt?toL(b.pjt):arr;for(const p of SPX.pj.values())fixLast(p,tl);}
+  if(b.cb)specMsg(b.cb);if(b.fx)specMsg(b.fx);
+  // ritardo di visione: un pacchetto (250 ms) + le irregolarità della rete misurate, così il buffer non resta mai vuoto
+  const d=clamp(Math.round(RL_DELAY+(SPEC.jit||0)*1.3),RL_DELAY,1100);SPEC.rlDelay=d;
+  if(SPEC.R)SPEC.R.delay=d;for(const e of SPEC.emap.values())e.delay=d;for(const p of SPX.pj.values())p.delay=d;}
 function specMsg(m){
   if(m.t==='full'){specExit('Troppi spettatori',`${SPEC.name} ha già ${SPEC_MAX} persone che lo guardano`);return;}
   if(m.t==='si'){SPEC.seed=m.seed;if(m.n)SPEC.name=m.n;$('sbName').textContent=SPEC.name;
@@ -13154,13 +13163,13 @@ setInterval(async()=>{if(!fbOn()||!store.get('nameok',false))return;const run=sp
   const now=Date.now(),act=Object.entries(sq||{}).filter(([k,v])=>v&&Math.abs(now-(v.t||0))<30000);
   for(const [k,v] of act)if(!RL.who.has(k)){RL.who.add(k);toast(`${String(v.n||'Un amico').slice(0,14)} ti sta guardando`,'Ti segue nella scalata');}
   const want=specInRun()&&act.length>0;RL.n=act.length;
-  if(want&&!RL.on){RL.on=true;RL.s=[];RL.fx=[];RL.e=RL.pj=RL.cb=null;}
+  if(want&&!RL.on){RL.on=true;RL.s=[];RL.es=[];RL.fx=[];RL.pj=RL.cb=null;}
   else if(!want&&RL.on){RL.on=false;relayEnd();}
   specCountUi();},3000);
 setInterval(()=>{if(!RL.on||RL.busy||!fbOn())return;
   if(!specInRun()){RL.on=false;relayEnd();return;}
-  const b={q:++RL.q,si:specInfo(),lv:Object.assign({},G.lv||{}),s:RL.s.splice(0),e:RL.e,pj:RL.pj,cb:RL.cb,fx:RL.fx.length?{t:'fx',f:G.floor,l:RL.fx.splice(0,140)}:null};
-  RL.e=RL.pj=RL.cb=null;relayPut(b);},RL_MS);
+  const b={q:++RL.q,bt:Math.round(performance.now()),si:specInfo(),lv:Object.assign({},G.lv||{}),s:RL.s.splice(0),es:RL.es.splice(0),pj:RL.pj,pjt:RL.pjt,cb:RL.cb,fx:RL.fx.length?{t:'fx',f:G.floor,l:RL.fx.splice(0,140)}:null};
+  RL.pj=RL.cb=null;relayPut(b);},RL_MS);
 
 /* ---------- l'occhio nella lista amici, aggiornato mentre la lista è aperta ---------- */
 function specEyeHtml(k,p){if(!specCan(p))return '';const n=esc(p.n||k);

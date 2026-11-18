@@ -167,7 +167,7 @@ function mpRemoveHero(R){if(R.hero){scene.remove(R.hero.root);disposeObj(R.hero.
 // riproduzione fluida: si mostra il movimento con un piccolo ritardo, interpolando tra i dati ricevuti
 const INTERP_MS=110;
 function bufPush(o,s){const b=o.buf||(o.buf=[]),l=b[b.length-1];if(l){const d=Math.min(400,s.t-l.t);o.iv=o.iv==null?d:o.iv*0.9+d*0.1;o.jit=o.jit==null?0:o.jit*0.9+Math.abs(d-o.iv)*0.1;}
-  b.push(s);if(b.length>12)b.shift();const tg=Math.max(40,Math.min(130,(o.iv||50)+2*(o.jit||0)+8));o.delay=o.delay==null?tg:o.delay+Math.max(-3,Math.min(3,tg-o.delay));}
+  b.push(s);if(b.length>32)b.shift();const tg=Math.max(40,Math.min(130,(o.iv||50)+2*(o.jit||0)+8));o.delay=o.delay==null?tg:o.delay+Math.max(-3,Math.min(3,tg-o.delay));}
 // il tempo mostrato non torna mai indietro: niente passi all'indietro quando il ritardo si regola
 function renderT(o){let t=performance.now()-(o.delay||INTERP_MS);if(o.lastRt!=null&&t<o.lastRt)t=o.lastRt;o.lastRt=t;return t;}
 function sampleAt(buf,t){if(!buf||!buf.length)return null;const n=buf.length;
