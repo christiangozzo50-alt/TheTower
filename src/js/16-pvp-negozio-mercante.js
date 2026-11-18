@@ -357,9 +357,12 @@ const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o 
   {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
   {id:'leggenda',n:'Cassa epica',p:1700,min:3,d:'Un oggetto Epico, con il 3% di trovarlo Leggendario'},
   {id:'mitica',n:'Cassa mitica',p:2400,min:4,d:'Un oggetto Leggendario o Mitico'}];
-function dailyOffer(){return 'c:'+CRATES[dayNo()%CRATES.length].id;}
+// sconto del 30% a rotazione ogni giorno, ma mai sulla Cassa mitica
+function dailyOffer(){const L=CRATES.filter(c=>c.id!=='mitica');return 'c:'+L[dayNo()%L.length].id;}
+// la Cassa mitica è in sconto solo di rado (circa 1 giorno su 10) e al massimo del 10%
+const mythSale=()=>((dayNo()*2654435761)>>>0)%10===3;
 const FRAG_P=[1200,2000,3500];
-const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
+const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):key==='c:mitica'&&mythSale()?Math.round(base*0.9):base;};
 function openCrate(cr){const f=Math.max(5,STATS.best||1);let r=Math.max(cr.min,rollRarity(f,0));if(cr.leg&&Math.random()<cr.leg)r=4;r=Math.min(4,r);
   const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();crateShow(cr,o);return o;}
 
@@ -410,9 +413,9 @@ function renderShop(){$('shCoins').textContent=fmtC(COINS.n);for(const b of docu
   const pi=portraitImg(),pe=$('shPortrait');if(pi&&pe.getAttribute('src')!==pi)pe.src=pi;pe.hidden=!pi;$('shQuote').textContent=SH_QUOTES[dayNo()%SH_QUOTES.length];
   const off=dailyOffer(),box=$('shBody');box.className='sh-body sh-'+shTab;
   const buyBtn=(k,p)=>`<button class="sh-buy" data-buy="${k}" ${COINS.n<p?'disabled':''}>${coinI}<span>${fmtC(p)}</span></button>`;
-  if(shTab==='casse'){box.innerHTML=CRATES.map(c=>{const k='c:'+c.id,p=priceOf(k),im=crateImg(c.id);
-      return `<article class="sh-card cr-${c.id}"><div class="sh-stage">${im?`<img src="${im}" alt="">`:''}${k===off?'<em class="sh-rib">−30% oggi</em>':''}</div>
-      <div class="sh-info"><b>${c.n}</b><span>${c.d}</span></div>${k===off?`<s class="sh-was">${fmtC(c.p)}</s>`:''}${buyBtn(k,p)}</article>`;}).join('')
+  if(shTab==='casse'){box.innerHTML=CRATES.map(c=>{const k='c:'+c.id,p=priceOf(k),im=crateImg(c.id),disc=k===off?'−30% oggi':(k==='c:mitica'&&mythSale()?'−10% oggi':'');
+      return `<article class="sh-card cr-${c.id}"><div class="sh-stage">${im?`<img src="${im}" alt="">`:''}${disc?`<em class="sh-rib">${disc}</em>`:''}</div>
+      <div class="sh-info"><b>${c.n}</b><span>${c.d}</span></div>${disc?`<s class="sh-was">${fmtC(c.p)}</s>`:''}${buyBtn(k,p)}</article>`;}).join('')
       +`<p class="note">Gli oggetti finiscono nell'armadio. Le armi sono per ${esc(G.cls.name)}.</p>`;}
   else if(shTab==='ogg'){const full=STONES.n>=STONE_MAX,sp=priceOf('o:stone');
     box.innerHTML=`<div class="sh-h"><b>Oggetti</b></div><article class="sh-card" style="--vc:#ff4a64"><div class="sh-stage"><i class="sh-stone"></i><span class="sh-cnt">${STONES.n}/${STONE_MAX}</span></div>

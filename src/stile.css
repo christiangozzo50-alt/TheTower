@@ -1108,3 +1108,7 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
   #shop .sh-frame>.row button{padding:6px 18px;font-size:14px}
 }
 @media (max-width:600px){.sh-frame{min-width:0;max-width:100%}.sh-top{flex-wrap:nowrap}.sh-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.sh-tabs .tab{flex:0 0 auto}}
+
+/* chat del seminterrato: in basso al centro (dove in torre ci sono le mosse speciali), anche su telefono */
+#sChat.cellar:not(.open){left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(380px,46vw);text-align:center}
+#sChat.cellar:not(.open) #scLog{max-height:110px}

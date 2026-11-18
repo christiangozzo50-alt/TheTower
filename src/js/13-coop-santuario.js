@@ -404,14 +404,18 @@ function hubRetry(){if(!HUB.want)return;const f=HUB.floor,old=HUB.peer;HUB.peer=
   setTimeout(()=>{if(HUB.want&&HUB.floor===f&&!HUB.peer)hubClaim(f);},500+Math.random()*1500);}
 function hubLeave(){scClear();if(!HUB.want&&!HUB.peer)return;HUB.want=false;HUB.on=false;HUB.lead=false;const p=HUB.peer,c=HUB.conn,ms=HUB.members;HUB.peer=null;HUB.conn=null;HUB.members=[];
   try{c&&c.close();}catch(_){}for(const x of ms){try{x.close();}catch(_){}}try{p&&p.destroy();}catch(_){}hubClear();}
-function hubClear(){for(const R of HUB.players.values())mpRemoveHero(R);HUB.players.clear();}
-function hubGone(sid){const R=HUB.players.get(sid);if(!R)return;mpRemoveHero(R);HUB.players.delete(sid);}
+function hubClear(){for(const R of HUB.players.values())mpRemoveHero(R);HUB.players.clear();HUBP.clear();}
+// chi c'è nella stanza (serve al seminterrato, dove non si mandano le posizioni): un segnale ogni 5 s
+const HUBP=new Map();
+const hubOthers=()=>{const now=Date.now();let n=0;for(const t of HUBP.values())if(now-t<13000)n++;return n;};
+setInterval(()=>{if(!HUB.on||HUB.floor!==0)return;const m={t:'hp',sid:HUB.sid,n:MP.name()};if(HUB.lead)HUB.bcast(m);else if(HUB.conn&&HUB.conn.open){try{HUB.conn.send(m);}catch(e){}}},5000);
+function hubGone(sid){HUBP.delete(sid);const R=HUB.players.get(sid);if(!R)return;mpRemoveHero(R);HUB.players.delete(sid);}
 /* ---------- Chat del santuario: solo tra chi è su questo piano, viaggia sul collegamento del santuario, non viene salvata da nessuna parte ---------- */
 const SC={last:0,rate:new Map(),open:false,cnt:-1,on:false};
 const scClean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g,' ').replace(/\s+/g,' ').trim().slice(0,n);
 // chat del seminterrato: stessa chat, nella stanza 0 del santuario, per tutti i giocatori che sono nel seminterrato
 const scCellar=()=>G.scene==='cellar'&&HUB.want&&HUB.floor===0;
-const scAvail=()=>(G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play')||(scCellar()&&G.state==='cellar');
+const scAvail=()=>(G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play')||(scCellar()&&G.state==='cellar'&&hubOthers()>0);   // nel seminterrato solo se c'è almeno un altro giocatore
 function scAdd(name,text,me){const box=$('scLog'),p=document.createElement('p'),b=document.createElement('b'),s=document.createElement('span');
   if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);box.appendChild(p);while(box.children.length>30)box.firstChild.remove();box.scrollTop=box.scrollHeight;
   setTimeout(()=>p.classList.add('old'),14000);}
@@ -431,7 +435,8 @@ function scRecv(m,c){if(!m||typeof m.x!=='string'||typeof m.sid!=='string'||m.si
   if(c)HUB.bcast({t:'hc',sid:m.sid,n:name,x:text,fl:m.fl},c);
   scAdd(name,text,false);scBubble(name,m.sid,text);sfx('ui');}
 function schatTick(){const av=scAvail(),el=$('sChat');if(!el)return;if(av!==SC.on){SC.on=av;el.hidden=!av;if(!av)scClose();}if(!av)return;
-  if(scCellar()){if(SC.cnt!==-2){SC.cnt=-2;$('scWho').textContent='seminterrato · tutti i giocatori';}return;}
+  el.classList.toggle('cellar',scCellar());
+  if(scCellar()){const n=hubOthers()+1;if(SC.cnt!==-100-n){SC.cnt=-100-n;$('scWho').textContent=`${n} nel seminterrato`;}return;}
   const n=HUB.players.size+[...MP.players.values()].filter(R=>R.sc==='tower'&&R.fl===G.floor).length;
   if(n!==SC.cnt){SC.cnt=n;$('scWho').textContent=n?`${n} qui con te`:'Solo tu, per ora';}}
 $('scBtn').addEventListener('click',()=>scOpen());
@@ -443,6 +448,7 @@ addEventListener('keydown',e=>{if(e.code==='Enter'&&!e.repeat&&!SC.open&&scAvail
 e.preventDefault();e.stopImmediatePropagation();scOpen();}},true);
 function hubMsg(m,c){
   if(m&&m.t==='hc'){scRecv(m,c);return;}
+  if(m&&m.t==='hp'){if(typeof m.sid!=='string'||m.sid===HUB.sid)return;if(c){c.sid=m.sid;HUB.bcast(m,c);}HUBP.set(m.sid,Date.now());return;}
   if(m.t==='hs'){if(m.sid===HUB.sid)return;if(c){c.sid=m.sid;HUB.bcast(m,c);}
     if(!G.safe||m.fl!==G.floor)return;
     if(MP.live()&&m.code&&m.code===MP.code)return;   // i compagni di squadra si vedono già
