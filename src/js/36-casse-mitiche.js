@@ -4,8 +4,8 @@
    e ogni cassa mostra la legenda con le probabilità di ciò che può uscire
    (calcolate sul tuo piano migliore, come l'estrazione vera).
    ========================================================= */
-const CRATE_MYTH=0.10;   // Cassa mitica: 10% di oggetto Mitico, altrimenti Leggendario
-// Cassa epica (id 'leggenda'): 97% Epica, 3% Leggendaria · Cassa mitica: 90% Leggendaria, 10% Mitica · le altre come l'estrazione nella torre, sul tuo piano migliore
+const CRATE_MYTH=0.03;   // Cassa mitica: 3% di oggetto Mitico, altrimenti Leggendario
+// Cassa epica (id 'leggenda'): 97% Epica, 3% Leggendaria · Cassa mitica: 97% Leggendaria, 3% Mitica · le altre come l'estrazione nella torre, sul tuo piano migliore
 function crateOdds(cr){
   if(cr.id==='leggenda')return [0,0,0,0.97,0.03,0,0];
   if(cr.id==='mitica')return [0,0,0,0,1-CRATE_MYTH,CRATE_MYTH,0];
