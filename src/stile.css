@@ -1109,6 +1109,16 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
 }
 @media (max-width:600px){.sh-frame{min-width:0;max-width:100%}.sh-top{flex-wrap:nowrap}.sh-tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.sh-tabs .tab{flex:0 0 auto}}
 
-/* chat del seminterrato: in basso al centro (dove in torre ci sono le mosse speciali), anche su telefono */
-#sChat.cellar:not(.open){left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(380px,46vw);text-align:center}
-#sChat.cellar:not(.open) #scLog{max-height:110px}
+/* CHAT GLOBALE del seminterrato: piccola in basso al centro (dove in torre ci sono le mosse speciali), grande e leggibile quando la apri */
+#sChat.cellar:not(.open){left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(300px,40vw);text-align:center;font-size:12px}
+#sChat.cellar:not(.open) #scLog{max-height:66px;margin-bottom:5px;pointer-events:auto;cursor:pointer}
+#sChat.cellar:not(.open) #scLog p{padding:2px 7px}
+#sChat.cellar #scBtn{min-height:30px;padding:3px 10px;gap:7px;font-size:12px;border-width:1px}
+#sChat.cellar #scBtn small{font-size:10.5px}
+#sChat.cellar.open{left:50%;right:auto;top:auto;transform:translateX(-50%);bottom:calc(10px + env(safe-area-inset-bottom,0px));width:min(560px,94vw);display:block;text-align:left}
+#sChat.cellar.open #scLog{max-height:min(52vh,420px);margin:0 0 6px;padding:6px 4px 6px 8px;background:rgba(10,8,14,.9);border:1px solid rgba(255,210,122,.35);font-size:14.5px;line-height:1.45}
+#sChat.cellar.open #scLog p{background:none;padding:3px 4px;margin:0;border-bottom:1px solid rgba(255,255,255,.06)}
+#sChat.cellar.open #scLog p:last-child{border-bottom:0}
+@media (hover:none),(pointer:coarse){
+  #sChat.cellar.open{top:6px;bottom:auto;display:flex;flex-direction:column-reverse}
+  #sChat.cellar.open #scLog{max-height:44vh;margin:6px 0 0;font-size:14px}}

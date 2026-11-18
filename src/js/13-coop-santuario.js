@@ -435,11 +435,15 @@ function scRecv(m,c){if(!m||typeof m.x!=='string'||typeof m.sid!=='string'||m.si
   if(c)HUB.bcast({t:'hc',sid:m.sid,n:name,x:text,fl:m.fl},c);
   scAdd(name,text,false);scBubble(name,m.sid,text);sfx('ui');}
 function schatTick(){const av=scAvail(),el=$('sChat');if(!el)return;if(av!==SC.on){SC.on=av;el.hidden=!av;if(!av)scClose();}if(!av)return;
-  el.classList.toggle('cellar',scCellar());
+  {const cel=scCellar();el.classList.toggle('cellar',cel);const t=$('scBtn').firstChild;if(t&&t.nodeType===3){const want=cel?'Chat globale ':'Chat ';if(t.nodeValue!==want)t.nodeValue=want;}}
   if(scCellar()){const n=hubOthers()+1;if(SC.cnt!==-100-n){SC.cnt=-100-n;$('scWho').textContent=`${n} nel seminterrato`;}return;}
   const n=HUB.players.size+[...MP.players.values()].filter(R=>R.sc==='tower'&&R.fl===G.floor).length;
   if(n!==SC.cnt){SC.cnt=n;$('scWho').textContent=n?`${n} qui con te`:'Solo tu, per ora';}}
 $('scBtn').addEventListener('click',()=>scOpen());
+// per leggere con calma: tocchi i messaggi e la chat si apre grande, senza tastiera; tocchi fuori e si chiude
+function scRead(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;$('scLog').scrollTop=1e6;}
+$('scLog').addEventListener('click',()=>{if(!SC.open)scRead();});
+document.addEventListener('pointerdown',e=>{if(SC.open&&!$('sChat').contains(e.target))scClose();},true);
 $('scForm').addEventListener('submit',e=>{e.preventDefault();scSend();});
 $('scIn').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Escape'){e.preventDefault();scClose();}});
 $('scIn').addEventListener('keyup',e=>e.stopPropagation());
