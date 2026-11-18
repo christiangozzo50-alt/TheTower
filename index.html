@@ -642,7 +642,8 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   #cine.boss #cineSub{top:calc(11dvh + 18px + env(safe-area-inset-top,0px))}
 }
 /* scelta dei potenziamenti: fondo pieno e sopra nomi e numeri, così dietro non si vede nessuno */
-#upgrade{z-index:60;background:#0b0c11;-webkit-backdrop-filter:none;backdrop-filter:none}
+/* scelta del potenziamento e forziere: sfondo trasparente (si vede la partita dietro) e sopra a tutto, così i nomi dei giocatori non coprono le scritte */
+#upgrade,#loot{z-index:60;-webkit-backdrop-filter:none;backdrop-filter:none}
 #cards .card.padsel{border-color:var(--ember);transform:translateY(-6px);box-shadow:0 0 0 3px rgba(255,179,71,.35),0 10px 30px rgba(255,140,40,.25)}
 /* blocco "installa l'app" */
 #installGate{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;overflow-y:auto;touch-action:pan-y;background:radial-gradient(ellipse at 50% 30%,#241a30,#07060d 70%);
@@ -10582,7 +10583,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795017256';
+const BUILD_ID='1795018049';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
