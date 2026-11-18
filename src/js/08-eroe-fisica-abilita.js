@@ -26,7 +26,8 @@ function applyVariant(a,w){if(!w||!a||!a.g)return a;const m=wModel(w),L=m.len||1
   return a;}
 function makeWeapon(type,rarity,floor,v){const T=WTYPES[type],R=RARITY[rarity],mods=WMODELS[type]||[{n:T.names[rarity]}];v=v==null?Math.floor(Math.random()*mods.length):v;const m=mods[v]||{};
   const w={type,rarity,v,name:m.n?`${m.n} ${pick(RSUF[rarity])}`:T.names[Math.min(rarity,T.names.length-1)],dmg:Math.round(T.dmg*R.mul*(m.dmg||1)*(1+0.05*(floor-1))),cdMul:m.cd||1,critB:m.crit||0,effect:null,bonusReach:rarity>=4};
-  if(rarity>=2)w.effect=pick(rarity>=3?['fuoco','gelo','fulmine','vampiro']:['fuoco','gelo']);
+  // "Vampiro" (ti cura a ogni colpo) solo sulle armi mitiche
+  if(rarity>=2)w.effect=pick(rarity===5?['fuoco','gelo','fulmine','vampiro']:rarity>=3?['fuoco','gelo','fulmine']:['fuoco','gelo']);
   if(rarity>=2){const pool=Object.keys(PERKS).filter(k=>floor>=PERKS[k].from&&rarity>=PERKS[k].minR);if(pool.length&&Math.random()<[0,0,0.15,0.35,0.8,0.9,1][rarity])w.perk=pick(pool);}
   return w;}
 // se il modello di un'arma non si costruisce (combinazione rara/mitica non prevista) non deve bloccare la scalata: ripiego

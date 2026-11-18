@@ -147,6 +147,8 @@ $('lootLeave').onclick=()=>closeLoot(false);
 /* ---------- Inventario: quello che trovi resta tuo, lo indossi dall'armadio ---------- */
 const INV=Object.assign({items:[],eq:{}},store.get('inv',{}));
 const saveInv=()=>store.set('inv',INV);
+// le armi già trovate col potere Vampiro che non sono mitiche ricevono un altro potere (ora cura solo la Mitica)
+if(INV.items.some(i=>!i.slot&&i.effect==='vampiro'&&i.rarity!==5)){for(const i of INV.items)if(!i.slot&&i.effect==='vampiro'&&i.rarity!==5)i.effect=pick(['fuoco','gelo','fulmine']);saveInv();}
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
 // un oggetto sta addosso a una sola classe alla volta
