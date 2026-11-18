@@ -10703,7 +10703,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795038561';
+const BUILD_ID='1795038686';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -14071,7 +14071,7 @@ renderBoard=function(){_rbBest.apply(this,arguments);if(bdTab!=='best')return;co
 
 /* =========================================================
    MINIATURE DELL'EQUIPAGGIAMENTO: elmo, guanti e corazza si vedono come sono davvero,
-   cioè addosso al tuo eroe attuale (con la sua skin e il suo stile), inquadrati sul pezzo.
+   nello stile del tuo eroe attuale (con la sua skin), da soli e inquadrati al centro.
    Una miniatura per eroe+skin+pezzo+rarità, poi resta in memoria.
    ========================================================= */
 const GTH={};
@@ -14080,11 +14080,13 @@ function gearThumbReal(o){const c=G.cls;if(!c||!o||!o.slot)return '';
   let url='';
   try{const R=buildHero(c);poseShop(R,c);gearBuild(R,c,{[o.slot]:{rarity:o.rarity|0,slot:o.slot}});
     R.root.rotation.y=o.slot==='guanti'?0.9:0.55;R.root.updateMatrixWorld(true);
-    const parts=(R.gearObjs||[]).filter(g=>g.parent);const box=new THREE.Box3();
-    for(const g of o.slot==='guanti'?parts.slice(0,1):parts)box.expandByObject(g);
+    const parts=(R.gearObjs||[]).filter(g=>g.parent),show=o.slot==='guanti'?parts.slice(0,1):parts;
+    // si vede solo il pezzo: il corpo dell'eroe (e il secondo guanto) si nascondono
+    R.root.traverse(m=>{if(!m.isMesh&&!m.isPoints)return;let keep=false;for(let p=m;p;p=p.parent)if(show.includes(p)){keep=true;break;}m.visible=keep;});
+    const box=new THREE.Box3();for(const g of show)box.expandByObject(g);
     if(box.isEmpty())box.setFromObject(R.root);
     const ctr=box.getCenter(new THREE.Vector3()),sz=box.getSize(new THREE.Vector3());
-    const h=Math.max(sz.y,sz.x*0.95)*(o.slot==='corazza'?1.25:1.55);
+    const h=Math.max(sz.y,sz.x)*1.18;
     url=psURL(psShot(R.root,80,80,{cx:ctr.x,cy:ctr.y,h:Math.max(0.45,h),dist:7,oy:0.05},false));disposeObj(R.root);}
   catch(e){console.warn('miniatura armatura',e);url='';}
   return GTH[key]=url;}
