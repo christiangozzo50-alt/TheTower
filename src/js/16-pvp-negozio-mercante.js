@@ -355,7 +355,8 @@ function thumbOf(k){if(THUMB[k]!=null)return THUMB[k];try{const m=skinModel(k);m
 /* ---------- casse del negozio ---------- */
 const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o un pezzo d\'armatura, almeno Non comune'},
   {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
-  {id:'leggenda',n:'Cassa leggendaria',p:2400,min:3,leg:0.2,d:'Almeno Epica: può uscire Leggendaria o anche Mitica'}];
+  {id:'leggenda',n:'Cassa epica',p:1700,min:3,d:'Un oggetto Epico, con il 3% di trovarlo Leggendario'},
+  {id:'mitica',n:'Cassa mitica',p:2400,min:4,d:'Un oggetto Leggendario o Mitico'}];
 function dailyOffer(){return 'c:'+CRATES[dayNo()%CRATES.length].id;}
 const FRAG_P=[1200,2000,3500];
 const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
@@ -377,14 +378,14 @@ function merchantModelOld(){const g=new THREE.Group();
   for(let i=0;i<4;i++)mesh(new THREE.CylinderGeometry(0.07,0.07,0.03,12),gold,-0.4+i*0.17,0.84+(i%2)*0.03,0.8,g);
   mesh(rbox(0.3,0.26,0.22,0.04),toon(0x7a5434),0.3,0.95,0.75,g);mesh(sph(0.06,8,6),toon(0x6fd0ff,{emissive:0x1a6aa0,emissiveIntensity:0.6}),0.3,1.12,0.75,g);
   mesh(sph(0.09,10,8),new THREE.MeshBasicMaterial({color:0xffc56b}),-0.42,1.3,0.75,g,true);return g;}
-function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a44,0x8a8a96],eroe:[0x2e3f5c,0xa9b3c4,0x5fb0ff],leggenda:[0x2a1830,0xd9b45a,0xff7ad9]}[id];
+function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a44,0x8a8a96],eroe:[0x2e3f5c,0xa9b3c4,0x5fb0ff],leggenda:[0x2a1830,0xd9b45a,0xc27bff],mitica:[0x3a0c14,0xffd27a,0xff5470]}[id];
   const body=toon(T[0]),band=toon(T[1],{metalness:0.4}),gem=toon(T[2],{emissive:T[2],emissiveIntensity:0.5});
   mesh(rbox(1.3,0.72,0.86,0.06),body,0,0.36,0,g);
   const lid=new THREE.Group();lid.position.set(0,0.72,-0.43);g.add(lid);   // perno sul retro: il coperchio si apre davvero
   const top=mesh(new THREE.CylinderGeometry(0.43,0.43,1.3,16,1,false,0,Math.PI),body,0,0,0.43,lid);top.rotation.z=Math.PI/2;
   for(const x of [-0.45,0.45]){mesh(rbox(0.1,0.76,0.9,0.02),band,x,0.38,0,g);const b=mesh(new THREE.CylinderGeometry(0.45,0.45,0.1,16,1,true,0,Math.PI),band,x,0,0.43,lid);b.rotation.z=Math.PI/2;}
   const lock=[mesh(rbox(0.26,0.3,0.08,0.03),band,0,0.66,0.45,g),mesh(sph(0.075,8,6),gem,0,0.68,0.5,g,true)];
-  if(id==='leggenda')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);
+  if(id==='leggenda'||id==='mitica')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);
   g.userData.parts={lid,lock,gem,w:1.15};return g;}
 const CRATE_IMG={},PORTRAIT={v:null};
 function crateImg(id){if(CRATE_IMG[id]!=null)return CRATE_IMG[id];try{const m=crateModel(id);m.rotation.y=-0.55;m.position.y=0.06;const u=psURL(psShot(m,72,96,{cx:0,cy:0.55,h:2.5,dist:9,oy:2.2},true));disposeObj(m);return CRATE_IMG[id]=u;}catch(e){return CRATE_IMG[id]='';}}

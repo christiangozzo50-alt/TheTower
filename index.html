@@ -743,7 +743,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   border:2px solid #5a4024;box-shadow:inset 0 0 0 2px #0e0905,0 4px 0 #0b0704;transition:transform .12s,border-color .12s}
 .sh-card:hover{transform:translateY(-3px);border-color:var(--vc)}
 .sh-card.on{border-color:var(--vc);box-shadow:inset 0 0 0 2px #0e0905,0 4px 0 #0b0704,0 0 20px color-mix(in srgb,var(--vc) 45%,transparent)}
-.cr-viandante{--vc:#d9a86a}.cr-eroe{--vc:#5fb0ff}.cr-leggenda{--vc:#ff7ad9}
+.cr-viandante{--vc:#d9a86a}.cr-eroe{--vc:#5fb0ff}.cr-leggenda{--vc:#c27bff}.cr-mitica{--vc:#ff5470}
 .sh-stage{position:relative;display:block;width:100%;aspect-ratio:1;padding:0;overflow:hidden;cursor:default;
   background:radial-gradient(ellipse at 50% 88%,color-mix(in srgb,var(--vc) 40%,transparent) 0 26%,transparent 62%),radial-gradient(ellipse at 50% 20%,rgba(255,200,120,.08),transparent 60%),#120e0b;
   border:2px solid #0b0704;outline:1px solid #3a2a18}
@@ -9785,7 +9785,8 @@ function thumbOf(k){if(THUMB[k]!=null)return THUMB[k];try{const m=skinModel(k);m
 /* ---------- casse del negozio ---------- */
 const CRATES=[{id:'viandante',n:'Cassa del viandante',p:300,min:1,d:'Un\'arma o un pezzo d\'armatura, almeno Non comune'},
   {id:'eroe',n:'Cassa dell\'eroe',p:900,min:2,d:'Almeno Rara'},
-  {id:'leggenda',n:'Cassa leggendaria',p:2400,min:3,leg:0.2,d:'Almeno Epica: può uscire Leggendaria o anche Mitica'}];
+  {id:'leggenda',n:'Cassa epica',p:1700,min:3,d:'Un oggetto Epico, con il 3% di trovarlo Leggendario'},
+  {id:'mitica',n:'Cassa mitica',p:2400,min:4,d:'Un oggetto Leggendario o Mitico'}];
 function dailyOffer(){return 'c:'+CRATES[dayNo()%CRATES.length].id;}
 const FRAG_P=[1200,2000,3500];
 const priceOf=key=>{if(key.startsWith('o:frag:'))return FRAG_P[clsOf(key.slice(7)).tier]||FRAG_P[2];if(key==='s:'+VENOM_K)return VENOM_P;const base=key.startsWith('c:')?CRATES.find(c=>'c:'+c.id===key).p:key==='o:stone'?STONE_P:skinPrice(key.slice(2));return key===dailyOffer()?Math.round(base*0.7):base;};
@@ -9807,14 +9808,14 @@ function merchantModelOld(){const g=new THREE.Group();
   for(let i=0;i<4;i++)mesh(new THREE.CylinderGeometry(0.07,0.07,0.03,12),gold,-0.4+i*0.17,0.84+(i%2)*0.03,0.8,g);
   mesh(rbox(0.3,0.26,0.22,0.04),toon(0x7a5434),0.3,0.95,0.75,g);mesh(sph(0.06,8,6),toon(0x6fd0ff,{emissive:0x1a6aa0,emissiveIntensity:0.6}),0.3,1.12,0.75,g);
   mesh(sph(0.09,10,8),new THREE.MeshBasicMaterial({color:0xffc56b}),-0.42,1.3,0.75,g,true);return g;}
-function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a44,0x8a8a96],eroe:[0x2e3f5c,0xa9b3c4,0x5fb0ff],leggenda:[0x2a1830,0xd9b45a,0xff7ad9]}[id];
+function crateModel(id){const g=new THREE.Group(),T={viandante:[0x7a5434,0x3a3a44,0x8a8a96],eroe:[0x2e3f5c,0xa9b3c4,0x5fb0ff],leggenda:[0x2a1830,0xd9b45a,0xc27bff],mitica:[0x3a0c14,0xffd27a,0xff5470]}[id];
   const body=toon(T[0]),band=toon(T[1],{metalness:0.4}),gem=toon(T[2],{emissive:T[2],emissiveIntensity:0.5});
   mesh(rbox(1.3,0.72,0.86,0.06),body,0,0.36,0,g);
   const lid=new THREE.Group();lid.position.set(0,0.72,-0.43);g.add(lid);   // perno sul retro: il coperchio si apre davvero
   const top=mesh(new THREE.CylinderGeometry(0.43,0.43,1.3,16,1,false,0,Math.PI),body,0,0,0.43,lid);top.rotation.z=Math.PI/2;
   for(const x of [-0.45,0.45]){mesh(rbox(0.1,0.76,0.9,0.02),band,x,0.38,0,g);const b=mesh(new THREE.CylinderGeometry(0.45,0.45,0.1,16,1,true,0,Math.PI),band,x,0,0.43,lid);b.rotation.z=Math.PI/2;}
   const lock=[mesh(rbox(0.26,0.3,0.08,0.03),band,0,0.66,0.45,g),mesh(sph(0.075,8,6),gem,0,0.68,0.5,g,true)];
-  if(id==='leggenda')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);
+  if(id==='leggenda'||id==='mitica')for(const x of [-0.62,0.62])mesh(sph(0.08,8,6),gem,x,0.72,0.42,g,true);
   g.userData.parts={lid,lock,gem,w:1.15};return g;}
 const CRATE_IMG={},PORTRAIT={v:null};
 function crateImg(id){if(CRATE_IMG[id]!=null)return CRATE_IMG[id];try{const m=crateModel(id);m.rotation.y=-0.55;m.position.y=0.06;const u=psURL(psShot(m,72,96,{cx:0,cy:0.55,h:2.5,dist:9,oy:2.2},true));disposeObj(m);return CRATE_IMG[id]=u;}catch(e){return CRATE_IMG[id]='';}}
@@ -10644,7 +10645,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795023035';
+const BUILD_ID='1795023471';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13814,27 +13815,29 @@ renderForge=function(){_rfFuse.apply(this,arguments);renderFuse();
 .fg-tagf{font-style:normal;color:#ffd27a}`;document.head.appendChild(st);}
 
 /* =========================================================
-   CASSE DEL NEGOZIO: la Cassa leggendaria può dare anche un oggetto MITICO,
+   CASSE DEL NEGOZIO: Cassa epica (1700) e Cassa mitica (2400, Leggendaria o Mitica),
    e ogni cassa mostra la legenda con le probabilità di ciò che può uscire
    (calcolate sul tuo piano migliore, come l'estrazione vera).
    ========================================================= */
-const CRATE_MYTH=0.03;   // Cassa leggendaria: 3% di oggetto Mitico
-function crateOdds(cr){const f=Math.max(5,STATS.best||1),mx=lootMaxR(f),nv=novice();
-  // stessi pesi di rollRarity(f,0)
+const CRATE_MYTH=0.10;   // Cassa mitica: 10% di oggetto Mitico, altrimenti Leggendario
+// Cassa epica (id 'leggenda'): 97% Epica, 3% Leggendaria · Cassa mitica: 90% Leggendaria, 10% Mitica · le altre come l'estrazione nella torre, sul tuo piano migliore
+function crateOdds(cr){
+  if(cr.id==='leggenda')return [0,0,0,0.97,0.03,0,0];
+  if(cr.id==='mitica')return [0,0,0,0,1-CRATE_MYTH,CRATE_MYTH,0];
+  const f=Math.max(5,STATS.best||1),mx=lootMaxR(f),nv=novice();
   const w=[nv?30:55,28+f*0.2,(12+f*0.5)*(nv?1.8:1),(4+f*0.35)*(nv?2:1),1+f*0.2,0.7,0.2].map((v,i)=>i>mx?0:v),tot=w.reduce((a,b)=>a+b,0)||1;
   let p=w.map(v=>v/tot);
-  for(let i=0;i<cr.min;i++){p[cr.min]+=p[i];p[i]=0;}                       // rarità minima della cassa
-  if(cr.leg){p=p.map(v=>v*(1-cr.leg));p[4]+=cr.leg;}                         // possibilità extra di Leggendaria
-  for(let i=5;i<p.length;i++){p[4]+=p[i];p[i]=0;}                           // il negozio arriva fino a Leggendaria...
-  if(cr.id==='leggenda'){p=p.map(v=>v*(1-CRATE_MYTH));p[5]+=CRATE_MYTH;}    // ...tranne la Cassa leggendaria, che può dare la Mitica
+  for(let i=0;i<cr.min;i++){p[cr.min]+=p[i];p[i]=0;}
+  if(cr.leg){p=p.map(v=>v*(1-cr.leg));p[4]+=cr.leg;}
+  for(let i=5;i<p.length;i++){p[4]+=p[i];p[i]=0;}
   return p;}
 crateRoll=function(cr){const f=Math.max(5,STATS.best||1),p=crateOdds(cr);let x=Math.random(),r=cr.min;
   for(let i=0;i<p.length;i++){if(p[i]<=0)continue;r=i;if((x-=p[i])<0)break;}
-  if(cr.id==='leggenda'){if(PITY>=PITY_N-1&&r<4)r=4;PITY=r>=4?0:PITY+1;store.set('crpity',PITY);}
   const o=Math.random()<0.5?makeWeapon(G.cls.weapon,r,f):makeGear(pick(Object.keys(GEAR)),r,f);invAdd(o);saveInv();return o;};
 const pctOdd=v=>v>=0.995?'100%':v<0.01?String(+(v*100).toFixed(1)).replace('.',',')+'%':Math.round(v*100)+'%';
 const _rsMyth=renderShop;
 renderShop=function(){_rsMyth.apply(this,arguments);if(shTab!=='casse')return;
+  for(const el of document.querySelectorAll('#shBody .cr-leggenda .pity,#shBody .cr-leggenda .pity-bar'))el.remove();   // la garanzia non serve più
   for(const cr of CRATES){const info=document.querySelector(`#shBody .cr-${cr.id} .sh-info`);if(!info||info.querySelector('.cr-odds'))continue;
     const p=crateOdds(cr);
     info.insertAdjacentHTML('beforeend',`<span class="cr-odds" aria-label="Cosa può uscire">${p.map((v,i)=>v>0?`<i style="--rc:${RARITY[i].css}"><em>${RARITY[i].name}</em>${pctOdd(v)}</i>`:'').join('')}</span>`);}};

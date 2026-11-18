@@ -735,7 +735,7 @@ html,body{touch-action:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   border:2px solid #5a4024;box-shadow:inset 0 0 0 2px #0e0905,0 4px 0 #0b0704;transition:transform .12s,border-color .12s}
 .sh-card:hover{transform:translateY(-3px);border-color:var(--vc)}
 .sh-card.on{border-color:var(--vc);box-shadow:inset 0 0 0 2px #0e0905,0 4px 0 #0b0704,0 0 20px color-mix(in srgb,var(--vc) 45%,transparent)}
-.cr-viandante{--vc:#d9a86a}.cr-eroe{--vc:#5fb0ff}.cr-leggenda{--vc:#ff7ad9}
+.cr-viandante{--vc:#d9a86a}.cr-eroe{--vc:#5fb0ff}.cr-leggenda{--vc:#c27bff}.cr-mitica{--vc:#ff5470}
 .sh-stage{position:relative;display:block;width:100%;aspect-ratio:1;padding:0;overflow:hidden;cursor:default;
   background:radial-gradient(ellipse at 50% 88%,color-mix(in srgb,var(--vc) 40%,transparent) 0 26%,transparent 62%),radial-gradient(ellipse at 50% 20%,rgba(255,200,120,.08),transparent 60%),#120e0b;
   border:2px solid #0b0704;outline:1px solid #3a2a18}
