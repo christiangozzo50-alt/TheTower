@@ -148,7 +148,8 @@ $('lootLeave').onclick=()=>closeLoot(false);
 const INV=Object.assign({items:[],eq:{}},store.get('inv',{}));
 const saveInv=()=>store.set('inv',INV);
 // le armi già trovate col potere Vampiro che non sono mitiche ricevono un altro potere (ora cura solo la Mitica)
-if(INV.items.some(i=>!i.slot&&i.effect==='vampiro'&&i.rarity!==5)){for(const i of INV.items)if(!i.slot&&i.effect==='vampiro'&&i.rarity!==5)i.effect=pick(['fuoco','gelo','fulmine']);saveInv();}
+function fixVamp(w){if(w&&!w.slot&&w.effect==='vampiro'&&w.rarity!==5){w.effect=pick(['fuoco','gelo','fulmine']);return true;}return false;}
+if(INV.items.map(fixVamp).some(Boolean))saveInv();
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
 // un oggetto sta addosso a una sola classe alla volta

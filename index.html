@@ -6616,7 +6616,8 @@ $('lootLeave').onclick=()=>closeLoot(false);
 const INV=Object.assign({items:[],eq:{}},store.get('inv',{}));
 const saveInv=()=>store.set('inv',INV);
 // le armi già trovate col potere Vampiro che non sono mitiche ricevono un altro potere (ora cura solo la Mitica)
-if(INV.items.some(i=>!i.slot&&i.effect==='vampiro'&&i.rarity!==5)){for(const i of INV.items)if(!i.slot&&i.effect==='vampiro'&&i.rarity!==5)i.effect=pick(['fuoco','gelo','fulmine']);saveInv();}
+function fixVamp(w){if(w&&!w.slot&&w.effect==='vampiro'&&w.rarity!==5){w.effect=pick(['fuoco','gelo','fulmine']);return true;}return false;}
+if(INV.items.map(fixVamp).some(Boolean))saveInv();
 const itemById=id=>INV.items.find(i=>i.id===id);
 const eqOf=cid=>INV.eq[cid]||(INV.eq[cid]={});
 // un oggetto sta addosso a una sola classe alla volta
@@ -8573,7 +8574,7 @@ const clearSave=()=>store.set('runsave',null);
 function resumeRun(sv){
   const i=CLASSES.findIndex(c=>c.id===sv.cls);if(i>=0&&G.cls.id!==sv.cls)setClass(i);
   RESUMING=true;_startRun();RESUMING=false;
-  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;G.weapon=sv.weapon||G.weapon;resetStats();
+  for(const k in G.gear)gearMod(G.gear[k],-1);G.gear=sv.gear||G.gear;G.weapon=sv.weapon||G.weapon;fixVamp(G.weapon);resetStats();
   G.lv=sv.lv||{};for(const u of UPG){if(u.id==='heal')continue;const n=Math.min(u.max,G.lv[u.id]||0);G.lv[u.id]=n;for(let k=0;k<n;k++)u.apply();}
   attachWeapon();refreshGearVisual();
   Object.assign(G,{kills:sv.kills||0,runTime:sv.runTime||0,runXp:sv.runXp||0,upKills:sv.upKills||0,upNeed:sv.upNeed||14});
@@ -10576,7 +10577,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795014156';
+const BUILD_ID='1795014420';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
