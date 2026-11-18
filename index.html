@@ -2579,7 +2579,7 @@ const platMat=mat(0x6b6157,{roughness:0.85}),platEdge=mat(0x3b2a1e,{roughness:0.
 function buildLevel(f){
   const zi=zoneIndex(f);if(G.zoneBuilt!==zi)applyZone(zi);drawFloorNumber(f);
   while(levelGroup.children.length){const c=levelGroup.children.pop();disposeObj(c);}
-  G.solids=[];const preset=isBossFloor(f)?BOSS_PLATS:(f===1?PRESETS[1]:pick(PRESETS));
+  G.solids=[];const preset=isBossFloor(f)?BOSS_PLATS:isSafeFloor(f)?[]:(f===1?PRESETS[1]:pick(PRESETS));   // nei santuari niente piattaforme
   for(const [cx0,top,w] of preset){const cx=MX(cx0);
     mesh(rbox(w,0.5,2.4,0.14),platMat,cx,top-0.25,-0.3,levelGroup);
     mesh(rbox(w+0.15,0.12,2.5,0.05),platEdge,cx,top-0.52,-0.3,levelGroup);
@@ -8570,10 +8570,11 @@ const scClean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f\u200b-\u
 const scCellar=()=>G.scene==='cellar'&&HUB.want&&HUB.floor===0;
 const scAvail=()=>(G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play')||(scCellar()&&G.state==='cellar'&&hubOthers()>0);   // nel seminterrato solo se c'è almeno un altro giocatore
 function scAdd(name,text,me){const box=$('scLog'),p=document.createElement('p'),b=document.createElement('b'),s=document.createElement('span');
-  if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);box.appendChild(p);while(box.children.length>30)box.firstChild.remove();box.scrollTop=box.scrollHeight;
+  if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);
+  box.prepend(p);while(box.children.length>30)box.lastChild.remove();box.scrollTop=0;   // i messaggi più recenti in cima (seminterrato e santuari)
   setTimeout(()=>p.classList.add('old'),14000);}
 function scClear(){const b=$('scLog');if(b)b.textContent='';SC.rate.clear();}
-function scOpen(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;const i=$('scIn');i.focus();$('scLog').scrollTop=1e6;}
+function scOpen(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;const i=$('scIn');i.focus();$('scLog').scrollTop=0;}
 function scClose(){if(!SC.open)return;SC.open=false;$('sChat').classList.remove('open');$('scForm').hidden=true;$('scBtn').hidden=false;const i=$('scIn');i.value='';i.blur();if(canvas&&canvas.focus)canvas.focus();}
 function scSend(){const t=scClean($('scIn').value,100),now=performance.now();if(!t){scClose();return;}if(now-SC.last<900)return;SC.last=now;
   const m={t:'hc',sid:HUB.sid,n:MP.name(),x:t,fl:HUB.floor};
@@ -8594,7 +8595,7 @@ function schatTick(){const av=scAvail(),el=$('sChat');if(!el)return;if(av!==SC.o
   if(n!==SC.cnt){SC.cnt=n;$('scWho').textContent=n?`${n} qui con te`:'Solo tu, per ora';}}
 $('scBtn').addEventListener('click',()=>scOpen());
 // per leggere con calma: tocchi i messaggi e la chat si apre grande, senza tastiera; tocchi fuori e si chiude
-function scRead(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;$('scLog').scrollTop=1e6;}
+function scRead(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;$('scLog').scrollTop=0;}
 $('scLog').addEventListener('click',()=>{if(!SC.open)scRead();});
 document.addEventListener('pointerdown',e=>{if(SC.open&&!$('sChat').contains(e.target))scClose();},true);
 $('scForm').addEventListener('submit',e=>{e.preventDefault();scSend();});
@@ -10702,7 +10703,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795037884';
+const BUILD_ID='1795038014';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));

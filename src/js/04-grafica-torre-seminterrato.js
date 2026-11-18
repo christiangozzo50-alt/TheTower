@@ -179,7 +179,7 @@ const platMat=mat(0x6b6157,{roughness:0.85}),platEdge=mat(0x3b2a1e,{roughness:0.
 function buildLevel(f){
   const zi=zoneIndex(f);if(G.zoneBuilt!==zi)applyZone(zi);drawFloorNumber(f);
   while(levelGroup.children.length){const c=levelGroup.children.pop();disposeObj(c);}
-  G.solids=[];const preset=isBossFloor(f)?BOSS_PLATS:(f===1?PRESETS[1]:pick(PRESETS));
+  G.solids=[];const preset=isBossFloor(f)?BOSS_PLATS:isSafeFloor(f)?[]:(f===1?PRESETS[1]:pick(PRESETS));   // nei santuari niente piattaforme
   for(const [cx0,top,w] of preset){const cx=MX(cx0);
     mesh(rbox(w,0.5,2.4,0.14),platMat,cx,top-0.25,-0.3,levelGroup);
     mesh(rbox(w+0.15,0.12,2.5,0.05),platEdge,cx,top-0.52,-0.3,levelGroup);

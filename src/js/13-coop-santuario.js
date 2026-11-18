@@ -417,10 +417,11 @@ const scClean=(s,n)=>String(s==null?'':s).replace(/[\u0000-\u001f\u007f\u200b-\u
 const scCellar=()=>G.scene==='cellar'&&HUB.want&&HUB.floor===0;
 const scAvail=()=>(G.scene==='tower'&&!!G.safe&&!G.tutorial&&!G.pvp&&HUB.want&&G.state==='play')||(scCellar()&&G.state==='cellar'&&hubOthers()>0);   // nel seminterrato solo se c'è almeno un altro giocatore
 function scAdd(name,text,me){const box=$('scLog'),p=document.createElement('p'),b=document.createElement('b'),s=document.createElement('span');
-  if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);box.appendChild(p);while(box.children.length>30)box.firstChild.remove();box.scrollTop=box.scrollHeight;
+  if(me)p.className='me';b.textContent=name;s.textContent=text;p.append(b,s);
+  box.prepend(p);while(box.children.length>30)box.lastChild.remove();box.scrollTop=0;   // i messaggi più recenti in cima (seminterrato e santuari)
   setTimeout(()=>p.classList.add('old'),14000);}
 function scClear(){const b=$('scLog');if(b)b.textContent='';SC.rate.clear();}
-function scOpen(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;const i=$('scIn');i.focus();$('scLog').scrollTop=1e6;}
+function scOpen(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;const i=$('scIn');i.focus();$('scLog').scrollTop=0;}
 function scClose(){if(!SC.open)return;SC.open=false;$('sChat').classList.remove('open');$('scForm').hidden=true;$('scBtn').hidden=false;const i=$('scIn');i.value='';i.blur();if(canvas&&canvas.focus)canvas.focus();}
 function scSend(){const t=scClean($('scIn').value,100),now=performance.now();if(!t){scClose();return;}if(now-SC.last<900)return;SC.last=now;
   const m={t:'hc',sid:HUB.sid,n:MP.name(),x:t,fl:HUB.floor};
@@ -441,7 +442,7 @@ function schatTick(){const av=scAvail(),el=$('sChat');if(!el)return;if(av!==SC.o
   if(n!==SC.cnt){SC.cnt=n;$('scWho').textContent=n?`${n} qui con te`:'Solo tu, per ora';}}
 $('scBtn').addEventListener('click',()=>scOpen());
 // per leggere con calma: tocchi i messaggi e la chat si apre grande, senza tastiera; tocchi fuori e si chiude
-function scRead(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;$('scLog').scrollTop=1e6;}
+function scRead(){if(!scAvail()||SC.open)return;SC.open=true;clearInput();$('sChat').classList.add('open');$('scForm').hidden=false;$('scBtn').hidden=true;$('scLog').scrollTop=0;}
 $('scLog').addEventListener('click',()=>{if(!SC.open)scRead();});
 document.addEventListener('pointerdown',e=>{if(SC.open&&!$('sChat').contains(e.target))scClose();},true);
 $('scForm').addEventListener('submit',e=>{e.preventDefault();scSend();});
