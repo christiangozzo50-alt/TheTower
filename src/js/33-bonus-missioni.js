@@ -26,9 +26,10 @@ function troClaimAll(){const l=troToClaim();if(!l.length)return;let tot=0;for(co
 // la Bacheca: le skin bloccate non si mostrano più, le missioni hanno il tasto Riscuoti
 const _rbM=renderBoard;
 renderBoard=function(){_rbM.apply(this,arguments);if(bdTab!=='tro')return;const box=$('bdBody');
-  for(const b of box.querySelectorAll('.sk.lock'))b.remove();
+  // la scheda mostra solo le missioni: niente più riga delle skin
+  {const row=box.querySelector('.sk-row'),h=row&&row.previousElementSibling;if(row)row.remove();if(h&&h.classList.contains('bd-h'))h.remove();}
   const tl=trophyList(),c=G.cls,done=tl.filter(t=>t.ok).length,todo=troToClaim().length;
-  const hs=box.querySelectorAll('.bd-h');if(hs[1])hs[1].innerHTML=`Missioni · ${done} di ${tl.length}${todo?` · <button class="mini" data-claimall>Riscuoti tutte (${todo})</button>`:''}`;
+  const hs=box.querySelectorAll('.bd-h');if(hs[0])hs[0].innerHTML=`Missioni · ${done} di ${tl.length}${todo?` · <button class="mini" data-claimall>Riscuoti tutte (${todo})</button>`:''}`;
   const list=box.querySelector('.tro-list');if(!list)return;
   list.innerHTML=tl.filter(t=>!t.cls||t.cls===c.id).concat(tl.filter(t=>t.cls&&t.cls!==c.id)).map(t=>{const got=!!TRO_CLAIM[t.n];
     return `<div class="tro${t.ok?' ok':''}"><b>${t.ok?'🏆':'🔒'} ${esc(t.n)}</b><span>${esc(t.d)}</span>`+
@@ -36,10 +37,13 @@ renderBoard=function(){_rbM.apply(this,arguments);if(bdTab!=='tro')return;const 
       `<i style="--p:${Math.round(t.p*100)}%"></i></div>`;}).join('');};
 $('board').addEventListener('click',e=>{const a=e.target.closest('[data-claimall]');if(a){troClaimAll();renderBoard();return;}
   const b=e.target.closest('[data-claim]');if(b){troClaim(b.dataset.claim);renderBoard();}});
-{const tb=document.querySelector('#board .tab[data-tab="tro"]');if(tb)tb.textContent='Missioni e skin';}
+{const tb=document.querySelector('#board .tab[data-tab="tro"]');if(tb)tb.textContent='Missioni';}
 
 /* ---------- bonus d'accesso giornaliero ---------- */
 const DAILY_PRIZE=[50,75,100,150,200,250,500];
+// oltre ai rubini: il 7° giorno sempre una Cassa dell'eroe, gli altri giorni 20% di trovare una Cassa del viandante (oggetti dello shop)
+const DAILY_CRATE_P=0.2;
+const dlyCrate=s=>CRATES.find(c=>c.id===(s===7?'eroe':'viandante'));
 const DLY=Object.assign({last:0,streak:0},store.get('daily',{}));const saveDly=()=>store.set('daily',DLY);
 const dlyNext=()=>{const d=dayNo();return DLY.last===d-1?(DLY.streak%7)+1:1;};
 let dlyEl=null;
@@ -47,12 +51,15 @@ function dlyOpen(){if(dlyEl&&!dlyEl.hidden)return;const s=dlyNext();
   if(!dlyEl){dlyEl=document.createElement('section');dlyEl.className='screen';dlyEl.id='daily';dlyEl.hidden=true;dlyEl.setAttribute('role','dialog');dlyEl.setAttribute('aria-label','Bonus giornaliero');document.body.appendChild(dlyEl);
     dlyEl.addEventListener('click',e=>{if(e.target.closest('#dlyGet'))dlyClaim();});}
   dlyEl.innerHTML=`<div class="panel"><div class="eyebrow">Bonus giornaliero</div><h2 style="margin:0">Giorno ${s} di 7</h2>
-    <div class="dly-row">${DAILY_PRIZE.map((p,i)=>`<div class="dly${i+1<s?' got':''}${i+1===s?' now':''}"><small>Giorno ${i+1}</small><b>${p} ◆</b>${i+1<s?'<em>✓</em>':''}</div>`).join('')}</div>
-    <p class="ig-lead" style="margin:0">Entra ogni giorno: il premio cresce. Se salti un giorno si riparte dal primo.</p>
+    <div class="dly-row">${DAILY_PRIZE.map((p,i)=>`<div class="dly${i+1<s?' got':''}${i+1===s?' now':''}"><small>Giorno ${i+1}</small><b>${p} ◆</b>${i===6?'<small>+ Cassa dell\'eroe</small>':''}${i+1<s?'<em>✓</em>':''}</div>`).join('')}</div>
+    <p class="ig-lead" style="margin:0">Entra ogni giorno: il premio cresce, e a volte c'è anche una cassa del negozio. Se salti un giorno si riparte dal primo.</p>
     <div class="row"><button id="dlyGet">Riscuoti ${DAILY_PRIZE[s-1]} rubini</button></div></div>`;
   G.state='daily';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);dlyEl.hidden=false;sfx('chest');
   setTimeout(()=>{const b=$('dlyGet');if(b)b.focus();},50);}
-function dlyClaim(){const d=dayNo();if(DLY.last!==d){const s=dlyNext();DLY.last=d;DLY.streak=s;saveDly();addCoins(DAILY_PRIZE[s-1]);sfx('lvl');toast(`+${DAILY_PRIZE[s-1]} rubini`,s===7?'Settimana completa!':`Bonus del giorno ${s}`);}
+function dlyClaim(){const d=dayNo();if(DLY.last!==d){const s=dlyNext();DLY.last=d;DLY.streak=s;saveDly();addCoins(DAILY_PRIZE[s-1]);sfx('lvl');
+    const cr=(s===7||Math.random()<DAILY_CRATE_P)?dlyCrate(s):null;
+    toast(`+${DAILY_PRIZE[s-1]} rubini${cr?' e '+cr.n:''}`,s===7?'Settimana completa!':`Bonus del giorno ${s}`);
+    if(cr)setTimeout(()=>{try{openCrate(cr);}catch(e){console.warn('cassa bonus',e);}},400);}
   if(dlyEl)dlyEl.hidden=true;if(G.state==='daily'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}
   const n=troToClaim().length;if(n)setTimeout(()=>toast('Missioni completate',`${n} da riscuotere nella Bacheca`),900);}
 // si apre appena sei nel seminterrato senza altre finestre aperte
