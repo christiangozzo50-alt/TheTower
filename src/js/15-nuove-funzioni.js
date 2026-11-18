@@ -38,13 +38,13 @@ function troCheck(){if(!troKnown){troKnown=new Set(trophyList().filter(t=>t.ok).
 const BEST=store.get('bestiary',{});
 const BOSSARCH={};for(const b of BOSS_LIST)if(!BOSSARCH[b[1]])BOSSARCH[b[1]]=b[2];
 const BEST_TIPS={slime:'Lento e goffo: colpiscilo da lontano o saltagli sopra.',guard:'Para i colpi di fronte: prendilo alle spalle o dall\'alto.',mage:'Fragile: chiudi la distanza prima che lanci.',
-  bat:'Vola a scatti: usa l\'attacco verso l\'alto.',archer:'Tiene le distanze: scatta verso di lui tra un tiro e l\'altro.',knight:'Resistentissimo: tieni le abilità per lui.',
+  bat:'Vola a scatti: usa l\'attacco verso l\'alto.',archer:'Tiene le distanze: schiva verso di lui tra un tiro e l\'altro.',knight:'Resistentissimo: tieni le abilità per lui.',
   imp:'Esplode vicino a te: colpiscilo e allontanati subito.',wraith:'A tratti diventa immune: attacca solo quando è visibile.',brute:'Colpi lenti e pesanti: schiva e contrattacca.',
-  shaman:'Evoca alleati: eliminalo per primo.',spider:'Sputa ragnatele che ti rallentano e balza: scatta di lato quando si abbassa.',fungus:'Lento, ma se ti avvicini scoppia una nube velenosa: colpisci e allontanati.',
+  shaman:'Evoca alleati: eliminalo per primo.',spider:'Sputa ragnatele che ti rallentano e balza: schiva di lato quando si abbassa.',fungus:'Lento, ma se ti avvicini scoppia una nube velenosa: colpisci e allontanati.',
   gargoyle:'Piomba dall\'alto: scansati e colpiscilo mentre resta a terra.',shade:'Sparisce e riappare alle tue spalle: girati e colpisci per primo.',scorpion:'Pinze da vicino, veleno da lontano: stagli addosso quando alza la coda.',
   salamander:'Sputa fuoco davanti a sé: saltale sopra e colpiscila da dietro.',eye:'Prende la mira e spara in linea retta: muoviti quando si illumina.',minotaur:'Carica a testa bassa: fallo schiantare contro il muro e sarà stordito.',
   'boss:slimeKing':'Si divide e salta: resta in movimento.','boss:golem':'Scosse a terra: salta quando alza i pugni.','boss:skelKing':'Evoca scheletri: colpisci lui, non loro.',
-  'boss:bknight':'Para e contrattacca: aspetta che finisca la combo.','boss:archmage':'Vola e lancia magie: usa gli attacchi in aria.','boss:batQueen':'Picchiate improvvise: scatta di lato.',
+  'boss:bknight':'Para e contrattacca: aspetta che finisca la combo.','boss:archmage':'Vola e lancia magie: usa gli attacchi in aria.','boss:batQueen':'Picchiate improvvise: schiva di lato.',
   'boss:dragon':'Soffio di fuoco: stagli sotto e colpisci la pancia.'};
 const bestKeys=()=>[...Object.keys(TYPES),...Object.keys(BOSSARCH).map(a=>'boss:'+a)];
 const bestKeyOf=e=>e.type==='boss'?'boss:'+e.arch:e.type;

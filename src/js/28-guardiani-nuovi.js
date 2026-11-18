@@ -277,7 +277,7 @@ const NBPICK={fungusKing:2,gargoyleLord:2,shadeLord:2,ogreKing:1,scorpionKing:0,
 for(const a in NBPICK)BOSSB[a]=d=>{const s=NBOSSES[a][NBPICK[a]].make(d);s.tick=s.tick||[];return s;};
 Object.assign(BLOOD,{fungusKing:[0xc9e08a,0x7a9a3a],gargoyleLord:[0x9a9aa4,0x6a6a74],shadeLord:[0x8a6aff,0x2a1a6a],ogreKing:[0x8a0f1a,0x5a0a10],
   scorpionKing:[0xa6e34a,0x6a8a1e],salamanderKing:[0xff9a3a,0xb04a14],eyeLord:[0xc23a7a,0x6a1a3a],minoKing:[0x8a0f1a,0x5a0a10]});
-Object.assign(BEST_TIPS,{'boss:fungusKing':'Le spore restano a terra: non fermarti dove si alza la nube.','boss:gargoyleLord':'Piomba dove sei: quando vedi il segno a terra, scatta via.',
+Object.assign(BEST_TIPS,{'boss:fungusKing':'Le spore restano a terra: non fermarti dove si alza la nube.','boss:gargoyleLord':'Piomba dove sei: quando vedi il segno a terra, schiva.',
   'boss:shadeLord':'Sparisce e ti appare alle spalle: girati subito dopo il fumo.','boss:ogreKing':'Gli spiriti dal cielo cadono dove sei: muoviti mentre alza il totem.',
   'boss:scorpionKing':'Pinze da vicino, veleno da lontano: salta quando si abbassa.','boss:salamanderKing':'Tre teste, tre fiammate: passa fra un colpo e l\'altro.',
   'boss:eyeLord':'Il raggio attraversa la stanza: saltalo o stagli dietro.','boss:minoKing':'Carica due volte di fila: schiva la prima e preparati alla seconda.'});

@@ -137,7 +137,7 @@ function pollPad(){const gp=padGet();
   if(!gp){padRelease();if(PAD.on&&performance.now()-PAD.seen>1500){PAD.on=false;padChanged();}return;}   // sul telefono il Bluetooth può sparire per un attimo: niente tasti bloccati e niente falsi "scollegato"
   PAD.seen=performance.now();
   if(padActive(gp)){PAD.act=performance.now();if(PAD.touch){PAD.touch=false;padChanged();}}
-  if(!PAD.on){if(!padActive(gp))return;padStyle(gp);PAD.on=true;toast('Controller collegato',`${padGlyph('jump')} salta · ${padGlyph('atk')} attacca · ${padGlyph('dash')} scatto`);padChanged();}
+  if(!PAD.on){if(!padActive(gp))return;padStyle(gp);PAD.on=true;toast('Controller collegato',`${padGlyph('jump')} salta · ${padGlyph('atk')} attacca · ${padGlyph('dash')} schivata`);padChanged();}
   if(G.padCapture){for(let i=0;i<gp.buttons.length;i++){const v=padBtn(gp.buttons[i]),was=PAD.prev['cap'+i];PAD.prev['cap'+i]=v;
       if(v&&!was&&G.padCapture!=='armed'){PADKEYS[G.padCapture]=[i];store.set('padkeys',PADKEYS);G.padCapture=null;sfx('pick');renderPadTable();padChanged();return;}}
     if(G.padCapture==='armed')G.padCapture=G.padArm;return;}

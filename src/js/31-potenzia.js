@@ -7,7 +7,7 @@ const AB_MAX=10,AB_STEP=0.1;   // ogni livello di potenza: +10% danno della moss
 const AB_SLOTS=[[1,'ability','ab1',1],[2,'ability2','ab2',LV_ABIL2],[3,'ability3','ab3',LV_ABIL3]];
 const abLv=(cls,n)=>(prog(cls.id).alloc['ab'+n]||0);
 const abCost=l=>2+Math.floor(l/2);   // le mosse costano più delle statistiche e salgono di prezzo a ogni livello
-const PST_HINT={hp:'più punti vita',dmg:'colpi più forti',spd:'attacchi più rapidi',arm:'subisci meno danni',crit:'più colpi critici',stam:'più stamina per scatti e salti',move:'corri più veloce'};
+const PST_HINT={hp:'più punti vita',dmg:'colpi più forti',spd:'attacchi più rapidi',arm:'subisci meno danni',crit:'più colpi critici',stam:'più stamina per schivate e salti',move:'corri più veloce'};
 const pips=(n,max)=>{const m=max||10,f=Math.min(m,n%m||(n?m:0)),rounds=Math.floor((n-1)/m);
   return `<span class="pips${rounds>0?' r'+Math.min(3,rounds):''}" aria-hidden="true">${Array.from({length:m},(_,i)=>`<i${i<f?' class="on"':''}></i>`).join('')}</span>`;};
 ptsHTML=function(cls,allowReset){const pr=prog(cls.id),spent=Object.values(pr.alloc).reduce((a,b)=>a+b,0),lv=pr.lv,can=pr.pts>0;

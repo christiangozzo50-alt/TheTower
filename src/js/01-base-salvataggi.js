@@ -163,7 +163,7 @@ const SETTINGS=Object.assign({master:0.8,music:0.5,sfx:0.8,shake:true,rumble:tru
 function opBegin(){opWait=false;document.body.classList.remove('fg-wait');if(opPixel.t0)opPixel.t0();setTimeout(()=>{opReady=true;},3100);}
 if(window.FlamesGames&&!/coop-debug/.test(location.hash)){document.body.classList.add('fg-wait');FlamesGames.play({volume:SETTINGS.master*SETTINGS.sfx}).then(opBegin);}else opBegin();
 const DEFAULT_KEYS={left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],jump:['Space','KeyC'],atk:['KeyJ','KeyX'],dash:['KeyK','ShiftLeft'],ability:['KeyL','KeyQ'],ability2:['KeyI','KeyR'],ability3:['KeyO','KeyF'],use:['KeyE','Enter'],pause:['Escape','KeyP']};
-const ACTION_NAMES={left:'Sinistra',right:'Destra',up:'Su (attacchi in alto)',down:'Giù (attacchi in basso)',jump:'Salto',atk:'Attacco',dash:'Scatto',ability:'Abilità',ability2:'Abilità 2',ability3:'Abilità 3',use:'Interagisci',pause:'Pausa'};
+const ACTION_NAMES={left:'Sinistra',right:'Destra',up:'Su (attacchi in alto)',down:'Giù (attacchi in basso)',jump:'Salto',atk:'Attacco',dash:'Schivata',ability:'Abilità',ability2:'Abilità 2',ability3:'Abilità 3',use:'Interagisci',pause:'Pausa'};
 function loadKeys(){const k=store.get('keys',null),o={};for(const a in DEFAULT_KEYS)o[a]=(k&&Array.isArray(k[a])&&k[a].length===2)?k[a].slice():DEFAULT_KEYS[a].slice();
   for(const a of ['jump','atk','dash','ability','ability2','use'])o[a]=o[a].map(c=>(o.up.includes(c)||o.down.includes(c))&&!DEFAULT_KEYS[a].includes(c)?DEFAULT_KEYS[a][1]:c);   // W/S ora servono a mirare
   if(o.jump.includes('KeyW'))o.jump=o.jump.map(c=>c==='KeyW'?'KeyC':c);return o;}

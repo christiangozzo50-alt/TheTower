@@ -1112,7 +1112,7 @@ button.cos-stage:hover .cos-try,button.cos-stage:focus-visible .cos-try{opacity:
   <div class="joy" id="joy" data-ed="joy" aria-label="Movimento"><div class="joy-knob" id="joyKnob"></div></div>
   <button class="tbtn" id="bJump" data-ed="bJump" aria-label="Salta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>Salta</button>
   <button class="tbtn" id="bAtk" data-ed="bAtk" aria-label="Attacca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 4l-9 9M19 4h-4M19 4v4M10 13l-2 2M6 12l6 6M5 19l2-2"/></svg>Attacca</button>
-  <button class="tbtn" id="bDash" data-ed="bDash" aria-label="Scatto"><span class="cd" id="dashCd"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M2 12h11M4 16h9M15 7l5 5-5 5"/></svg>Scatto</button>
+  <button class="tbtn" id="bDash" data-ed="bDash" aria-label="Schivata"><span class="cd" id="dashCd"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M2 12h11M4 16h9M15 7l5 5-5 5"/></svg>Schivata</button>
   <button class="tbtn" id="bAbil" data-ed="bAbil" aria-label="Abilità"><span class="cd" id="abilCdT"></span><span id="bAbilIco"></span><span id="bAbilName">Abilità</span></button>
   <button class="tbtn" id="bAbil3" data-ed="bAbil3" aria-label="Abilità 3" hidden><span class="cd" id="abil3CdT"></span><span id="bAbil3Ico"></span><span id="bAbil3Name">Abilità</span></button>
   <button class="tbtn" id="bAbil2" data-ed="bAbil2" aria-label="Abilità 2" hidden><span class="cd" id="abil2CdT"></span><span id="bAbil2Ico"></span><span id="bAbil2Name">Abilità</span></button>
@@ -1731,7 +1731,7 @@ const SETTINGS=Object.assign({master:0.8,music:0.5,sfx:0.8,shake:true,rumble:tru
 function opBegin(){opWait=false;document.body.classList.remove('fg-wait');if(opPixel.t0)opPixel.t0();setTimeout(()=>{opReady=true;},3100);}
 if(window.FlamesGames&&!/coop-debug/.test(location.hash)){document.body.classList.add('fg-wait');FlamesGames.play({volume:SETTINGS.master*SETTINGS.sfx}).then(opBegin);}else opBegin();
 const DEFAULT_KEYS={left:['KeyA','ArrowLeft'],right:['KeyD','ArrowRight'],up:['KeyW','ArrowUp'],down:['KeyS','ArrowDown'],jump:['Space','KeyC'],atk:['KeyJ','KeyX'],dash:['KeyK','ShiftLeft'],ability:['KeyL','KeyQ'],ability2:['KeyI','KeyR'],ability3:['KeyO','KeyF'],use:['KeyE','Enter'],pause:['Escape','KeyP']};
-const ACTION_NAMES={left:'Sinistra',right:'Destra',up:'Su (attacchi in alto)',down:'Giù (attacchi in basso)',jump:'Salto',atk:'Attacco',dash:'Scatto',ability:'Abilità',ability2:'Abilità 2',ability3:'Abilità 3',use:'Interagisci',pause:'Pausa'};
+const ACTION_NAMES={left:'Sinistra',right:'Destra',up:'Su (attacchi in alto)',down:'Giù (attacchi in basso)',jump:'Salto',atk:'Attacco',dash:'Schivata',ability:'Abilità',ability2:'Abilità 2',ability3:'Abilità 3',use:'Interagisci',pause:'Pausa'};
 function loadKeys(){const k=store.get('keys',null),o={};for(const a in DEFAULT_KEYS)o[a]=(k&&Array.isArray(k[a])&&k[a].length===2)?k[a].slice():DEFAULT_KEYS[a].slice();
   for(const a of ['jump','atk','dash','ability','ability2','use'])o[a]=o[a].map(c=>(o.up.includes(c)||o.down.includes(c))&&!DEFAULT_KEYS[a].includes(c)?DEFAULT_KEYS[a][1]:c);   // W/S ora servono a mirare
   if(o.jump.includes('KeyW'))o.jump=o.jump.map(c=>c==='KeyW'?'KeyC':c);return o;}
@@ -6188,7 +6188,7 @@ function bBat(e,dt,dir,dist,rage,sp){
 function bDragon(e,dt,dir,dist,rage,sp){
   const k=e.hp/e.maxHp,want=k>0.66?1:k>0.33?2:3;
   if(want!==e.phase&&e.state!=='trans'){e.phase=want;e.state='trans';e.t=0;e.warn=0;e.landed=false;sfx('roar');shake(0.6);
-    toast(want===2?'Il drago atterra!':'Il drago riprende il volo, furioso!',want===2?'Attento al soffio di fuoco: scatta per attraversarlo':'Guarda il pavimento: piovono meteore');
+    toast(want===2?'Il drago atterra!':'Il drago riprende il volo, furioso!',want===2?'Attento al soffio di fuoco: schiva per attraversarlo':'Guarda il pavimento: piovono meteore');
     for(const p of G.projs)if(p.owner==='e')p.dead=true;}
   const ground=e.phase===2;
   if(e.state==='trans'){e.vx*=0.9;e.warn=0.5+0.5*Math.sin(e.t*20);
@@ -7010,20 +7010,20 @@ $('pauseSettings').onclick=()=>{sfx('ui');openSettings('pause');};
 $('pauseQuit').onclick=()=>{sfx('ui');quitToCellar();};
 // dopo la morte: 4 secondi di schermo nero con un consiglio di gioco
 const TIPS=[
-  ()=>'Attento alla <b>stamina</b>: ogni colpo, ogni scatto e ogni salto la consumano. Se resti senza fiato non puoi più attaccare, scattare né saltare: fermati un attimo e lasciala ricaricare.',
+  ()=>'Attento alla <b>stamina</b>: ogni colpo, ogni schivata e ogni salto la consumano. Se resti senza fiato non puoi più attaccare, schivare né saltare: fermati un attimo e lasciala ricaricare.',
   ()=>`Salta e attacca verso il basso: piombi a terra con lo <b>${MOVES.da.name}</b>, un colpo ad area che colpisce tutti i nemici intorno a te.`,
   ()=>touchUI()?`Per lo <b>${MOVES.da.name}</b>: salta, poi trascina il tasto d'attacco verso il basso. Più salti in alto, più arrivi forte.`:`Per lo <b>${MOVES.da.name}</b>: salta, poi tieni premuto giù e attacca. Perfetto quando i nemici ti circondano.`,
-  ()=>'Lo <b>scatto</b> ti rende intoccabile per un istante: usalo per passare attraverso gli attacchi, non solo per scappare.',
+  ()=>'La <b>schivata</b> ti rende intoccabile per un istante: usalo per passare attraverso gli attacchi, non solo per scappare.',
   ()=>`La <b>${MOVES.dl.name}</b> (giù + attacco a terra) lancia i nemici in aria: salta subito dietro di loro e continua la combo.`,
   ()=>`Il terzo colpo della <b>${MOVES.nl.name}</b> è il più forte: non interrompere la catena a metà.`,
-  ()=>'Quando un nemico si carica per colpire, allontanati o scatta via: aspettare il colpo costa caro.',
+  ()=>'Quando un nemico si carica per colpire, allontanati o schiva: aspettare il colpo costa caro.',
   ()=>'Le <b>bende</b> curano un quarto della vita. Se hai la vita piena non le raccogli: lasciale lì per dopo.',
   ()=>'Gli oggetti dei forzieri cadono a terra: raccoglili e poi indossali dall\'<b>armadio</b> del seminterrato.',
   ()=>'Nell\'armadio puoi <b>fondere</b> 5 oggetti con lo stesso nome per ottenerne uno di rarità superiore.',
   ()=>'Spendi i <b>punti livello</b> al piedistallo del seminterrato: ogni punto ti rende più forte per tutte le scalate.',
   ()=>'Ogni 5 piani ti aspetta un <b>guardiano</b>. Guarda bene i suoi attacchi prima di lanciarti: ognuno ha il suo ritmo e i suoi momenti scoperti.',
   ()=>'Le <b>abilità</b> si ricaricano da sole: usale spesso, non tenerle da parte aspettando il momento perfetto.',
-  ()=>'Combatti vicino al centro della stanza: negli angoli i nemici ti chiudono e non hai spazio per scattare.',
+  ()=>'Combatti vicino al centro della stanza: negli angoli i nemici ti chiudono e non hai spazio per schivare.',
 ];
 function showTip(cb){const el=$('tipScreen');let i;do{i=Math.floor(Math.random()*TIPS.length);}while(TIPS.length>1&&i===showTip.last);showTip.last=i;
   $('tipText').innerHTML=TIPS[i]();G.state='tip';el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
@@ -7395,7 +7395,7 @@ const TUT=[
   {t:'Muoviti',x:()=>touchUI()?'Usa il joystick a sinistra per camminare.':`Cammina con ${kl('left')} e ${kl('right')}.`,init(){G.tut.x0=P.x;},done:()=>Math.abs(P.x-G.tut.x0)>3},
   {t:'Salta',x:()=>touchUI()?'Premi il tasto Salto. In aria puoi saltare ancora.':`Premi ${kl('jump')} per saltare. In aria puoi saltare ancora.`,done:()=>!P.onGround&&P.y>1.2},
   {t:'Attacca',x:()=>touchUI()?'Una guardia! Premi il tasto Attacco per colpirla.':`Una guardia! Premi ${kl('atk')} per colpirla.`,init(){tutSpawn('guard',P.x+7);},done:()=>tutAlive()===0},
-  {t:'Schivata',x:()=>touchUI()?'Premi il tasto Scatto: per un attimo sei intoccabile.':`Premi ${kl('dash')} per scattare: per un attimo sei intoccabile.`,done:()=>P.dashT>0},
+  {t:'Schivata',x:()=>touchUI()?'Premi il tasto Schivata: per un attimo sei intoccabile.':`Premi ${kl('dash')} per schivare: per un attimo sei intoccabile.`,done:()=>P.dashT>0},
   {t:'Abilità speciale',x:()=>touchUI()?`Premi il tasto ${G.cls.ability.short} per usare ${G.cls.ability.name}.`:`Premi ${kl('ability')} per usare ${G.cls.ability.name}.`,done:()=>P.abilCd>0},
   {t:'Le guardie arrivano!',x:()=>'Sconfiggile tutte per aprire il cancello.',init(){G.tut.final=true;[['guard',8],['slime',-9],['guard',11],['slime',13],['bat',4]].forEach(([k,dx])=>tutSpawn(k,clamp(P.x+dx,-HALF+2,GATE_X-2)));},done:()=>tutAlive()===0&&G.cleared},
   {t:'Il cancello è aperto',x:()=>'Sali la scala oltre il cancello: porta al seminterrato, il tuo rifugio.',init(){for(const h of G.tut.others||[])popNum(h.x,3.2,'Torna a liberarci!','xp');},done:()=>false},
@@ -7988,7 +7988,7 @@ function pollPad(){const gp=padGet();
   if(!gp){padRelease();if(PAD.on&&performance.now()-PAD.seen>1500){PAD.on=false;padChanged();}return;}   // sul telefono il Bluetooth può sparire per un attimo: niente tasti bloccati e niente falsi "scollegato"
   PAD.seen=performance.now();
   if(padActive(gp)){PAD.act=performance.now();if(PAD.touch){PAD.touch=false;padChanged();}}
-  if(!PAD.on){if(!padActive(gp))return;padStyle(gp);PAD.on=true;toast('Controller collegato',`${padGlyph('jump')} salta · ${padGlyph('atk')} attacca · ${padGlyph('dash')} scatto`);padChanged();}
+  if(!PAD.on){if(!padActive(gp))return;padStyle(gp);PAD.on=true;toast('Controller collegato',`${padGlyph('jump')} salta · ${padGlyph('atk')} attacca · ${padGlyph('dash')} schivata`);padChanged();}
   if(G.padCapture){for(let i=0;i<gp.buttons.length;i++){const v=padBtn(gp.buttons[i]),was=PAD.prev['cap'+i];PAD.prev['cap'+i]=v;
       if(v&&!was&&G.padCapture!=='armed'){PADKEYS[G.padCapture]=[i];store.set('padkeys',PADKEYS);G.padCapture=null;sfx('pick');renderPadTable();padChanged();return;}}
     if(G.padCapture==='armed')G.padCapture=G.padArm;return;}
@@ -8922,13 +8922,13 @@ function troCheck(){if(!troKnown){troKnown=new Set(trophyList().filter(t=>t.ok).
 const BEST=store.get('bestiary',{});
 const BOSSARCH={};for(const b of BOSS_LIST)if(!BOSSARCH[b[1]])BOSSARCH[b[1]]=b[2];
 const BEST_TIPS={slime:'Lento e goffo: colpiscilo da lontano o saltagli sopra.',guard:'Para i colpi di fronte: prendilo alle spalle o dall\'alto.',mage:'Fragile: chiudi la distanza prima che lanci.',
-  bat:'Vola a scatti: usa l\'attacco verso l\'alto.',archer:'Tiene le distanze: scatta verso di lui tra un tiro e l\'altro.',knight:'Resistentissimo: tieni le abilità per lui.',
+  bat:'Vola a scatti: usa l\'attacco verso l\'alto.',archer:'Tiene le distanze: schiva verso di lui tra un tiro e l\'altro.',knight:'Resistentissimo: tieni le abilità per lui.',
   imp:'Esplode vicino a te: colpiscilo e allontanati subito.',wraith:'A tratti diventa immune: attacca solo quando è visibile.',brute:'Colpi lenti e pesanti: schiva e contrattacca.',
-  shaman:'Evoca alleati: eliminalo per primo.',spider:'Sputa ragnatele che ti rallentano e balza: scatta di lato quando si abbassa.',fungus:'Lento, ma se ti avvicini scoppia una nube velenosa: colpisci e allontanati.',
+  shaman:'Evoca alleati: eliminalo per primo.',spider:'Sputa ragnatele che ti rallentano e balza: schiva di lato quando si abbassa.',fungus:'Lento, ma se ti avvicini scoppia una nube velenosa: colpisci e allontanati.',
   gargoyle:'Piomba dall\'alto: scansati e colpiscilo mentre resta a terra.',shade:'Sparisce e riappare alle tue spalle: girati e colpisci per primo.',scorpion:'Pinze da vicino, veleno da lontano: stagli addosso quando alza la coda.',
   salamander:'Sputa fuoco davanti a sé: saltale sopra e colpiscila da dietro.',eye:'Prende la mira e spara in linea retta: muoviti quando si illumina.',minotaur:'Carica a testa bassa: fallo schiantare contro il muro e sarà stordito.',
   'boss:slimeKing':'Si divide e salta: resta in movimento.','boss:golem':'Scosse a terra: salta quando alza i pugni.','boss:skelKing':'Evoca scheletri: colpisci lui, non loro.',
-  'boss:bknight':'Para e contrattacca: aspetta che finisca la combo.','boss:archmage':'Vola e lancia magie: usa gli attacchi in aria.','boss:batQueen':'Picchiate improvvise: scatta di lato.',
+  'boss:bknight':'Para e contrattacca: aspetta che finisca la combo.','boss:archmage':'Vola e lancia magie: usa gli attacchi in aria.','boss:batQueen':'Picchiate improvvise: schiva di lato.',
   'boss:dragon':'Soffio di fuoco: stagli sotto e colpisci la pancia.'};
 const bestKeys=()=>[...Object.keys(TYPES),...Object.keys(BOSSARCH).map(a=>'boss:'+a)];
 const bestKeyOf=e=>e.type==='boss'?'boss:'+e.arch:e.type;
@@ -10596,7 +10596,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795020320';
+const BUILD_ID='1795020741';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -11253,7 +11253,7 @@ UPG.push(
   {id:'catena', name:"Fulmine a catena",   icon:'bolt',  max:2, desc:()=>nxLv('catena')>1?"Il fulmine parte ogni 4 colpi e salta su 5 nemici":"Ogni 5 colpi un fulmine salta su 3 nemici vicini", apply(){}},
   {id:'esecuz', name:"Esecuzione",         icon:'skull', max:2, desc:()=>nxLv('esecuz')>1?"Uccidi al primo colpo i nemici sotto il 25% di vita":"Uccidi al primo colpo i nemici sotto il 15% di vita (non i guardiani)", apply(){}},
   {id:'cadaveri',name:"Cadaveri esplosivi",icon:'meteor',max:2, desc:()=>nxLv('cadaveri')>1?"Le esplosioni sono più grandi e fanno più danno":"I nemici che uccidi esplodono e feriscono quelli vicini", apply(){}},
-  {id:'scia',   name:"Scia di fuoco",      icon:'fire',  max:2, desc:()=>nxLv('scia')>1?"Le fiamme durano di più e bruciano più forte":"Lo scatto lascia fiamme a terra che bruciano i nemici", apply(){}},
+  {id:'scia',   name:"Scia di fuoco",      icon:'fire',  max:2, desc:()=>nxLv('scia')>1?"Le fiamme durano di più e bruciano più forte":"La schivata lascia fiamme a terra che bruciano i nemici", apply(){}},
   {id:'turbine',name:"Turbine",            icon:'spin',  max:2, desc:()=>nxLv('turbine')>1?"La giravolta è più ampia e scaraventa via i nemici":"Il salto in aria fa una giravolta che colpisce tutto intorno", apply(){}},
   {id:'spine',  name:"Spine",              icon:'shield',max:2, desc:()=>nxLv('spine')>1?"Le spine fanno quasi il doppio del danno":"Chi ti colpisce da vicino subisce danno", apply(){}},
   {id:'famiglio',name:"Famiglio",          icon:'orbit', max:2, desc:()=>nxLv('famiglio')>1?"Il famiglio spara più spesso e più forte":"Uno spirito ti segue e spara ai nemici", apply(){}},
@@ -12726,7 +12726,7 @@ const NBPICK={fungusKing:2,gargoyleLord:2,shadeLord:2,ogreKing:1,scorpionKing:0,
 for(const a in NBPICK)BOSSB[a]=d=>{const s=NBOSSES[a][NBPICK[a]].make(d);s.tick=s.tick||[];return s;};
 Object.assign(BLOOD,{fungusKing:[0xc9e08a,0x7a9a3a],gargoyleLord:[0x9a9aa4,0x6a6a74],shadeLord:[0x8a6aff,0x2a1a6a],ogreKing:[0x8a0f1a,0x5a0a10],
   scorpionKing:[0xa6e34a,0x6a8a1e],salamanderKing:[0xff9a3a,0xb04a14],eyeLord:[0xc23a7a,0x6a1a3a],minoKing:[0x8a0f1a,0x5a0a10]});
-Object.assign(BEST_TIPS,{'boss:fungusKing':'Le spore restano a terra: non fermarti dove si alza la nube.','boss:gargoyleLord':'Piomba dove sei: quando vedi il segno a terra, scatta via.',
+Object.assign(BEST_TIPS,{'boss:fungusKing':'Le spore restano a terra: non fermarti dove si alza la nube.','boss:gargoyleLord':'Piomba dove sei: quando vedi il segno a terra, schiva.',
   'boss:shadeLord':'Sparisce e ti appare alle spalle: girati subito dopo il fumo.','boss:ogreKing':'Gli spiriti dal cielo cadono dove sei: muoviti mentre alza il totem.',
   'boss:scorpionKing':'Pinze da vicino, veleno da lontano: salta quando si abbassa.','boss:salamanderKing':'Tre teste, tre fiammate: passa fra un colpo e l\'altro.',
   'boss:eyeLord':'Il raggio attraversa la stanza: saltalo o stagli dietro.','boss:minoKing':'Carica due volte di fila: schiva la prima e preparati alla seconda.'});
@@ -12777,7 +12777,11 @@ const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true
 // chi trasmette (sta scalando)
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
 // chi guarda
-const SPEC={on:false,key:'',name:'',peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),tm:0,endT:0,prevFl:1};
+// ponte via Firebase (quando il collegamento diretto non passa): chi scala scrive la partita in players/<nome>/sr, chi guarda la riceve in diretta
+const RL={on:false,busy:false,s:[],e:null,pj:null,cb:null,fx:[],q:0,who:new Set(),n:0};
+const RL_MS=250,RL_DELAY=380;
+const fbBase=()=>FB_URL.replace(/\/$/,'');
+const SPEC={on:false,mode:null,key:'',name:'',peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),tm:0,endT:0,prevFl:1};
 
 /* ---------- stanze uguali per chi scala e per chi guarda ---------- */
 // le stanze vengono costruite con un "seme": chi guarda usa lo stesso seme e vede le stesse piattaforme
@@ -12815,7 +12819,7 @@ function specCloseB(){const p=SPB.peer,cs=SPB.conns;SPB.peer=null;SPB.conns=[];
   setTimeout(()=>{for(const c of cs){try{c.close();}catch(e){}}try{p&&p.destroy();}catch(e){}},400);specCountUi();}
 // quanti ti stanno guardando (in alto, durante la scalata)
 let specCountEl=null;
-function specCountUi(){const n=SPB.conns.filter(c=>c.open).length;
+function specCountUi(){const n=SPB.conns.filter(c=>c.open).length+(RL.on?RL.n:0);
   if(!specCountEl){specCountEl=document.createElement('div');specCountEl.className='spec-count';specCountEl.setAttribute('aria-live','polite');document.body.appendChild(specCountEl);}
   const show=n>0&&G.scene==='tower'&&!$('hud').hidden;specCountEl.hidden=!show;
   if(show){const names=SPB.conns.filter(c=>c.open&&c.who).map(c=>c.who);specCountEl.innerHTML=EYE_SVG+`<span>${n}</span>`;specCountEl.title=names.length?'Ti guardano: '+names.join(', '):'Spettatori';}}
@@ -12830,9 +12834,11 @@ setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
   if(run!==SPB.inRun||fl!==SPB.fl||(run&&now-SPB.presT>40000)){SPB.inRun=run;SPB.fl=fl;SPB.presT=now;specPresence();if(SPB.conns.length)specSend(specInfo());}
   specCountUi();},2000);
 // invio a chi guarda: eroe, nemici, proiettili ed effetti 20 volte al secondo (come in co-op); forzieri e barili 4 volte al secondo
-setInterval(()=>{if(!SPB.conns.length||document.hidden)return;SPB.tk++;
-  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);
-      if(!G.pvp){specSend(mpSnap());specSend(specProjMsg());if(FXQ.length)specSend({t:'fx',f:G.floor,l:FXQ.splice(0)});if(SPB.tk%5===0)specSend(specPropsMsg());}}
+setInterval(()=>{if((!SPB.conns.length&&!RL.on)||document.hidden)return;SPB.tk++;
+  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);if(RL.on){RL.s.push(s);if(RL.s.length>6)RL.s.shift();}
+      if(!G.pvp){const e=mpSnap(),pj=specProjMsg();specSend(e);specSend(pj);if(RL.on){RL.e=e;RL.pj=pj;}
+        if(FXQ.length){const l=FXQ.splice(0);specSend({t:'fx',f:G.floor,l});if(RL.on)RL.fx.push(...l);}
+        if(SPB.tk%5===0){const cb=specPropsMsg();specSend(cb);if(RL.on)RL.cb=cb;}}}
     {const k=specInRun()?JSON.stringify(G.lv||{}):'{}';if(k!==SPB.lvKey){SPB.lvKey=k;specSend({t:'lv',lv:JSON.parse(k)});}}
     if(SPB.tk%20===0)specSend(specInfo());}catch(e){}},50);
 // forzieri (escono a caso solo da chi scala) e barili rotti
@@ -12844,7 +12850,7 @@ function specPropsMsg(){return {t:'cb',f:G.floor,ex:G.entry?f2(G.entry.x):null,
    Si registrano solo gli effetti "di primo livello": quelli fatti dentro un altro effetto registrato
    (o dentro l'animazione degli effetti) li rifà da solo chi guarda, così non escono doppi. */
 const FXQ=[],FXQ_MAX=140;let fxDepth=0,fxSfxN=0;
-const fxRec=()=>fxDepth===0&&SPB.conns.length>0&&!SPEC.on&&G.scene==='tower'&&!G.pvp;
+const fxRec=()=>fxDepth===0&&(SPB.conns.length>0||RL.on)&&!SPEC.on&&G.scene==='tower'&&!G.pvp;
 const f2=v=>typeof v==='number'?Math.round(v*100)/100:v;
 function fxPush(e){if(FXQ.length<FXQ_MAX)FXQ.push(e);}
 function fxWrap(code,orig,keep){return function(){if(fxRec()&&(!keep||keep.apply(null,arguments)))fxPush([code,...Array.from(arguments).map(f2)]);
@@ -12950,24 +12956,48 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{mode:null,rlQ:0,outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
-  SPEC.try=0;SPEC.unav=0;specConnect();}
+  SPEC.try=0;SPEC.unav=0;specConnect();specRelayStart();
+  clearTimeout(SPEC.rlT);SPEC.rlT=setTimeout(()=>{if(SPEC.on&&!SPEC.built)specExit(`Non riesco a collegarmi a ${SPEC.name}`,'Deve avere il gioco aggiornato, aperto e in primo piano');},25000);}
 // il collegamento: fino a SPEC_TRIES tentativi, perché il primo a volte non va (rete lenta, canale appena aperto)
 function specConnect(){if(!SPEC.on||SPEC.built)return;const n=++SPEC.try;
   {const oc=SPEC.conn,op=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{oc&&oc.close();}catch(e){}try{op&&op.destroy();}catch(e){}}
   if(n>1)specSetInfo(`Riprovo a collegarmi (${n}/${SPEC_TRIES})…`);
   clearTimeout(SPEC.tm);
-  SPEC.tm=setTimeout(()=>{if(!SPEC.on||SPEC.built)return;if(n<SPEC_TRIES)specConnect();else specExit(`Non riesco a collegarmi a ${SPEC.name}`,'Riprova tra poco: deve tenere il gioco aperto e in primo piano');},n===1?9000:8000);
-  mpLib(()=>{if(!SPEC.on||SPEC.try!==n)return;const p=new Peer();SPEC.peer=p;
+  SPEC.tm=setTimeout(()=>{if(!SPEC.on||SPEC.built)return;if(n<SPEC_TRIES)specConnect();else specP2pStop();},n===1?9000:8000);
+  mpLib(()=>{if(!SPEC.on||SPEC.try!==n||SPEC.mode==='relay')return;const p=new Peer();SPEC.peer=p;
     p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(SPEC.key),{reliable:true,serialization:'json'});SPEC.conn=c;
       c.on('open',()=>{try{c.send({t:'hi',n:MP.name()});}catch(e){}});
-      c.on('data',m=>{if(SPEC.conn!==c)return;try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
-      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c&&SPEC.built)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
+      c.on('data',m=>{if(SPEC.conn!==c||SPEC.mode==='relay')return;if(!SPEC.mode){SPEC.mode='p2p';specRelayStop();}try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
+      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c&&SPEC.built&&SPEC.mode==='p2p')specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
     p.on('error',e=>{if(SPEC.peer!==p||SPEC.built)return;
-      if(e&&e.type==='peer-unavailable'){if(++SPEC.unav<2&&n<SPEC_TRIES){clearTimeout(SPEC.tm);SPEC.tm=setTimeout(specConnect,1500);}else specExit(`${SPEC.name} non è più in scalata`,'Il suo canale non risponde');}});});}
+      if(e&&e.type==='peer-unavailable'){if(++SPEC.unav<2&&n<SPEC_TRIES){clearTimeout(SPEC.tm);SPEC.tm=setTimeout(specConnect,1500);}else specP2pStop();}});});}
+function specP2pStop(){clearTimeout(SPEC.tm);const oc=SPEC.conn,op=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{oc&&oc.close();}catch(e){}try{op&&op.destroy();}catch(e){}}
+// ponte via Firebase, lato di chi guarda: chiede la partita (players/<amico>/sq/<io>) e la riceve in diretta
+function specRelayStart(){if(!SPEC.on||SPEC.es||!fbOn())return;const k=encodeURIComponent(SPEC.key),me=encodeURIComponent(nameKey(MP.name()));
+  const ping=()=>fetch(`${fbBase()}/players/${k}/sq/${me}.json?print=silent`,{method:'PUT',body:JSON.stringify({t:Date.now(),n:MP.name()})}).catch(()=>{});
+  ping();SPEC.rlPing=setInterval(ping,5000);SPEC.rlLast=Date.now();SPEC.rlQ=0;
+  let es;try{es=new EventSource(`${fbBase()}/players/${k}/sr.json`);}catch(e){return;}SPEC.es=es;
+  es.addEventListener('put',ev=>{if(SPEC.es!==es)return;let m,b;try{m=JSON.parse(ev.data);}catch(e){return;}
+    if(!m||m.path!=='/'||!m.data||typeof m.data.d!=='string'||Math.abs(Date.now()-(m.data.ts||0))>120000)return;
+    try{b=JSON.parse(m.data.d);}catch(e){return;}try{specRelayMsg(b);}catch(e){console.warn('spettatore ponte',e);}});
+  es.onerror=()=>{};   // si ricollega da solo
+  clearInterval(SPEC.rlWd);SPEC.rlWd=setInterval(()=>{if(SPEC.on&&SPEC.mode==='relay'&&Date.now()-SPEC.rlLast>12000)specExit(`${SPEC.name} non è più raggiungibile`,'');},2000);}
+function specRelayStop(){clearInterval(SPEC.rlPing);clearInterval(SPEC.rlWd);const es=SPEC.es;SPEC.es=null;try{es&&es.close();}catch(e){}
+  if(SPEC.key&&fbOn())fetch(`${fbBase()}/players/${encodeURIComponent(SPEC.key)}/sq/${encodeURIComponent(nameKey(MP.name()))}.json`,{method:'DELETE'}).catch(()=>{});}
+function specRelayMsg(b){if(!SPEC.on||SPEC.mode==='p2p'||!b)return;
+  if(!SPEC.mode){SPEC.mode='relay';specP2pStop();}
+  SPEC.rlLast=Date.now();if(b.q&&b.q===SPEC.rlQ)return;SPEC.rlQ=b.q;
+  if(b.si)specMsg(b.si);if(!SPEC.on)return;
+  if(b.lv)specSetLv(b.lv);
+  const now=performance.now(),l=b.s||[];
+  l.forEach((s,i)=>{specMsg(s);const R=SPEC.R;if(R&&R.buf&&R.buf.length)R.buf[R.buf.length-1].t=now-(l.length-1-i)*50;});
+  if(b.e)specMsg(b.e);if(b.pj)specMsg(b.pj);if(b.cb)specMsg(b.cb);if(b.fx)specMsg(b.fx);
+  // i dati arrivano a pacchetti: un po' più di ritardo, così i movimenti restano fluidi
+  if(SPEC.R)SPEC.R.delay=RL_DELAY;for(const e of SPEC.emap.values())e.delay=RL_DELAY;for(const p of SPX.pj.values())p.delay=RL_DELAY;}
 function specMsg(m){
   if(m.t==='full'){specExit('Troppi spettatori',`${SPEC.name} ha già ${SPEC_MAX} persone che lo guardano`);return;}
   if(m.t==='si'){SPEC.seed=m.seed;if(m.n)SPEC.name=m.n;$('sbName').textContent=SPEC.name;
@@ -13028,7 +13058,7 @@ function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)retur
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
 function specKill(e){e.dead=true;
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
-function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
+function specExit(t,s){if(!SPEC.on)return;specRelayStop();clearTimeout(SPEC.rlT);SPEC.mode=null;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
   specFxClear();SPEC.tipId=null;if($('spTip'))$('spTip').hidden=true;if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
   clearInput();G.state='menu';
@@ -13065,6 +13095,24 @@ const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.ap
 // Esc o il tasto indietro del controller: esci
 addEventListener('keydown',e=>{if(SPEC.on&&(e.key==='Escape'||e.key==='Backspace')){e.preventDefault();e.stopPropagation();specExit();}},true);
 const _padBackSp=padBack;padBack=function(){if(SPEC.on){specExit();return true;}return _padBackSp();};
+
+/* ---------- ponte via Firebase, lato di chi scala ----------
+   ogni 3 s guarda se qualcuno ha chiesto di guardarlo (players/<io>/sq); se sì, 4 volte al secondo scrive la partita in players/<io>/sr */
+const relayUrl=()=>`${fbBase()}/players/${encodeURIComponent(nameKey(MP.name()))}/sr.json`;
+function relayPut(b){RL.busy=true;return fetch(relayUrl()+'?print=silent',{method:'PUT',body:JSON.stringify({ts:Date.now(),d:JSON.stringify(b)})}).catch(()=>{}).finally(()=>{RL.busy=false;});}
+function relayEnd(){relayPut({q:++RL.q,si:specInfo()});RL.who.clear();RL.n=0;setTimeout(()=>{if(!RL.on)fetch(relayUrl(),{method:'DELETE'}).catch(()=>{});},8000);}
+setInterval(async()=>{if(!fbOn()||!store.get('nameok',false))return;const run=specInRun();if(!run&&!RL.on)return;
+  let sq=null;try{sq=await fbGet('players/'+encodeURIComponent(nameKey(MP.name()))+'/sq');}catch(e){return;}
+  const now=Date.now(),act=Object.entries(sq||{}).filter(([k,v])=>v&&Math.abs(now-(v.t||0))<30000);
+  for(const [k,v] of act)if(!RL.who.has(k)){RL.who.add(k);toast(`${String(v.n||'Un amico').slice(0,14)} ti sta guardando`,'Ti segue nella scalata');}
+  const want=specInRun()&&act.length>0;RL.n=act.length;
+  if(want&&!RL.on){RL.on=true;RL.s=[];RL.fx=[];RL.e=RL.pj=RL.cb=null;}
+  else if(!want&&RL.on){RL.on=false;relayEnd();}
+  specCountUi();},3000);
+setInterval(()=>{if(!RL.on||RL.busy||!fbOn())return;
+  if(!specInRun()){RL.on=false;relayEnd();return;}
+  const b={q:++RL.q,si:specInfo(),lv:Object.assign({},G.lv||{}),s:RL.s.splice(0),e:RL.e,pj:RL.pj,cb:RL.cb,fx:RL.fx.length?{t:'fx',f:G.floor,l:RL.fx.splice(0,140)}:null};
+  RL.e=RL.pj=RL.cb=null;relayPut(b);},RL_MS);
 
 /* ---------- l'occhio nella lista amici, aggiornato mentre la lista è aperta ---------- */
 function specEyeHtml(k,p){if(!specCan(p))return '';const n=esc(p.n||k);
@@ -13444,7 +13492,7 @@ const AB_MAX=10,AB_STEP=0.1;   // ogni livello di potenza: +10% danno della moss
 const AB_SLOTS=[[1,'ability','ab1',1],[2,'ability2','ab2',LV_ABIL2],[3,'ability3','ab3',LV_ABIL3]];
 const abLv=(cls,n)=>(prog(cls.id).alloc['ab'+n]||0);
 const abCost=l=>2+Math.floor(l/2);   // le mosse costano più delle statistiche e salgono di prezzo a ogni livello
-const PST_HINT={hp:'più punti vita',dmg:'colpi più forti',spd:'attacchi più rapidi',arm:'subisci meno danni',crit:'più colpi critici',stam:'più stamina per scatti e salti',move:'corri più veloce'};
+const PST_HINT={hp:'più punti vita',dmg:'colpi più forti',spd:'attacchi più rapidi',arm:'subisci meno danni',crit:'più colpi critici',stam:'più stamina per schivate e salti',move:'corri più veloce'};
 const pips=(n,max)=>{const m=max||10,f=Math.min(m,n%m||(n?m:0)),rounds=Math.floor((n-1)/m);
   return `<span class="pips${rounds>0?' r'+Math.min(3,rounds):''}" aria-hidden="true">${Array.from({length:m},(_,i)=>`<i${i<f?' class="on"':''}></i>`).join('')}</span>`;};
 ptsHTML=function(cls,allowReset){const pr=prog(cls.id),spent=Object.values(pr.alloc).reduce((a,b)=>a+b,0),lv=pr.lv,can=pr.pts>0;

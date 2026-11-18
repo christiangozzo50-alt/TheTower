@@ -482,7 +482,7 @@ function bBat(e,dt,dir,dist,rage,sp){
 function bDragon(e,dt,dir,dist,rage,sp){
   const k=e.hp/e.maxHp,want=k>0.66?1:k>0.33?2:3;
   if(want!==e.phase&&e.state!=='trans'){e.phase=want;e.state='trans';e.t=0;e.warn=0;e.landed=false;sfx('roar');shake(0.6);
-    toast(want===2?'Il drago atterra!':'Il drago riprende il volo, furioso!',want===2?'Attento al soffio di fuoco: scatta per attraversarlo':'Guarda il pavimento: piovono meteore');
+    toast(want===2?'Il drago atterra!':'Il drago riprende il volo, furioso!',want===2?'Attento al soffio di fuoco: schiva per attraversarlo':'Guarda il pavimento: piovono meteore');
     for(const p of G.projs)if(p.owner==='e')p.dead=true;}
   const ground=e.phase===2;
   if(e.state==='trans'){e.vx*=0.9;e.warn=0.5+0.5*Math.sin(e.t*20);

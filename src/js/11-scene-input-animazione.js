@@ -56,20 +56,20 @@ $('pauseSettings').onclick=()=>{sfx('ui');openSettings('pause');};
 $('pauseQuit').onclick=()=>{sfx('ui');quitToCellar();};
 // dopo la morte: 4 secondi di schermo nero con un consiglio di gioco
 const TIPS=[
-  ()=>'Attento alla <b>stamina</b>: ogni colpo, ogni scatto e ogni salto la consumano. Se resti senza fiato non puoi più attaccare, scattare né saltare: fermati un attimo e lasciala ricaricare.',
+  ()=>'Attento alla <b>stamina</b>: ogni colpo, ogni schivata e ogni salto la consumano. Se resti senza fiato non puoi più attaccare, schivare né saltare: fermati un attimo e lasciala ricaricare.',
   ()=>`Salta e attacca verso il basso: piombi a terra con lo <b>${MOVES.da.name}</b>, un colpo ad area che colpisce tutti i nemici intorno a te.`,
   ()=>touchUI()?`Per lo <b>${MOVES.da.name}</b>: salta, poi trascina il tasto d'attacco verso il basso. Più salti in alto, più arrivi forte.`:`Per lo <b>${MOVES.da.name}</b>: salta, poi tieni premuto giù e attacca. Perfetto quando i nemici ti circondano.`,
-  ()=>'Lo <b>scatto</b> ti rende intoccabile per un istante: usalo per passare attraverso gli attacchi, non solo per scappare.',
+  ()=>'La <b>schivata</b> ti rende intoccabile per un istante: usalo per passare attraverso gli attacchi, non solo per scappare.',
   ()=>`La <b>${MOVES.dl.name}</b> (giù + attacco a terra) lancia i nemici in aria: salta subito dietro di loro e continua la combo.`,
   ()=>`Il terzo colpo della <b>${MOVES.nl.name}</b> è il più forte: non interrompere la catena a metà.`,
-  ()=>'Quando un nemico si carica per colpire, allontanati o scatta via: aspettare il colpo costa caro.',
+  ()=>'Quando un nemico si carica per colpire, allontanati o schiva: aspettare il colpo costa caro.',
   ()=>'Le <b>bende</b> curano un quarto della vita. Se hai la vita piena non le raccogli: lasciale lì per dopo.',
   ()=>'Gli oggetti dei forzieri cadono a terra: raccoglili e poi indossali dall\'<b>armadio</b> del seminterrato.',
   ()=>'Nell\'armadio puoi <b>fondere</b> 5 oggetti con lo stesso nome per ottenerne uno di rarità superiore.',
   ()=>'Spendi i <b>punti livello</b> al piedistallo del seminterrato: ogni punto ti rende più forte per tutte le scalate.',
   ()=>'Ogni 5 piani ti aspetta un <b>guardiano</b>. Guarda bene i suoi attacchi prima di lanciarti: ognuno ha il suo ritmo e i suoi momenti scoperti.',
   ()=>'Le <b>abilità</b> si ricaricano da sole: usale spesso, non tenerle da parte aspettando il momento perfetto.',
-  ()=>'Combatti vicino al centro della stanza: negli angoli i nemici ti chiudono e non hai spazio per scattare.',
+  ()=>'Combatti vicino al centro della stanza: negli angoli i nemici ti chiudono e non hai spazio per schivare.',
 ];
 function showTip(cb){const el=$('tipScreen');let i;do{i=Math.floor(Math.random()*TIPS.length);}while(TIPS.length>1&&i===showTip.last);showTip.last=i;
   $('tipText').innerHTML=TIPS[i]();G.state='tip';el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
@@ -441,7 +441,7 @@ const TUT=[
   {t:'Muoviti',x:()=>touchUI()?'Usa il joystick a sinistra per camminare.':`Cammina con ${kl('left')} e ${kl('right')}.`,init(){G.tut.x0=P.x;},done:()=>Math.abs(P.x-G.tut.x0)>3},
   {t:'Salta',x:()=>touchUI()?'Premi il tasto Salto. In aria puoi saltare ancora.':`Premi ${kl('jump')} per saltare. In aria puoi saltare ancora.`,done:()=>!P.onGround&&P.y>1.2},
   {t:'Attacca',x:()=>touchUI()?'Una guardia! Premi il tasto Attacco per colpirla.':`Una guardia! Premi ${kl('atk')} per colpirla.`,init(){tutSpawn('guard',P.x+7);},done:()=>tutAlive()===0},
-  {t:'Schivata',x:()=>touchUI()?'Premi il tasto Scatto: per un attimo sei intoccabile.':`Premi ${kl('dash')} per scattare: per un attimo sei intoccabile.`,done:()=>P.dashT>0},
+  {t:'Schivata',x:()=>touchUI()?'Premi il tasto Schivata: per un attimo sei intoccabile.':`Premi ${kl('dash')} per schivare: per un attimo sei intoccabile.`,done:()=>P.dashT>0},
   {t:'Abilità speciale',x:()=>touchUI()?`Premi il tasto ${G.cls.ability.short} per usare ${G.cls.ability.name}.`:`Premi ${kl('ability')} per usare ${G.cls.ability.name}.`,done:()=>P.abilCd>0},
   {t:'Le guardie arrivano!',x:()=>'Sconfiggile tutte per aprire il cancello.',init(){G.tut.final=true;[['guard',8],['slime',-9],['guard',11],['slime',13],['bat',4]].forEach(([k,dx])=>tutSpawn(k,clamp(P.x+dx,-HALF+2,GATE_X-2)));},done:()=>tutAlive()===0&&G.cleared},
   {t:'Il cancello è aperto',x:()=>'Sali la scala oltre il cancello: porta al seminterrato, il tuo rifugio.',init(){for(const h of G.tut.others||[])popNum(h.x,3.2,'Torna a liberarci!','xp');},done:()=>false},

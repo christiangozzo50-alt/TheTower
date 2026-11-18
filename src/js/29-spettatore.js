@@ -14,7 +14,11 @@ const EYE_SVG='<svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true
 // chi trasmette (sta scalando)
 const SPB={peer:null,conns:[],tk:0,lvSeed:0,inRun:false,fl:0,presT:0};
 // chi guarda
-const SPEC={on:false,key:'',name:'',peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),tm:0,endT:0,prevFl:1};
+// ponte via Firebase (quando il collegamento diretto non passa): chi scala scrive la partita in players/<nome>/sr, chi guarda la riceve in diretta
+const RL={on:false,busy:false,s:[],e:null,pj:null,cb:null,fx:[],q:0,who:new Set(),n:0};
+const RL_MS=250,RL_DELAY=380;
+const fbBase=()=>FB_URL.replace(/\/$/,'');
+const SPEC={on:false,mode:null,key:'',name:'',peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),tm:0,endT:0,prevFl:1};
 
 /* ---------- stanze uguali per chi scala e per chi guarda ---------- */
 // le stanze vengono costruite con un "seme": chi guarda usa lo stesso seme e vede le stesse piattaforme
@@ -52,7 +56,7 @@ function specCloseB(){const p=SPB.peer,cs=SPB.conns;SPB.peer=null;SPB.conns=[];
   setTimeout(()=>{for(const c of cs){try{c.close();}catch(e){}}try{p&&p.destroy();}catch(e){}},400);specCountUi();}
 // quanti ti stanno guardando (in alto, durante la scalata)
 let specCountEl=null;
-function specCountUi(){const n=SPB.conns.filter(c=>c.open).length;
+function specCountUi(){const n=SPB.conns.filter(c=>c.open).length+(RL.on?RL.n:0);
   if(!specCountEl){specCountEl=document.createElement('div');specCountEl.className='spec-count';specCountEl.setAttribute('aria-live','polite');document.body.appendChild(specCountEl);}
   const show=n>0&&G.scene==='tower'&&!$('hud').hidden;specCountEl.hidden=!show;
   if(show){const names=SPB.conns.filter(c=>c.open&&c.who).map(c=>c.who);specCountEl.innerHTML=EYE_SVG+`<span>${n}</span>`;specCountEl.title=names.length?'Ti guardano: '+names.join(', '):'Spettatori';}}
@@ -67,9 +71,11 @@ setInterval(()=>{const run=specInRun()&&store.get('nameok',false)&&fbOn();
   if(run!==SPB.inRun||fl!==SPB.fl||(run&&now-SPB.presT>40000)){SPB.inRun=run;SPB.fl=fl;SPB.presT=now;specPresence();if(SPB.conns.length)specSend(specInfo());}
   specCountUi();},2000);
 // invio a chi guarda: eroe, nemici, proiettili ed effetti 20 volte al secondo (come in co-op); forzieri e barili 4 volte al secondo
-setInterval(()=>{if(!SPB.conns.length||document.hidden)return;SPB.tk++;
-  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);
-      if(!G.pvp){specSend(mpSnap());specSend(specProjMsg());if(FXQ.length)specSend({t:'fx',f:G.floor,l:FXQ.splice(0)});if(SPB.tk%5===0)specSend(specPropsMsg());}}
+setInterval(()=>{if((!SPB.conns.length&&!RL.on)||document.hidden)return;SPB.tk++;
+  try{if(G.scene==='tower'){const s=mpMyState();s.sa=Math.round(P.stam||0);s.sx=Math.round(S.stamMax||100);specSend(s);if(RL.on){RL.s.push(s);if(RL.s.length>6)RL.s.shift();}
+      if(!G.pvp){const e=mpSnap(),pj=specProjMsg();specSend(e);specSend(pj);if(RL.on){RL.e=e;RL.pj=pj;}
+        if(FXQ.length){const l=FXQ.splice(0);specSend({t:'fx',f:G.floor,l});if(RL.on)RL.fx.push(...l);}
+        if(SPB.tk%5===0){const cb=specPropsMsg();specSend(cb);if(RL.on)RL.cb=cb;}}}
     {const k=specInRun()?JSON.stringify(G.lv||{}):'{}';if(k!==SPB.lvKey){SPB.lvKey=k;specSend({t:'lv',lv:JSON.parse(k)});}}
     if(SPB.tk%20===0)specSend(specInfo());}catch(e){}},50);
 // forzieri (escono a caso solo da chi scala) e barili rotti
@@ -81,7 +87,7 @@ function specPropsMsg(){return {t:'cb',f:G.floor,ex:G.entry?f2(G.entry.x):null,
    Si registrano solo gli effetti "di primo livello": quelli fatti dentro un altro effetto registrato
    (o dentro l'animazione degli effetti) li rifà da solo chi guarda, così non escono doppi. */
 const FXQ=[],FXQ_MAX=140;let fxDepth=0,fxSfxN=0;
-const fxRec=()=>fxDepth===0&&SPB.conns.length>0&&!SPEC.on&&G.scene==='tower'&&!G.pvp;
+const fxRec=()=>fxDepth===0&&(SPB.conns.length>0||RL.on)&&!SPEC.on&&G.scene==='tower'&&!G.pvp;
 const f2=v=>typeof v==='number'?Math.round(v*100)/100:v;
 function fxPush(e){if(FXQ.length<FXQ_MAX)FXQ.push(e);}
 function fxWrap(code,orig,keep){return function(){if(fxRec()&&(!keep||keep.apply(null,arguments)))fxPush([code,...Array.from(arguments).map(f2)]);
@@ -187,24 +193,48 @@ function specStart(k,n){
   if(SPEC.on)return;
   if(MP.live()||MP.reco){toast('Sei in un gruppo','Esci dalla co-op per guardare un amico');return;}
   if(!fbOn()){toast('Non sei online','Serve la connessione per guardare un amico');return;}
-  clearTimeout(SPEC.outT);Object.assign(SPEC,{outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
+  clearTimeout(SPEC.outT);Object.assign(SPEC,{mode:null,rlQ:0,outT:0,out:false,doorFl:0,on:true,ready:false,key:k,name:n||k,peer:null,conn:null,R:null,seed:0,fl:0,built:false,emap:new Map(),endT:0,prevFl:G.floor||1});
   sfx('ui');closeFriends();clearInput();G.state='menu';['prompt','bUse','touch','cellarHud'].forEach(id=>$(id).hidden=true);
   specBarUi().hidden=false;$('sbName').textContent=SPEC.name;$('sbBars').hidden=true;SPEC.lv={};SPEC.lvKey='';specPerks();specSetInfo('Mi collego…');
   fadeThen(()=>{if(!SPEC.on)return;showScene('tower');if(hero)hero.root.visible=false;$('hud').hidden=true;showMeds(false);G.pvp=false;G.tutorial=false;G.state='spec';SPEC.ready=true;if(SPEC.built)G.fadeTarget=0;});
-  SPEC.try=0;SPEC.unav=0;specConnect();}
+  SPEC.try=0;SPEC.unav=0;specConnect();specRelayStart();
+  clearTimeout(SPEC.rlT);SPEC.rlT=setTimeout(()=>{if(SPEC.on&&!SPEC.built)specExit(`Non riesco a collegarmi a ${SPEC.name}`,'Deve avere il gioco aggiornato, aperto e in primo piano');},25000);}
 // il collegamento: fino a SPEC_TRIES tentativi, perché il primo a volte non va (rete lenta, canale appena aperto)
 function specConnect(){if(!SPEC.on||SPEC.built)return;const n=++SPEC.try;
   {const oc=SPEC.conn,op=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{oc&&oc.close();}catch(e){}try{op&&op.destroy();}catch(e){}}
   if(n>1)specSetInfo(`Riprovo a collegarmi (${n}/${SPEC_TRIES})…`);
   clearTimeout(SPEC.tm);
-  SPEC.tm=setTimeout(()=>{if(!SPEC.on||SPEC.built)return;if(n<SPEC_TRIES)specConnect();else specExit(`Non riesco a collegarmi a ${SPEC.name}`,'Riprova tra poco: deve tenere il gioco aperto e in primo piano');},n===1?9000:8000);
-  mpLib(()=>{if(!SPEC.on||SPEC.try!==n)return;const p=new Peer();SPEC.peer=p;
+  SPEC.tm=setTimeout(()=>{if(!SPEC.on||SPEC.built)return;if(n<SPEC_TRIES)specConnect();else specP2pStop();},n===1?9000:8000);
+  mpLib(()=>{if(!SPEC.on||SPEC.try!==n||SPEC.mode==='relay')return;const p=new Peer();SPEC.peer=p;
     p.on('open',()=>{if(SPEC.peer!==p)return;const c=p.connect(specId(SPEC.key),{reliable:true,serialization:'json'});SPEC.conn=c;
       c.on('open',()=>{try{c.send({t:'hi',n:MP.name()});}catch(e){}});
-      c.on('data',m=>{if(SPEC.conn!==c)return;try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
-      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c&&SPEC.built)specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
+      c.on('data',m=>{if(SPEC.conn!==c||SPEC.mode==='relay')return;if(!SPEC.mode){SPEC.mode='p2p';specRelayStop();}try{specMsg(m);}catch(e){console.warn('spettatore',e);}});
+      c.on('close',()=>{if(SPEC.on&&SPEC.conn===c&&SPEC.built&&SPEC.mode==='p2p')specExit(`${SPEC.name} non è più raggiungibile`,'');});c.on('error',()=>{});});
     p.on('error',e=>{if(SPEC.peer!==p||SPEC.built)return;
-      if(e&&e.type==='peer-unavailable'){if(++SPEC.unav<2&&n<SPEC_TRIES){clearTimeout(SPEC.tm);SPEC.tm=setTimeout(specConnect,1500);}else specExit(`${SPEC.name} non è più in scalata`,'Il suo canale non risponde');}});});}
+      if(e&&e.type==='peer-unavailable'){if(++SPEC.unav<2&&n<SPEC_TRIES){clearTimeout(SPEC.tm);SPEC.tm=setTimeout(specConnect,1500);}else specP2pStop();}});});}
+function specP2pStop(){clearTimeout(SPEC.tm);const oc=SPEC.conn,op=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{oc&&oc.close();}catch(e){}try{op&&op.destroy();}catch(e){}}
+// ponte via Firebase, lato di chi guarda: chiede la partita (players/<amico>/sq/<io>) e la riceve in diretta
+function specRelayStart(){if(!SPEC.on||SPEC.es||!fbOn())return;const k=encodeURIComponent(SPEC.key),me=encodeURIComponent(nameKey(MP.name()));
+  const ping=()=>fetch(`${fbBase()}/players/${k}/sq/${me}.json?print=silent`,{method:'PUT',body:JSON.stringify({t:Date.now(),n:MP.name()})}).catch(()=>{});
+  ping();SPEC.rlPing=setInterval(ping,5000);SPEC.rlLast=Date.now();SPEC.rlQ=0;
+  let es;try{es=new EventSource(`${fbBase()}/players/${k}/sr.json`);}catch(e){return;}SPEC.es=es;
+  es.addEventListener('put',ev=>{if(SPEC.es!==es)return;let m,b;try{m=JSON.parse(ev.data);}catch(e){return;}
+    if(!m||m.path!=='/'||!m.data||typeof m.data.d!=='string'||Math.abs(Date.now()-(m.data.ts||0))>120000)return;
+    try{b=JSON.parse(m.data.d);}catch(e){return;}try{specRelayMsg(b);}catch(e){console.warn('spettatore ponte',e);}});
+  es.onerror=()=>{};   // si ricollega da solo
+  clearInterval(SPEC.rlWd);SPEC.rlWd=setInterval(()=>{if(SPEC.on&&SPEC.mode==='relay'&&Date.now()-SPEC.rlLast>12000)specExit(`${SPEC.name} non è più raggiungibile`,'');},2000);}
+function specRelayStop(){clearInterval(SPEC.rlPing);clearInterval(SPEC.rlWd);const es=SPEC.es;SPEC.es=null;try{es&&es.close();}catch(e){}
+  if(SPEC.key&&fbOn())fetch(`${fbBase()}/players/${encodeURIComponent(SPEC.key)}/sq/${encodeURIComponent(nameKey(MP.name()))}.json`,{method:'DELETE'}).catch(()=>{});}
+function specRelayMsg(b){if(!SPEC.on||SPEC.mode==='p2p'||!b)return;
+  if(!SPEC.mode){SPEC.mode='relay';specP2pStop();}
+  SPEC.rlLast=Date.now();if(b.q&&b.q===SPEC.rlQ)return;SPEC.rlQ=b.q;
+  if(b.si)specMsg(b.si);if(!SPEC.on)return;
+  if(b.lv)specSetLv(b.lv);
+  const now=performance.now(),l=b.s||[];
+  l.forEach((s,i)=>{specMsg(s);const R=SPEC.R;if(R&&R.buf&&R.buf.length)R.buf[R.buf.length-1].t=now-(l.length-1-i)*50;});
+  if(b.e)specMsg(b.e);if(b.pj)specMsg(b.pj);if(b.cb)specMsg(b.cb);if(b.fx)specMsg(b.fx);
+  // i dati arrivano a pacchetti: un po' più di ritardo, così i movimenti restano fluidi
+  if(SPEC.R)SPEC.R.delay=RL_DELAY;for(const e of SPEC.emap.values())e.delay=RL_DELAY;for(const p of SPX.pj.values())p.delay=RL_DELAY;}
 function specMsg(m){
   if(m.t==='full'){specExit('Troppi spettatori',`${SPEC.name} ha già ${SPEC_MAX} persone che lo guardano`);return;}
   if(m.t==='si'){SPEC.seed=m.seed;if(m.n)SPEC.name=m.n;$('sbName').textContent=SPEC.name;
@@ -265,7 +295,7 @@ function specApplySnap(s){if(!SPEC.built||G.scene!=='tower'||s.f!==G.floor)retur
   if(s.cl&&!G.cleared&&!G.queue.length&&!G.enemies.some(e=>!e.dead)){G.cleared=true;lockM.emissive.setHex(0x7fe08a);}}
 function specKill(e){e.dead=true;
   scene.remove(e.parts.root);disposeObj(e.parts.root);if(G.boss===e)G.boss=null;}
-function specExit(t,s){if(!SPEC.on)return;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
+function specExit(t,s){if(!SPEC.on)return;specRelayStop();clearTimeout(SPEC.rlT);SPEC.mode=null;SPEC.on=false;SPEC.out=true;clearTimeout(SPEC.tm);clearTimeout(SPEC.outT);SPEC.outT=0;
   const c=SPEC.conn,p=SPEC.peer;SPEC.conn=null;SPEC.peer=null;try{c&&c.close();}catch(e){}try{p&&p.destroy();}catch(e){}
   specFxClear();SPEC.tipId=null;if($('spTip'))$('spTip').hidden=true;if(SPEC.R){mpRemoveHero(SPEC.R);SPEC.R=null;}if(specBar)specBar.hidden=true;if($('specPerks'))$('specPerks').hidden=true;if(t)toast(t,s||'');
   clearInput();G.state='menu';
@@ -302,6 +332,24 @@ const _uhSp=updHud;updHud=function(){if(SPEC.on||SPEC.out)return;return _uhSp.ap
 // Esc o il tasto indietro del controller: esci
 addEventListener('keydown',e=>{if(SPEC.on&&(e.key==='Escape'||e.key==='Backspace')){e.preventDefault();e.stopPropagation();specExit();}},true);
 const _padBackSp=padBack;padBack=function(){if(SPEC.on){specExit();return true;}return _padBackSp();};
+
+/* ---------- ponte via Firebase, lato di chi scala ----------
+   ogni 3 s guarda se qualcuno ha chiesto di guardarlo (players/<io>/sq); se sì, 4 volte al secondo scrive la partita in players/<io>/sr */
+const relayUrl=()=>`${fbBase()}/players/${encodeURIComponent(nameKey(MP.name()))}/sr.json`;
+function relayPut(b){RL.busy=true;return fetch(relayUrl()+'?print=silent',{method:'PUT',body:JSON.stringify({ts:Date.now(),d:JSON.stringify(b)})}).catch(()=>{}).finally(()=>{RL.busy=false;});}
+function relayEnd(){relayPut({q:++RL.q,si:specInfo()});RL.who.clear();RL.n=0;setTimeout(()=>{if(!RL.on)fetch(relayUrl(),{method:'DELETE'}).catch(()=>{});},8000);}
+setInterval(async()=>{if(!fbOn()||!store.get('nameok',false))return;const run=specInRun();if(!run&&!RL.on)return;
+  let sq=null;try{sq=await fbGet('players/'+encodeURIComponent(nameKey(MP.name()))+'/sq');}catch(e){return;}
+  const now=Date.now(),act=Object.entries(sq||{}).filter(([k,v])=>v&&Math.abs(now-(v.t||0))<30000);
+  for(const [k,v] of act)if(!RL.who.has(k)){RL.who.add(k);toast(`${String(v.n||'Un amico').slice(0,14)} ti sta guardando`,'Ti segue nella scalata');}
+  const want=specInRun()&&act.length>0;RL.n=act.length;
+  if(want&&!RL.on){RL.on=true;RL.s=[];RL.fx=[];RL.e=RL.pj=RL.cb=null;}
+  else if(!want&&RL.on){RL.on=false;relayEnd();}
+  specCountUi();},3000);
+setInterval(()=>{if(!RL.on||RL.busy||!fbOn())return;
+  if(!specInRun()){RL.on=false;relayEnd();return;}
+  const b={q:++RL.q,si:specInfo(),lv:Object.assign({},G.lv||{}),s:RL.s.splice(0),e:RL.e,pj:RL.pj,cb:RL.cb,fx:RL.fx.length?{t:'fx',f:G.floor,l:RL.fx.splice(0,140)}:null};
+  RL.e=RL.pj=RL.cb=null;relayPut(b);},RL_MS);
 
 /* ---------- l'occhio nella lista amici, aggiornato mentre la lista è aperta ---------- */
 function specEyeHtml(k,p){if(!specCan(p))return '';const n=esc(p.n||k);

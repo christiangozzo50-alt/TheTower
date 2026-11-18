@@ -12,7 +12,7 @@ UPG.push(
   {id:'catena', name:"Fulmine a catena",   icon:'bolt',  max:2, desc:()=>nxLv('catena')>1?"Il fulmine parte ogni 4 colpi e salta su 5 nemici":"Ogni 5 colpi un fulmine salta su 3 nemici vicini", apply(){}},
   {id:'esecuz', name:"Esecuzione",         icon:'skull', max:2, desc:()=>nxLv('esecuz')>1?"Uccidi al primo colpo i nemici sotto il 25% di vita":"Uccidi al primo colpo i nemici sotto il 15% di vita (non i guardiani)", apply(){}},
   {id:'cadaveri',name:"Cadaveri esplosivi",icon:'meteor',max:2, desc:()=>nxLv('cadaveri')>1?"Le esplosioni sono più grandi e fanno più danno":"I nemici che uccidi esplodono e feriscono quelli vicini", apply(){}},
-  {id:'scia',   name:"Scia di fuoco",      icon:'fire',  max:2, desc:()=>nxLv('scia')>1?"Le fiamme durano di più e bruciano più forte":"Lo scatto lascia fiamme a terra che bruciano i nemici", apply(){}},
+  {id:'scia',   name:"Scia di fuoco",      icon:'fire',  max:2, desc:()=>nxLv('scia')>1?"Le fiamme durano di più e bruciano più forte":"La schivata lascia fiamme a terra che bruciano i nemici", apply(){}},
   {id:'turbine',name:"Turbine",            icon:'spin',  max:2, desc:()=>nxLv('turbine')>1?"La giravolta è più ampia e scaraventa via i nemici":"Il salto in aria fa una giravolta che colpisce tutto intorno", apply(){}},
   {id:'spine',  name:"Spine",              icon:'shield',max:2, desc:()=>nxLv('spine')>1?"Le spine fanno quasi il doppio del danno":"Chi ti colpisce da vicino subisce danno", apply(){}},
   {id:'famiglio',name:"Famiglio",          icon:'orbit', max:2, desc:()=>nxLv('famiglio')>1?"Il famiglio spara più spesso e più forte":"Uno spirito ti segue e spara ai nemici", apply(){}},
