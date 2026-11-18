@@ -54,13 +54,13 @@ function spawnBandage(x,y){const g=new THREE.Group();
 function placeBandage(){
   let x,y;if(G.solids.length&&Math.random()<0.6){const s=pick(G.solids);x=rand(s.x1+0.6,s.x2-0.6);y=s.y2;}else{x=rand(-HALF+6,GATE_X-2);y=0;}
   spawnBandage(x,y);}
-// durante i guardiani cadono più bende: al 75%, 50% e 25% di vita del boss e ogni 18 s se a terra non ce n'è nessuna
+// durante i guardiani cadono più bende: al 75%, 50% e 25% di vita del boss e ogni 21 s se a terra non ce n'è nessuna
 function bossBandage(){const B=G.boss,away=B?(P.x<B.x?-1:1):-P.face,x=clamp(P.x+away*rand(1.5,3.5),-HALF+2,GATE_X-2);
   spawnBandage(x,0);burst(x,0.6,0x7fe08a,16,4,3,0.3);popNum(x,1.8,'Una benda!','info');}
 function bossBandTick(dt){const B=G.boss;if(!B||B.dead||G.scene!=='tower'||G.tutorial||G.pvp||!(B.maxHp>0)){G.bossBandT=0;return;}
   const fr=B.hp/B.maxHp,th=[0.75,0.5,0.25];B.bandN=B.bandN||0;
   while(B.bandN<th.length&&fr<th[B.bandN]){B.bandN++;bossBandage();}
-  G.bossBandT=(G.bossBandT||0)+dt;if(G.bossBandT>18){G.bossBandT=0;if(!G.pickups.some(p=>!p.done))bossBandage();}}
+  G.bossBandT=(G.bossBandT||0)+dt;if(G.bossBandT>21){G.bossBandT=0;if(!G.pickups.some(p=>!p.done))bossBandage();}}
 function updPickups(dt){bossBandTick(dt);
   for(const p of G.pickups){p.t+=dt;p.m.position.y=p.y+0.45+Math.sin(p.t*3)*0.12;p.m.rotation.y+=dt*1.6;
     if(!P.dead&&P.hp<S.maxHp&&Math.abs(P.x-p.x)<0.9&&P.y<p.y+1.2&&P.y+P.h>p.y){p.done=true;const h=Math.round(S.maxHp*0.25);heal(h);sfx('bandage');burst(p.x,p.y+0.5,0x7fe08a,14,4,3,0.3);}}
@@ -146,7 +146,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;xpToKiller(e,e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1)*(boss?1:runXpMul()));}
-  if(!boss&&!e.summon&&Math.random()<0.03)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.0255)spawnBandage(e.x,0);
   if(e.elite&&!e.summon&&G.scene==='tower'&&!G.pvp&&novice()&&Math.random()<0.4){const f=G.floor,o=Math.random()<0.4?makeWeapon(G.cls.weapon,rollRarity(f,1),f):makeGear(pick(Object.keys(GEAR)),rollRarity(f,1),f);dropItem(o,e.x,e.y+e.h*0.6,0,1);popNum(e.x,e.y+e.h+0.6,'Bottino!','xp');}
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}

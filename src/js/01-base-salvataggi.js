@@ -173,7 +173,8 @@ try{const old=parseInt(localStorage.getItem('torre-infinita-record')||'0',10);if
 const PROG=store.get('prog',{});               // livello, esperienza e punti spesi di ogni classe
 const prog=id=>{let p=PROG[id];if(!p)p=PROG[id]={lv:1,xp:0};
   if(p.pts==null){p.pts=Math.max(0,p.lv-1);p.alloc={};}if(!p.alloc)p.alloc={};return p;};
-const xpNeed=lv=>Math.round(18+lv*12+lv*lv*1.5+lv*lv*lv*0.04);   // ogni livello costa sempre di più
+const XP_HARD=1.5;   // quanto è più difficile livellare gli eroi (1.5 = serve il 50% di esperienza in più)
+const xpNeed=lv=>Math.round((18+lv*12+lv*lv*1.5+lv*lv*lv*0.04)*XP_HARD);   // ogni livello costa sempre di più
 const MAX_LV=80, LV_ABIL2=40, LV_ABIL3=70;
 // ogni livello dà un punto da spendere su una di queste statistiche
 const PSTATS=[

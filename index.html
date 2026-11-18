@@ -1739,7 +1739,8 @@ try{const old=parseInt(localStorage.getItem('torre-infinita-record')||'0',10);if
 const PROG=store.get('prog',{});               // livello, esperienza e punti spesi di ogni classe
 const prog=id=>{let p=PROG[id];if(!p)p=PROG[id]={lv:1,xp:0};
   if(p.pts==null){p.pts=Math.max(0,p.lv-1);p.alloc={};}if(!p.alloc)p.alloc={};return p;};
-const xpNeed=lv=>Math.round(18+lv*12+lv*lv*1.5+lv*lv*lv*0.04);   // ogni livello costa sempre di più
+const XP_HARD=1.5;   // quanto è più difficile livellare gli eroi (1.5 = serve il 50% di esperienza in più)
+const xpNeed=lv=>Math.round((18+lv*12+lv*lv*1.5+lv*lv*lv*0.04)*XP_HARD);   // ogni livello costa sempre di più
 const MAX_LV=80, LV_ABIL2=40, LV_ABIL3=70;
 // ogni livello dà un punto da spendere su una di queste statistiche
 const PSTATS=[
@@ -5757,13 +5758,13 @@ function spawnBandage(x,y){const g=new THREE.Group();
 function placeBandage(){
   let x,y;if(G.solids.length&&Math.random()<0.6){const s=pick(G.solids);x=rand(s.x1+0.6,s.x2-0.6);y=s.y2;}else{x=rand(-HALF+6,GATE_X-2);y=0;}
   spawnBandage(x,y);}
-// durante i guardiani cadono più bende: al 75%, 50% e 25% di vita del boss e ogni 18 s se a terra non ce n'è nessuna
+// durante i guardiani cadono più bende: al 75%, 50% e 25% di vita del boss e ogni 21 s se a terra non ce n'è nessuna
 function bossBandage(){const B=G.boss,away=B?(P.x<B.x?-1:1):-P.face,x=clamp(P.x+away*rand(1.5,3.5),-HALF+2,GATE_X-2);
   spawnBandage(x,0);burst(x,0.6,0x7fe08a,16,4,3,0.3);popNum(x,1.8,'Una benda!','info');}
 function bossBandTick(dt){const B=G.boss;if(!B||B.dead||G.scene!=='tower'||G.tutorial||G.pvp||!(B.maxHp>0)){G.bossBandT=0;return;}
   const fr=B.hp/B.maxHp,th=[0.75,0.5,0.25];B.bandN=B.bandN||0;
   while(B.bandN<th.length&&fr<th[B.bandN]){B.bandN++;bossBandage();}
-  G.bossBandT=(G.bossBandT||0)+dt;if(G.bossBandT>18){G.bossBandT=0;if(!G.pickups.some(p=>!p.done))bossBandage();}}
+  G.bossBandT=(G.bossBandT||0)+dt;if(G.bossBandT>21){G.bossBandT=0;if(!G.pickups.some(p=>!p.done))bossBandage();}}
 function updPickups(dt){bossBandTick(dt);
   for(const p of G.pickups){p.t+=dt;p.m.position.y=p.y+0.45+Math.sin(p.t*3)*0.12;p.m.rotation.y+=dt*1.6;
     if(!P.dead&&P.hp<S.maxHp&&Math.abs(P.x-p.x)<0.9&&P.y<p.y+1.2&&P.y+P.h>p.y){p.done=true;const h=Math.round(S.maxHp*0.25);heal(h);sfx('bandage');burst(p.x,p.y+0.5,0x7fe08a,14,4,3,0.3);}}
@@ -5849,7 +5850,7 @@ function killEnemy(e){UNL.kills++;if(UNL.kills%50===0){saveUnl();checkUnlocks();
   burst(e.x,e.y+e.h*0.5,e.color,boss?60:14,boss?10:6,4);sfx(bony?'bones':'die');
   if(bony)burst(e.x,e.y+1,0xf3ead7,14,5,4);
   if(!e.summon){const base=boss?40+G.floor*4:TYPES[e.type].xp;xpToKiller(e,e.x,e.y+e.h*0.6,base*(1+0.15*(G.floor-1))*(e.elite?2.5:1)*(boss?1:runXpMul()));}
-  if(!boss&&!e.summon&&Math.random()<0.03)spawnBandage(e.x,0);
+  if(!boss&&!e.summon&&Math.random()<0.0255)spawnBandage(e.x,0);
   if(e.elite&&!e.summon&&G.scene==='tower'&&!G.pvp&&novice()&&Math.random()<0.4){const f=G.floor,o=Math.random()<0.4?makeWeapon(G.cls.weapon,rollRarity(f,1),f):makeGear(pick(Object.keys(GEAR)),rollRarity(f,1),f);dropItem(o,e.x,e.y+e.h*0.6,0,1);popNum(e.x,e.y+e.h+0.6,'Bottino!','xp');}
   if(!e.summon&&G.scene==='tower'){G.upKills++;if(G.upKills>=G.upNeed&&!G.upPending){G.upKills=0;G.upNeed+=6;G.upPending=true;G.upDelay=0.5;}}
   if(G.weapon&&G.weapon.perk==='schegge'&&G.scene==='tower')for(let i=0;i<4;i++){const a=i*Math.PI/2+Math.PI/4;spawnProj({x:e.x,y:e.y+e.h/2,vx:Math.cos(a)*16,vy:Math.sin(a)*16,w:0.5,h:0.35,dmg:weaponDamage()*0.5,owner:'p',life:0.45,kind:'knife',kb:3});}
@@ -6545,14 +6546,17 @@ function updChests(dt){
     if(input.usePressed&&G.cleared)openChest(c);
   }else if(G.scene==='tower'&&!G.safe){pr.hidden=true;$('bUse').hidden=true;}
 }
+// equipaggiamento (elmo, guanti, corazza) più raro nei forzieri: 0.7 = 30% in meno, al suo posto esperienza o un'arma
+const GEAR_RARO=0.7;
 function openChest(c){
   if(c.open)return;c.open=true;STATS.chests++;sfx('chest');burst(c.x,c.y+0.8,0xffd27a,24,5,4,0.4);$('prompt').hidden=true;$('bUse').hidden=true;
   const f=G.floor,r=c.bonus?rand(0.56,1):Math.random(),minR=c.boss?2:c.bonus?1:0,loot=[];if(Math.random()<(c.boss?0.3:0.06))addFragment(f);
   if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const nv=novice(),n=1+Math.floor(f/50)+(nv?1:0),mR=Math.min(lootMaxR(f),1+Math.floor(f/30));
     dropXP(c.x,c.y+1.2,40+f*6);
-    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0)),wp=nv&&n>1?i===0:Math.random()<0.5;loot.push(wp?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
+    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0)),wp=nv&&n>1?i===0:Math.random()<1-0.5*GEAR_RARO;loot.push(wp?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
     burst(c.x,c.y+1,0xffd27a,40,8,6,0.4);shake(0.3);if(f>=TOP_FLOOR)winGame();}
   else if(r<(novice()?0.25:0.55)){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
+  else if(r<0.75&&Math.random()>=GEAR_RARO){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
   else if(r<0.75)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,novice()?1:minR),f));
   else loot.push(makeWeapon(G.cls.weapon,rollRarity(f,novice()?1:minR),f));
   loot.forEach((o,i)=>dropItem(o,c.x,c.y+0.9,i,loot.length));
@@ -6735,10 +6739,10 @@ function updBarrels(){const A=P.atk;if(!A||A.noHit||!G.barrels||!G.barrels.lengt
     for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
       G.chunks.push({m,vx:rand(-5,5)+P.face*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
     barrelLoot(bx);}}
-// cosa c'è dentro un barile: 1,5% oggetto, 15,5% benda, 58% esperienza, 25% niente
+// cosa c'è dentro un barile: 1,5% oggetto, 13% benda, 60,5% esperienza, 25% niente
 function barrelLoot(bx){const r=Math.random(),f=G.floor;
   if(r<0.015){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
-  else if(r<0.17){spawnBandage(bx,0);popNum(bx,1.8,'Una benda!','info');}
+  else if(r<0.145){spawnBandage(bx,0);popNum(bx,1.8,'Una benda!','info');}
   else if(r<0.75)dropXP(bx,1,3+Math.round(f*1.1));else popNum(bx,1.8,'Vuoto','info');}
 function updSafe(){nearSafe=null;if(!G.safe||G.state!=='play')return;for(const it of G.safeInter)if(Math.abs(P.x-it.x)<1.8&&P.y<1.6){nearSafe=it;break;}
   const pr=$('prompt');if(nearSafe){pr.hidden=false;$('promptName').textContent=nearSafe.name;$('promptSub').textContent=nearSafe.sub();$('promptKey').textContent=inputLabel('use');$('promptKey').hidden=touchUI();
@@ -6761,7 +6765,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.24)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(Math.random()<0.204)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
@@ -10577,7 +10581,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795014574';
+const BUILD_ID='1795015399';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13473,6 +13477,76 @@ $('caResume').onclick=()=>{const sv=getSave();if(!sv)return;
 function coopResumeGuest(m){MP.netStart=false;const sv=getSave();
   if(sv&&sv.coop&&sv.f===m.resume){resumeRun(sv);return;}
   MP.netStart=true;RESUMING=true;try{startRun();}finally{RESUMING=false;}G.runCoop=true;G.runCrew=m.crew||crewNow();startFloor(m.resume);}
+
+/* =========================================================
+   BONUS D'ACCESSO GIORNALIERO e MISSIONI DA RISCUOTERE
+   - Ogni giorno, entrando nel seminterrato, si riscuotono rubini.
+     Sette giorni di fila danno sempre di più; se salti un giorno si riparte dal primo.
+   - Le missioni (trofei) completate non danno più skin: danno rubini, da riscuotere nella Bacheca.
+   - Le skin già sbloccate con i trofei prima di questo aggiornamento restano tue.
+   ========================================================= */
+
+/* ---------- skin: niente più sblocco con le missioni ---------- */
+const SKKEEP=store.get('skinkeep',null)||(()=>{const k={};
+  for(const c of CLASSES)for(const v of altSkins(c.id))if(skinUnlocked(c.id,v))(k[c.id]=k[c.id]||[]).push(v);
+  store.set('skinkeep',k);return k;})();
+skinUnlocked=function(id,v){if(v===(SKINPICK[id]||0))return true;return !!(SKKEEP[id]&&SKKEEP[id].includes(v));};
+
+/* ---------- missioni: premio in rubini, da riscuotere ---------- */
+const TRO_CLAIM=store.get('troclaim',{});const saveTroClaim=()=>store.set('troclaim',TRO_CLAIM);
+const troPrize=t=>t.cls?(/veterano/.test(t.n)?150:300):500;
+const _troListM=trophyList;
+trophyList=function(){return _troListM().map(t=>Object.assign(t,{prize:troPrize(t),r:`${troPrize(t)} rubini da riscuotere`}));};
+const troToClaim=()=>trophyList().filter(t=>t.ok&&!TRO_CLAIM[t.n]);
+function troClaim(name){const t=trophyList().find(x=>x.n===name);if(!t||!t.ok||TRO_CLAIM[name])return;
+  TRO_CLAIM[name]=true;saveTroClaim();addCoins(t.prize);sfx('lvl');toast(`+${t.prize} rubini`,`Missione riscossa: ${t.n}`);}
+function troClaimAll(){const l=troToClaim();if(!l.length)return;let tot=0;for(const t of l){TRO_CLAIM[t.n]=true;tot+=t.prize;}
+  saveTroClaim();addCoins(tot);sfx('lvl');toast(`+${tot} rubini`,l.length>1?`${l.length} missioni riscosse`:`Missione riscossa: ${l[0].n}`);}
+// la Bacheca: le skin bloccate non si mostrano più, le missioni hanno il tasto Riscuoti
+const _rbM=renderBoard;
+renderBoard=function(){_rbM.apply(this,arguments);if(bdTab!=='tro')return;const box=$('bdBody');
+  for(const b of box.querySelectorAll('.sk.lock'))b.remove();
+  const tl=trophyList(),c=G.cls,done=tl.filter(t=>t.ok).length,todo=troToClaim().length;
+  const hs=box.querySelectorAll('.bd-h');if(hs[1])hs[1].innerHTML=`Missioni · ${done} di ${tl.length}${todo?` · <button class="mini" data-claimall>Riscuoti tutte (${todo})</button>`:''}`;
+  const list=box.querySelector('.tro-list');if(!list)return;
+  list.innerHTML=tl.filter(t=>!t.cls||t.cls===c.id).concat(tl.filter(t=>t.cls&&t.cls!==c.id)).map(t=>{const got=!!TRO_CLAIM[t.n];
+    return `<div class="tro${t.ok?' ok':''}"><b>${t.ok?'🏆':'🔒'} ${esc(t.n)}</b><span>${esc(t.d)}</span>`+
+      (t.ok&&!got?`<button class="mini tro-claim" data-claim="${esc(t.n)}">Riscuoti ${t.prize} ◆</button>`:`<small>${got?'Riscossa · ':''}${t.prize} rubini</small>`)+
+      `<i style="--p:${Math.round(t.p*100)}%"></i></div>`;}).join('');};
+$('board').addEventListener('click',e=>{const a=e.target.closest('[data-claimall]');if(a){troClaimAll();renderBoard();return;}
+  const b=e.target.closest('[data-claim]');if(b){troClaim(b.dataset.claim);renderBoard();}});
+{const tb=document.querySelector('#board .tab[data-tab="tro"]');if(tb)tb.textContent='Missioni e skin';}
+
+/* ---------- bonus d'accesso giornaliero ---------- */
+const DAILY_PRIZE=[50,75,100,150,200,250,500];
+const DLY=Object.assign({last:0,streak:0},store.get('daily',{}));const saveDly=()=>store.set('daily',DLY);
+const dlyNext=()=>{const d=dayNo();return DLY.last===d-1?(DLY.streak%7)+1:1;};
+let dlyEl=null;
+function dlyOpen(){if(dlyEl&&!dlyEl.hidden)return;const s=dlyNext();
+  if(!dlyEl){dlyEl=document.createElement('section');dlyEl.className='screen';dlyEl.id='daily';dlyEl.hidden=true;dlyEl.setAttribute('role','dialog');dlyEl.setAttribute('aria-label','Bonus giornaliero');document.body.appendChild(dlyEl);
+    dlyEl.addEventListener('click',e=>{if(e.target.closest('#dlyGet'))dlyClaim();});}
+  dlyEl.innerHTML=`<div class="panel"><div class="eyebrow">Bonus giornaliero</div><h2 style="margin:0">Giorno ${s} di 7</h2>
+    <div class="dly-row">${DAILY_PRIZE.map((p,i)=>`<div class="dly${i+1<s?' got':''}${i+1===s?' now':''}"><small>Giorno ${i+1}</small><b>${p} ◆</b>${i+1<s?'<em>✓</em>':''}</div>`).join('')}</div>
+    <p class="ig-lead" style="margin:0">Entra ogni giorno: il premio cresce. Se salti un giorno si riparte dal primo.</p>
+    <div class="row"><button id="dlyGet">Riscuoti ${DAILY_PRIZE[s-1]} rubini</button></div></div>`;
+  G.state='daily';clearInput();['prompt','bUse','touch'].forEach(id=>$(id).hidden=true);dlyEl.hidden=false;sfx('chest');
+  setTimeout(()=>{const b=$('dlyGet');if(b)b.focus();},50);}
+function dlyClaim(){const d=dayNo();if(DLY.last!==d){const s=dlyNext();DLY.last=d;DLY.streak=s;saveDly();addCoins(DAILY_PRIZE[s-1]);sfx('lvl');toast(`+${DAILY_PRIZE[s-1]} rubini`,s===7?'Settimana completa!':`Bonus del giorno ${s}`);}
+  if(dlyEl)dlyEl.hidden=true;if(G.state==='daily'){G.state='cellar';$('touch').hidden=!isTouch;canvas.focus();}
+  const n=troToClaim().length;if(n)setTimeout(()=>toast('Missioni completate',`${n} da riscuotere nella Bacheca`),900);}
+// si apre appena sei nel seminterrato senza altre finestre aperte
+setInterval(()=>{if(DLY.last===dayNo()||G.state!=='cellar'||G.fadeTarget>0||document.querySelector('.screen:not([hidden])'))return;dlyOpen();},1500);
+addEventListener('keydown',e=>{if(G.state==='daily'&&(e.key==='Escape'||e.key==='Enter')){e.preventDefault();e.stopPropagation();dlyClaim();}},true);
+const _padBackD=padBack;padBack=function(){if(G.state==='daily'){dlyClaim();return true;}return _padBackD();};
+
+{const st=document.createElement('style');st.textContent=`
+.dly-row{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;width:100%}
+.dly{position:relative;display:grid;gap:4px;padding:10px 4px;background:rgba(22,25,32,.85);border:1px solid var(--edge);font-size:12px;color:var(--ink-2)}
+.dly b{color:var(--ink);font-size:14px}.dly.got{opacity:.5}.dly.now{border-color:var(--xp);box-shadow:0 0 0 1px var(--xp),0 0 18px rgba(127,224,138,.25)}.dly.now b{color:var(--xp)}
+.dly em{position:absolute;top:2px;right:5px;font-style:normal;color:var(--xp)}
+.tro .tro-claim{justify-self:start;margin-top:3px}
+@media (max-width:520px){.dly-row{grid-template-columns:repeat(4,minmax(0,1fr))}}`;document.head.appendChild(st);}
+if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{DLY:()=>DLY,dlyOpen,dlyClaim,troToClaim,TRO_CLAIM:()=>TRO_CLAIM,SKKEEP:()=>SKKEEP});
 requestAnimationFrame(frame);
 })();
 </script>

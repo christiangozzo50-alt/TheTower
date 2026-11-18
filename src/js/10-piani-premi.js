@@ -77,14 +77,17 @@ function updChests(dt){
     if(input.usePressed&&G.cleared)openChest(c);
   }else if(G.scene==='tower'&&!G.safe){pr.hidden=true;$('bUse').hidden=true;}
 }
+// equipaggiamento (elmo, guanti, corazza) più raro nei forzieri: 0.7 = 30% in meno, al suo posto esperienza o un'arma
+const GEAR_RARO=0.7;
 function openChest(c){
   if(c.open)return;c.open=true;STATS.chests++;sfx('chest');burst(c.x,c.y+0.8,0xffd27a,24,5,4,0.4);$('prompt').hidden=true;$('bUse').hidden=true;
   const f=G.floor,r=c.bonus?rand(0.56,1):Math.random(),minR=c.boss?2:c.bonus?1:0,loot=[];if(Math.random()<(c.boss?0.3:0.06))addFragment(f);
   if(c.boss){if(G.cage&&!G.cage.broken)G.camFocusPending=true;const nv=novice(),n=1+Math.floor(f/50)+(nv?1:0),mR=Math.min(lootMaxR(f),1+Math.floor(f/30));
     dropXP(c.x,c.y+1.2,40+f*6);
-    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0)),wp=nv&&n>1?i===0:Math.random()<0.5;loot.push(wp?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
+    for(let i=0;i<n;i++){const rr=rollRarity(f,mR+(i===0?1:0)),wp=nv&&n>1?i===0:Math.random()<1-0.5*GEAR_RARO;loot.push(wp?makeWeapon(G.cls.weapon,rr,f):makeGear(pick(Object.keys(GEAR)),rr,f));}
     burst(c.x,c.y+1,0xffd27a,40,8,6,0.4);shake(0.3);if(f>=TOP_FLOOR)winGame();}
   else if(r<(novice()?0.25:0.55)){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
+  else if(r<0.75&&Math.random()>=GEAR_RARO){dropXP(c.x,c.y+1,12+f*3);popNum(c.x,c.y+1.8,'Esperienza!','xp');return;}
   else if(r<0.75)loot.push(makeGear(pick(Object.keys(GEAR)),rollRarity(f,novice()?1:minR),f));
   else loot.push(makeWeapon(G.cls.weapon,rollRarity(f,novice()?1:minR),f));
   loot.forEach((o,i)=>dropItem(o,c.x,c.y+0.9,i,loot.length));
@@ -267,10 +270,10 @@ function updBarrels(){const A=P.atk;if(!A||A.noHit||!G.barrels||!G.barrels.lengt
     for(let i=0;i<7;i++){const m=new THREE.Mesh(chunkGeo,chunkMat(i%3?0x7a5a3a:0x55443a));m.scale.set(0.5,rand(0.6,1.3),0.25);m.position.set(bx+rand(-.3,.3),0.6,b.g.position.z);scene.add(m);
       G.chunks.push({m,vx:rand(-5,5)+P.face*3,vy:rand(4,9),vz:rand(-1.5,2),rx:rand(-10,10),rz:rand(-10,10),t:0});}
     barrelLoot(bx);}}
-// cosa c'è dentro un barile: 1,5% oggetto, 15,5% benda, 58% esperienza, 25% niente
+// cosa c'è dentro un barile: 1,5% oggetto, 13% benda, 60,5% esperienza, 25% niente
 function barrelLoot(bx){const r=Math.random(),f=G.floor;
   if(r<0.015){popNum(bx,2.2,'Oggetto!','xp');openLoot(Math.random()<0.5?{weapon:makeWeapon(G.cls.weapon,rollRarity(f,0),f)}:{gear:makeGear(pick(Object.keys(GEAR)),rollRarity(f,0),f)});}
-  else if(r<0.17){spawnBandage(bx,0);popNum(bx,1.8,'Una benda!','info');}
+  else if(r<0.145){spawnBandage(bx,0);popNum(bx,1.8,'Una benda!','info');}
   else if(r<0.75)dropXP(bx,1,3+Math.round(f*1.1));else popNum(bx,1.8,'Vuoto','info');}
 function updSafe(){nearSafe=null;if(!G.safe||G.state!=='play')return;for(const it of G.safeInter)if(Math.abs(P.x-it.x)<1.8&&P.y<1.6){nearSafe=it;break;}
   const pr=$('prompt');if(nearSafe){pr.hidden=false;$('promptName').textContent=nearSafe.name;$('promptSub').textContent=nearSafe.sub();$('promptKey').textContent=inputLabel('use');$('promptKey').hidden=touchUI();
@@ -293,7 +296,7 @@ function startFloor(f){if(f>UNL.best){UNL.best=f;saveUnl();checkUnlocks();}
   lockM.emissive.setHex(0xff3b1f);lockM.emissiveIntensity=0.7;ctrLast=null;drawCounter(G.queue.length);
   if(safeG){scene.remove(safeG);safeG=null;}G.safe=isSafeFloor(f);$('prompt').hidden=true;$('bUse').hidden=true;
   if(G.safe){buildSafeRoom();G.cleared=true;P.hp=S.maxHp;P.stam=S.stamMax;}
-  else if(isBossFloor(f)){placeBandage();placeBandage();}else{if(Math.random()<0.24)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
+  else if(isBossFloor(f)){placeBandage();if(Math.random()<0.7)placeBandage();}else{if(Math.random()<0.204)placeBandage();if(Math.random()<(novice()?0.3:0.08))placeChest(false);}
   const z=ZONES[zoneIndex(f)],boss=isBossFloor(f);$('floorNum').textContent=f;$('zoneName').textContent=z.name;
   const ban=$('banner');ban.classList.remove('show','boss');void ban.offsetWidth;
   if(G.safe){$('b1').textContent='Santuario';$('b2').textContent='Piano sicuro: potenzia la classe e cambia equipaggiamento';MUS.mood='cellar';}
