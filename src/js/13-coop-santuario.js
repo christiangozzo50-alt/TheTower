@@ -125,7 +125,7 @@ function mpMsg(m,from){
   case 'warn':if(!MP.host&&G.scene==='tower'&&m.f===G.floor)_addWarn(m.x,m.w,m.d,()=>{});break;
   case 'pil':if(!MP.host&&G.scene==='tower'&&m.f===G.floor){const x=m.x;lightning(x,CEIL,x,0);burst(x,0.3,m.c,16,5,4,0.4);sfx('zap');shake(0.2);
     if(!P.dead&&Math.abs(P.x-x)<0.7+P.w/2)_hurtPlayer(m.d,x,m.eff);}break;
-  case 'ready':{const pid=MP.host?from:m.pid;const R=MP.players.get(pid);if(R)R.ready=true;if(MP.host){MP.bcast({t:'ready',pid},pid);mpTryAdvance();}break;}
+  case 'ready':{const pid=MP.host?from:m.pid;const R=MP.players.get(pid);if(m.f!=null&&m.f!==G.floor)break;if(R)R.ready=true;if(MP.host){MP.bcast({t:'ready',pid,f:G.floor},pid);mpTryAdvance();}break;}
   case 'next':if(!MP.host)mpGoNext(m.f);break;
   case 'down':{const pid=MP.host?from:m.pid;const R=MP.players.get(pid);if(R)R.dead=true;if(MP.host)MP.bcast({t:'down',pid},pid);
     if(P.dead&&G.scene==='tower'){if(!mpAnyAlive())G.overT=Math.min(G.overT,1.2);}
@@ -304,7 +304,7 @@ const mpInTower=()=>[...MP.players.values()].some(R=>R.sc==='tower');
 const _nextFloor=nextFloor;
 nextFloor=function(){
   if(!MP.live()||!mpInTower())return _nextFloor();
-  MP.ready=true;MP.send({t:'ready',pid:MP.myPid,f:G.floor});mpWait(true);clearInput();
+  MP.ready=true;MP.readyT=performance.now();MP.send({t:'ready',pid:MP.myPid,f:G.floor});mpWait(true);clearInput();
   if(MP.host)mpTryAdvance();
 };
 function mpTryAdvance(){if(!MP.host||G.scene!=='tower')return;
@@ -313,8 +313,17 @@ function mpTryAdvance(){if(!MP.host||G.scene!=='tower')return;
   for(const R of MP.players.values()){if(R.sc!=='tower')continue;if(R.ready)any=true;else if(!R.dead)return;}
   if(!any)return;   // nessuno è ancora arrivato alle scale
   const f=G.floor+1;MP.bcast({t:'next',f});mpGoNext(f);}
+/* rete di sicurezza: se un messaggio si perde, nessuno resta bloccato ad aspettare
+   - chi ospita ricontrolla ogni mezzo secondo se tutti sono saliti
+   - chi è ospite e aspetta da più di 3 s rimanda "sono pronto"
+   - se chi ospita è già al piano dopo, l'ospite lo raggiunge da solo */
+setInterval(()=>{if(!MP.live()||G.scene!=='tower')return;
+  if(MP.host){if(MP.ready||[...MP.players.values()].some(R=>R.ready))mpTryAdvance();return;}
+  const H=MP.players.get(0);
+  if(H&&H.sc==='tower'&&H.fl>G.floor&&(MP.ready||P.dead||G.cleared)){mpGoNext(H.fl);return;}
+  if(MP.ready&&performance.now()-(MP.readyT||0)>3000){MP.readyT=performance.now();MP.send({t:'ready',pid:MP.myPid,f:G.floor});}},500);
 function mpRevive(){P.dead=false;P.hp=Math.max(1,Math.round(S.maxHp*0.5));P.dot=null;$('deathFx').classList.remove('on');G.deathSlow=0;G.overT=1.5;if(hero)hero.root.rotation.z=0;}
-function mpGoNext(f){
+function mpGoNext(f){if(MP.goF===f&&performance.now()-(MP.goT||0)<6000)return;MP.goF=f;MP.goT=performance.now();   // mai due volte per lo stesso piano
   mpWait(false);MP.ready=false;for(const R of MP.players.values()){R.ready=false;R.dead=false;}
   if(P.dead)mpRevive();
   ['upgrade','pause','loot','over'].forEach(id=>{const el=$(id);if(el)el.hidden=true;});
