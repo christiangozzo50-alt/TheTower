@@ -407,7 +407,12 @@ function wfxCatalyst(a,w){const g=a.g,v=w.v||0,r=w.rarity||0,R=RARITY[r],oc=w.ef
   else if(v===2){f=mesh(new THREE.BoxGeometry(0.075,0.075,0.075),core,0,-0.27,0,g,true);f.rotation.x=0.6;const q=mesh(new THREE.RingGeometry(0.19,0.225,4),add,0,-0.24,0,g,true);q.rotation.x=Math.PI/2;rings.push(q);}
   else{f=mesh(new THREE.IcosahedronGeometry(0.08),core,0,-0.27,0,g,true);f.scale.set(1,0.72,1);const bd=mesh(new THREE.TorusGeometry(0.085,0.012,6,20),toon(r>=2?R.hex:0xc89a52),0,-0.27,0,g,true);bd.rotation.x=Math.PI/2;}
   rings.push(f);
-  for(let i=0;i<Math.max(0,r-2);i++){const o=mesh(new THREE.RingGeometry(0.2+i*0.07,0.222+i*0.07,i?5:7),add,0,-0.33-i*0.05,0,g,true);o.rotation.x=Math.PI/2;rings.push(o);}
+  // rarità alte: frammenti di cristallo che girano intorno al nucleo su piani inclinati (prima erano cerchi piatti
+  // che, visti di taglio, diventavano una lunga barra colorata) + un alone morbido dalla Leggendaria in su
+  const shardM=toon(R.hex,{emissive:R.hex,emissiveIntensity:1.1});
+  for(let i=0;i<Math.max(0,r-2);i++){const o=new THREE.Object3D();o.position.set(0,-0.27,0);o.rotation.set(Math.PI/2,i*1.05+0.3,0);g.add(o);
+    const sh=mesh(new THREE.OctahedronGeometry(0.03+0.004*i),shardM,0.13+i*0.025,0,0,o,true);sh.scale.set(0.7,1.4,0.7);rings.push(o);}
+  if(r>=4){const halo=mesh(new THREE.SphereGeometry(0.12+0.02*(r-4),14,10),new THREE.MeshBasicMaterial({color:R.hex,transparent:true,opacity:0.28,depthWrite:false,blending:THREE.AdditiveBlending}),0,-0.27,0,g,true);halo.userData.skipOl=true;}
   return f;}
 const WORDER=['spada','ascia','lancia','pugnali','martello','falce','katana','pugni','arco'];
 const WCLASS={spada:'cavaliere',ascia:'berserker',lancia:'lanciere',pugnali:'assassino',martello:'paladino',falce:'negromante',katana:'samurai',pugni:'monaco',arco:'arciere'};

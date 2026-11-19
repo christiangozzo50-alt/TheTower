@@ -236,7 +236,10 @@ function hordeInit(){G.hordePaid=false;G.hordeResult=null;G.horde=true;G.wave=1;
   if(merchant){levelGroup.remove(merchant.g);merchant=null;}hordeLabel();toast('Modalità Orda','Ondate infinite: resisti il più possibile');}
 function hordeLabel(){$('floorNum').textContent=G.wave;const z=$('zoneName');if(z)z.textContent='Orda · ondata';}
 function hordeQueue(){const f=G.floor;let q=buildQueue(f);if(G.wave%5===0)q=['boss',...q.slice(0,Math.ceil(q.length/2))];return q;}
+function hordeBarrels(){for(const b of G.barrels||[])if(b.dead&&b.g){b.dead=false;b.hp=2;b.lastA=null;b.g.rotation.z=0;levelGroup.add(b.g);burst(b.g.position.x,0.6,0xc9a06a,10,3,1,0.3,b.g.position.z);}}
 function hordeNextWave(){G.wave++;G.floor=G.wave*2;G.queue=hordeQueue();G.spawnT=1.2;G.cleared=false;G.gateMsg=true;
+  // ogni 2 ondate i barili rotti tornano al loro posto
+  if(G.wave%2===1)hordeBarrels();
   if(MP.live())MP.bcast({t:'wave',w:G.wave,f:G.floor});hordeLabel();bannerWave();}
 function bannerWave(){$('b1').textContent=`Ondata ${G.wave}`;$('b2').textContent=G.wave%5===0?'Arriva un guardiano!':'Preparati';const b=$('banner');b.classList.remove('show','boss');void b.offsetWidth;if(G.wave%5===0)b.classList.add('boss');b.classList.add('show');sfx('gate');}
 const _ufH=updFloor;
@@ -287,7 +290,7 @@ mpMsg=function(m,from){
   case 'abil':if(MP.host)teamAbil(from,m);return;
   case 'tcombo':if(!MP.host)teamCombo(m,false);return;
   case 'revive':if(MP.host&&m.to!==0){MP.sendTo(m.to,m);return;}if(m.to===MP.myPid)gotRevived(m.by);return;
-  case 'wave':if(!MP.host&&G.horde){G.wave=m.w;G.floor=m.f;G.cleared=false;G.spawnT=1e9;hordeLabel();bannerWave();}return;
+  case 'wave':if(!MP.host&&G.horde){G.wave=m.w;G.floor=m.f;G.cleared=false;G.spawnT=1e9;hordeLabel();bannerWave();if(G.wave%2===1)hordeBarrels();}return;
   }
   return _mpMsgF(m,from);};
 

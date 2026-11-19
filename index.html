@@ -4504,7 +4504,12 @@ function wfxCatalyst(a,w){const g=a.g,v=w.v||0,r=w.rarity||0,R=RARITY[r],oc=w.ef
   else if(v===2){f=mesh(new THREE.BoxGeometry(0.075,0.075,0.075),core,0,-0.27,0,g,true);f.rotation.x=0.6;const q=mesh(new THREE.RingGeometry(0.19,0.225,4),add,0,-0.24,0,g,true);q.rotation.x=Math.PI/2;rings.push(q);}
   else{f=mesh(new THREE.IcosahedronGeometry(0.08),core,0,-0.27,0,g,true);f.scale.set(1,0.72,1);const bd=mesh(new THREE.TorusGeometry(0.085,0.012,6,20),toon(r>=2?R.hex:0xc89a52),0,-0.27,0,g,true);bd.rotation.x=Math.PI/2;}
   rings.push(f);
-  for(let i=0;i<Math.max(0,r-2);i++){const o=mesh(new THREE.RingGeometry(0.2+i*0.07,0.222+i*0.07,i?5:7),add,0,-0.33-i*0.05,0,g,true);o.rotation.x=Math.PI/2;rings.push(o);}
+  // rarità alte: frammenti di cristallo che girano intorno al nucleo su piani inclinati (prima erano cerchi piatti
+  // che, visti di taglio, diventavano una lunga barra colorata) + un alone morbido dalla Leggendaria in su
+  const shardM=toon(R.hex,{emissive:R.hex,emissiveIntensity:1.1});
+  for(let i=0;i<Math.max(0,r-2);i++){const o=new THREE.Object3D();o.position.set(0,-0.27,0);o.rotation.set(Math.PI/2,i*1.05+0.3,0);g.add(o);
+    const sh=mesh(new THREE.OctahedronGeometry(0.03+0.004*i),shardM,0.13+i*0.025,0,0,o,true);sh.scale.set(0.7,1.4,0.7);rings.push(o);}
+  if(r>=4){const halo=mesh(new THREE.SphereGeometry(0.12+0.02*(r-4),14,10),new THREE.MeshBasicMaterial({color:R.hex,transparent:true,opacity:0.28,depthWrite:false,blending:THREE.AdditiveBlending}),0,-0.27,0,g,true);halo.userData.skipOl=true;}
   return f;}
 const WORDER=['spada','ascia','lancia','pugnali','martello','falce','katana','pugni','arco'];
 const WCLASS={spada:'cavaliere',ascia:'berserker',lancia:'lanciere',pugnali:'assassino',martello:'paladino',falce:'negromante',katana:'samurai',pugni:'monaco',arco:'arciere'};
@@ -9289,7 +9294,10 @@ function hordeInit(){G.hordePaid=false;G.hordeResult=null;G.horde=true;G.wave=1;
   if(merchant){levelGroup.remove(merchant.g);merchant=null;}hordeLabel();toast('Modalità Orda','Ondate infinite: resisti il più possibile');}
 function hordeLabel(){$('floorNum').textContent=G.wave;const z=$('zoneName');if(z)z.textContent='Orda · ondata';}
 function hordeQueue(){const f=G.floor;let q=buildQueue(f);if(G.wave%5===0)q=['boss',...q.slice(0,Math.ceil(q.length/2))];return q;}
+function hordeBarrels(){for(const b of G.barrels||[])if(b.dead&&b.g){b.dead=false;b.hp=2;b.lastA=null;b.g.rotation.z=0;levelGroup.add(b.g);burst(b.g.position.x,0.6,0xc9a06a,10,3,1,0.3,b.g.position.z);}}
 function hordeNextWave(){G.wave++;G.floor=G.wave*2;G.queue=hordeQueue();G.spawnT=1.2;G.cleared=false;G.gateMsg=true;
+  // ogni 2 ondate i barili rotti tornano al loro posto
+  if(G.wave%2===1)hordeBarrels();
   if(MP.live())MP.bcast({t:'wave',w:G.wave,f:G.floor});hordeLabel();bannerWave();}
 function bannerWave(){$('b1').textContent=`Ondata ${G.wave}`;$('b2').textContent=G.wave%5===0?'Arriva un guardiano!':'Preparati';const b=$('banner');b.classList.remove('show','boss');void b.offsetWidth;if(G.wave%5===0)b.classList.add('boss');b.classList.add('show');sfx('gate');}
 const _ufH=updFloor;
@@ -9340,7 +9348,7 @@ mpMsg=function(m,from){
   case 'abil':if(MP.host)teamAbil(from,m);return;
   case 'tcombo':if(!MP.host)teamCombo(m,false);return;
   case 'revive':if(MP.host&&m.to!==0){MP.sendTo(m.to,m);return;}if(m.to===MP.myPid)gotRevived(m.by);return;
-  case 'wave':if(!MP.host&&G.horde){G.wave=m.w;G.floor=m.f;G.cleared=false;G.spawnT=1e9;hordeLabel();bannerWave();}return;
+  case 'wave':if(!MP.host&&G.horde){G.wave=m.w;G.floor=m.f;G.cleared=false;G.spawnT=1e9;hordeLabel();bannerWave();if(G.wave%2===1)hordeBarrels();}return;
   }
   return _mpMsgF(m,from);};
 
@@ -10769,7 +10777,7 @@ const _sbAr=stepBody;stepBody=function(b,h){_sbAr(b,h);if(G.pvp&&ARENA&&PVA&&PVA
    ACCOUNT (nome utente + password, per giocare su più dispositivi)
    e AGGIORNAMENTI AUTOMATICI quando esce una nuova versione
    ========================================================= */
-const BUILD_ID='1795042162';
+const BUILD_ID='1795093143';
 // Chiave Web API di Firebase (Impostazioni progetto → Generali). Vuota = account non attivi.
 const FB_KEY='AIzaSyAGoRYCkQJYEvEGLGCEeCwksHGdlMntWrI';
 const AUTH=Object.assign({},store.get('auth',{}));
@@ -13913,6 +13921,11 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{D
     if(STATS.runs>0||(STATS.best||0)>1){store.set('welcome','no');clearInterval(iv);return;}   // ha già giocato (es. ha appena ritrovato il suo account)
     const cr=CRATES.find(c=>c.id==='eroe');if(!cr)return;store.set('welcome','dato');clearInterval(iv);
     toast('Regalo di benvenuto!','Una Cassa dell\'eroe per iniziare la scalata');try{openCrate(cr);}catch(e){console.warn('regalo',e);}},1500);}
+
+/* ---------- regali dati a mano a un giocatore (una volta sola, legati al nome; il "ricevuto" si salva anche nel cloud) ---------- */
+const GIFTS=[{id:'2026-11-19-anvswer',to:'anvswer',coins:2000,msg:'Un regalo dallo sviluppatore di The Tower'}];
+setInterval(()=>{if(!store.get('nameok',false)||G.state!=='cellar')return;const me=nameKey(MP.name()),done=store.get('gifts',{});
+  for(const g of GIFTS)if(g.to===me&&!done[g.id]){done[g.id]=Date.now();store.set('gifts',done);addCoins(g.coins);sfx('lvl');toast(`+${g.coins} rubini!`,g.msg);}},3000);
 
 /* =========================================================
    RUOLI DEGLI EROI (utili in co-op)

@@ -118,3 +118,8 @@ if(/coop-debug/.test(location.hash))Object.assign(window.__F||(window.__F={}),{D
     if(STATS.runs>0||(STATS.best||0)>1){store.set('welcome','no');clearInterval(iv);return;}   // ha già giocato (es. ha appena ritrovato il suo account)
     const cr=CRATES.find(c=>c.id==='eroe');if(!cr)return;store.set('welcome','dato');clearInterval(iv);
     toast('Regalo di benvenuto!','Una Cassa dell\'eroe per iniziare la scalata');try{openCrate(cr);}catch(e){console.warn('regalo',e);}},1500);}
+
+/* ---------- regali dati a mano a un giocatore (una volta sola, legati al nome; il "ricevuto" si salva anche nel cloud) ---------- */
+const GIFTS=[{id:'2026-11-19-anvswer',to:'anvswer',coins:2000,msg:'Un regalo dallo sviluppatore di The Tower'}];
+setInterval(()=>{if(!store.get('nameok',false)||G.state!=='cellar')return;const me=nameKey(MP.name()),done=store.get('gifts',{});
+  for(const g of GIFTS)if(g.to===me&&!done[g.id]){done[g.id]=Date.now();store.set('gifts',done);addCoins(g.coins);sfx('lvl');toast(`+${g.coins} rubini!`,g.msg);}},3000);
